@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="cr.ac.una.restunaclient.controller.UsuariosController"
+            style="-fx-background-color: #F5F5F0;">
+    
+    <!-- TOP: Header -->
+    <top>
+        <VBox spacing="10" style="-fx-background-color: white;">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label fx:id="lblTitle" text="Gestión de Usuarios">
+                    <font><Font name="System Bold" size="24"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver" 
+                        style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="14"/></font>
+                </Button>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- CENTER: Contenido principal -->
+    <center>
+        <HBox spacing="20" BorderPane.alignment="CENTER">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            
+            <!-- PANEL IZQUIERDO: Tabla de usuarios -->
+            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <!-- Barra de búsqueda y filtros -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar" promptText="Buscar usuario..." HBox.hgrow="ALWAYS">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                    <ComboBox fx:id="cmbFiltroRol" promptText="Filtrar por rol" prefWidth="180"/>
+                    <Button fx:id="btnNuevo" text="+ Nuevo Usuario" onAction="#onNuevo"
+                            style="-fx-background-color: #FF7A00; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                        <font><Font name="System Bold" size="13"/></font>
+                    </Button>
+                </HBox>
+                
+                <!-- Tabla de usuarios -->
+                <TableView fx:id="tblUsuarios" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="200"/>
+                        <TableColumn fx:id="colUsuario" text="Usuario" prefWidth="150"/>
+                        <TableColumn fx:id="colRol" text="Rol" prefWidth="150"/>
+                        <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+                        <TableColumn fx:id="colFecha" text="Fecha Creación" prefWidth="130"/>
+                    </columns>
+                </TableView>
+                
+                <!-- Botones de acción -->
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="btnEditar" text="✏️ Editar" onAction="#onEditar"
+                            style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="150">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnCambiarClave" text="🔑 Cambiar Clave" onAction="#onCambiarClave"
+                            style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="150">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnEliminar" text="🗑️ Eliminar" onAction="#onEliminar"
+                            style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="150">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnRefrescar" text="🔄 Refrescar" onAction="#onRefrescar"
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="150">
+                        <font><Font size="13"/></font>
+                    </Button>
+                </HBox>
+            </VBox>
+            
+            <!-- PANEL DERECHO: Formulario -->
+            <VBox spacing="15" prefWidth="380" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <Label fx:id="lblFormTitle" text="Nuevo Usuario">
+                    <font><Font name="System Bold" size="18"/></font>
+                </Label>
+                
+                <Separator/>
+                
+                <!-- Campo: Nombre -->
+                <VBox spacing="5">
+                    <Label fx:id="lblNombre" text="Nombre Completo:" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="txtNombre" promptText="Ej: Juan Pérez González">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                </VBox>
+                
+                <!-- Campo: Usuario -->
+                <VBox spacing="5">
+                    <Label fx:id="lblUsuario" text="Nombre de Usuario:" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="txtUsuario" promptText="Ej: jperez">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                    <Label fx:id="lblUsuarioInfo" text="Debe ser único en el sistema" 
+                           style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <!-- Campo: Contraseña (solo en modo creación) ⭐ CORREGIDO -->
+                <VBox fx:id="vboxClave" spacing="5">
+                    <Label fx:id="lblClave" text="Contraseña:" style="-fx-font-weight: bold;"/>
+                    <PasswordField fx:id="txtClave" promptText="Mínimo 6 caracteres">
+                        <font><Font size="13"/></font>
+                    </PasswordField>
+                </VBox>
+                
+                <!-- Campo: Rol -->
+                <VBox spacing="5">
+                    <Label fx:id="lblRol" text="Rol del Usuario:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="cmbRol" promptText="Seleccione un rol" prefWidth="340"/>
+                    <Label fx:id="lblRolInfo" text="ADMINISTRATIVO: acceso total | CAJERO: facturación | SALONERO: solo órdenes" 
+                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <!-- Campo: Estado -->
+                <VBox spacing="5">
+                    <Label fx:id="lblEstado" text="Estado:" style="-fx-font-weight: bold;"/>
+                    <CheckBox fx:id="chkActivo" text="Activo" selected="true">
+                        <font><Font size="13"/></font>
+                    </CheckBox>
+                    <Label text="Si está desactivado, el usuario no podrá iniciar sesión" 
+                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <Region VBox.vgrow="ALWAYS"/>
+                
+                <!-- Botones del formulario -->
+                <HBox spacing="10">
+                    <Button fx:id="btnGuardar" text="💾 Guardar" onAction="#onGuardar" 
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
+                            prefWidth="170" HBox.hgrow="ALWAYS">
+                        <font><Font name="System Bold" size="14"/></font>
+                    </Button>
+                    <Button fx:id="btnCancelar" text="✖️ Cancelar" onAction="#onCancelar" 
+                            style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
+                            prefWidth="170" HBox.hgrow="ALWAYS">
+                        <font><Font size="14"/></font>
+                    </Button>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

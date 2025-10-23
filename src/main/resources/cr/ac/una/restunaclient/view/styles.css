@@ -1,0 +1,121 @@
+/* Estilos generales */
+.root {
+    -fx-font-family: "Segoe UI", "System", sans-serif;
+}
+
+/* Campos de texto */
+.text-field, .password-field {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px;
+    -fx-font-size: 13px;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #FF7A00;
+    -fx-background-color: white;
+}
+
+/* Botones */
+.button {
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-opacity: 0.9;
+}
+
+.button:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* ComboBox */
+.combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.combo-box .list-cell {
+    -fx-padding: 10px;
+}
+
+.combo-box:focused {
+    -fx-border-color: #FF7A00;
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow {
+    -fx-background-color: #666666;
+}
+
+/* Hyperlink */
+.hyperlink {
+    -fx-border-width: 0;
+    -fx-underline: true;
+}
+
+.hyperlink:hover {
+    -fx-opacity: 0.8;
+}
+
+.hyperlink:visited {
+    -fx-text-fill: #FF7A00;
+}
+
+/* Estilo para el dropdown del ComboBox */
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #333333;
+    -fx-padding: 10px 15px;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #FFF5EC;
+}
+
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #FF7A00;
+    -fx-text-fill: white;
+}
+
+/* Scrollbar personalizado */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #CCCCCC;
+    -fx-background-radius: 5px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #999999;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #F5F5F5;
+    -fx-background-radius: 5px;
+}
+
+/* Placeholders */
+.text-field:empty {
+    -fx-prompt-text-fill: #999999;
+}
+
+.password-field:empty {
+    -fx-prompt-text-fill: #999999;
+}

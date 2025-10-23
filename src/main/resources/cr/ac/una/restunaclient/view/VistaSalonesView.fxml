@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="cr.ac.una.restunaclient.controller.VistaSalonesController"
+            style="-fx-background-color: #F5F5F0;">
+    
+    <!-- TOP: Header con información del usuario y botones -->
+    <top>
+        <VBox spacing="10" style="-fx-background-color: white;">
+            <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
+            
+            <!-- Primera fila: Título y botón volver -->
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label fx:id="lblTitle" text="🍽️ Salones del Restaurante">
+                    <font><Font name="System Bold" size="22"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblUsuario" text="Usuario: Juan Pérez" style="-fx-text-fill: #333;">
+                    <font><Font size="13"/></font>
+                </Label>
+                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver" 
+                        style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="13"/></font>
+                </Button>
+            </HBox>
+            
+            <!-- Segunda fila: Selector de salones -->
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Salón:" style="-fx-font-weight: bold;">
+                    <font><Font size="14"/></font>
+                </Label>
+                <ComboBox fx:id="cmbSalones" prefWidth="250" promptText="Seleccione un salón"/>
+                <Button fx:id="btnModoEdicion" managed="false" visible="false" text="🛠️ Modo Edición" onAction="#onModoEdicion" 
+                        style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="13"/></font>
+                </Button>
+                <Button fx:id="btnGuardarDiseno" managed="false" visible="false" text="💾 Guardar Diseño" onAction="#onGuardarDiseno" 
+                        style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="13"/></font>
+                </Button>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblInfo" text="Haga clic en una mesa para crear una orden" 
+                       style="-fx-text-fill: #666; -fx-font-style: italic;">
+                    <font><Font size="12"/></font>
+                </Label>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- CENTER: Área de visualización de mesas -->
+    <center>
+        <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background: #F5F5F0;">
+            <BorderPane.margin><Insets top="20" bottom="20" left="30" right="30"/></BorderPane.margin>
+            
+            <!-- Panel contenedor de mesas -->
+            <Pane fx:id="panelMesas" 
+                  minWidth="1000" minHeight="600" prefWidth="1100" prefHeight="650"
+                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);"/>
+        </ScrollPane>
+    </center>
+    
+    <!-- BOTTOM: Leyenda de estados -->
+    <bottom>
+        <HBox spacing="30" alignment="CENTER" style="-fx-background-color: white; -fx-padding: 15;">
+            <Label text="Leyenda:" style="-fx-font-weight: bold;">
+                <font><Font size="13"/></font>
+            </Label>
+            
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane prefWidth="30" prefHeight="30" 
+                          style="-fx-background-color: #d4edda; -fx-border-color: #28a745; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;"/>
+                <Label fx:id="lblLibre" text="Libre" style="-fx-text-fill: #333;">
+                    <font><Font size="13"/></font>
+                </Label>
+            </HBox>
+            
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane prefWidth="30" prefHeight="30" 
+                          style="-fx-background-color: #f8d7da; -fx-border-color: #dc3545; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;"/>
+                <Label fx:id="lblOcupada" text="Ocupada" style="-fx-text-fill: #333;">
+                    <font><Font size="13"/></font>
+                </Label>
+            </HBox>
+            
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <StackPane prefWidth="30" prefHeight="30" 
+                          style="-fx-background-color: #fff3cd; -fx-border-color: #ffc107; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;"/>
+                <Label fx:id="lblEdicion" text="Modo Edición" style="-fx-text-fill: #333;">
+                    <font><Font size="13"/></font>
+                </Label>
+            </HBox>
+        </HBox>
+    </bottom>
+</BorderPane>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.restunaclient.controller.ParametrosController">
+    <top>
+        <VBox spacing="10" alignment="CENTER" style="-fx-background-color: white;">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            <Label fx:id="lblTitle" text="Parametros Generales del Sistema">
+                <font><Font name="System Bold" size="24"/></font>
+            </Label>
+        </VBox>
+    </top>
+    <center>
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+            <padding><Insets top="10" bottom="10" left="30" right="30"/></padding>
+            <Tab fx:id="tabGeneral" text="General">
+                <ScrollPane fitToWidth="true" fitToHeight="true">
+                    <VBox spacing="15">
+                        <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                        <VBox spacing="5">
+                            <Label fx:id="lblIdioma" text="Idioma:"/>
+                            <ComboBox fx:id="cmbIdioma" maxWidth="300"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label fx:id="lblRestaurante" text="Nombre del Restaurante:"/>
+                            <TextField fx:id="txtRestaurante" promptText="Ingrese el nombre del restaurante"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label fx:id="lblDireccion" text="Direccion:"/>
+                            <TextArea fx:id="txtDireccion" promptText="Ingrese la direccion del restaurante" prefRowCount="3" wrapText="true"/>
+                        </VBox>
+                        <HBox spacing="20">
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblTelefono1" text="Telefono 1:"/>
+                                <TextField fx:id="txtTelefono1" promptText="Ej: 2771-5555"/>
+                            </VBox>
+                            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblTelefono2" text="Telefono 2:"/>
+                                <TextField fx:id="txtTelefono2" promptText="Ej: 8888-9999"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+            <Tab fx:id="tabImpuestos" text="Impuestos y Descuentos">
+                <ScrollPane fitToWidth="true" fitToHeight="true">
+                    <VBox spacing="20">
+                        <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                        <VBox spacing="5">
+                            <Label fx:id="lblImpuestoVenta" text="Impuesto de Venta:"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <TextField fx:id="txtImpuestoVenta" promptText="13.00" maxWidth="150"/>
+                                <Label text="porcentaje"/>
+                            </HBox>
+                            <Label text="Porcentaje de IVA aplicado a los productos" style="-fx-text-fill: gray;"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label fx:id="lblImpuestoServicio" text="Impuesto de Servicio:"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <TextField fx:id="txtImpuestoServicio" promptText="10.00" maxWidth="150"/>
+                                <Label text="porcentaje"/>
+                            </HBox>
+                            <Label text="Porcentaje de servicio aplicado en salones" style="-fx-text-fill: gray;"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label fx:id="lblDescuentoMax" text="Descuento Maximo:"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <TextField fx:id="txtDescuentoMax" promptText="10.00" maxWidth="150"/>
+                                <Label text="porcentaje"/>
+                            </HBox>
+                            <Label text="Maximo descuento que puede aplicar un cajero" style="-fx-text-fill: gray;"/>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+            <Tab fx:id="tabCorreo" text="Configuracion de Correo">
+                <ScrollPane fitToWidth="true" fitToHeight="true">
+                    <VBox spacing="20">
+                        <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                        <Label fx:id="lblInfoCorreo" text="Configure el correo desde el cual se enviaran las facturas a los clientes." wrapText="true">
+                            <font><Font size="13"/></font>
+                        </Label>
+                        <VBox spacing="5">
+                            <Label fx:id="lblCorreoSistema" text="Correo del Sistema:"/>
+                            <TextField fx:id="txtCorreoSistema" promptText="ejemplo@restaurante.com"/>
+                        </VBox>
+                        <VBox spacing="5">
+                            <Label fx:id="lblClaveCorreo" text="Contrasena del Correo:"/>
+                            <PasswordField fx:id="txtClaveCorreo" promptText="Contrasena de aplicacion"/>
+                            <Label text="Use una contrasena de aplicacion para mayor seguridad" style="-fx-text-fill: gray;"/>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+        </TabPane>
+    </center>
+    <bottom>
+        <HBox spacing="15" alignment="CENTER" style="-fx-background-color: white; -fx-padding: 20;">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            <Button fx:id="btnGuardar" text="Guardar" onAction="#onGuardar" prefWidth="150" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+            <Button fx:id="btnCancelar" text="Cancelar" onAction="#onCancelar" prefWidth="150" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

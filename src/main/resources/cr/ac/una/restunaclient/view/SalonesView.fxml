@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="cr.ac.una.restunaclient.controller.SalonesController"
+            style="-fx-background-color: #F5F5F0;">
+    
+    <!-- TOP: Header -->
+    <top>
+        <VBox spacing="10" style="-fx-background-color: white;">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label fx:id="lblTitle" text="Gestión de Salones y Secciones">
+                    <font><Font name="System Bold" size="24"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver" 
+                        style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="14"/></font>
+                </Button>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- CENTER: Contenido principal -->
+    <center>
+        <HBox spacing="20" BorderPane.alignment="CENTER">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
+            
+            <!-- PANEL IZQUIERDO: Tabla de salones -->
+            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <!-- Barra de búsqueda y botón nuevo -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar" promptText="Buscar salón..." HBox.hgrow="ALWAYS">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                    <Button fx:id="btnNuevo" text="+ Nuevo Salón" onAction="#onNuevo"
+                            style="-fx-background-color: #FF7A00; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                        <font><Font name="System Bold" size="13"/></font>
+                    </Button>
+                </HBox>
+                
+                <!-- Tabla de salones -->
+                <TableView fx:id="tblSalones" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNombre" text="Nombre" prefWidth="200"/>
+                        <TableColumn fx:id="colTipo" text="Tipo" prefWidth="120"/>
+                        <TableColumn fx:id="colMesas" text="Mesas" prefWidth="80"/>
+                        <TableColumn fx:id="colServicio" text="Cobra Servicio" prefWidth="130"/>
+                        <TableColumn fx:id="colEstado" text="Estado" prefWidth="100"/>
+                    </columns>
+                </TableView>
+                
+                <!-- Botones de acción -->
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="btnEditar" text="✏️ Editar" onAction="#onEditar"
+                            style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="120">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnDisenaMesas" text="🪑 Diseñar Mesas" onAction="#onDisenaMesas"
+                            style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="140">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnEliminar" text="🗑️ Eliminar" onAction="#onEliminar"
+                            style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="120">
+                        <font><Font size="13"/></font>
+                    </Button>
+                    <Button fx:id="btnRefrescar" text="🔄 Refrescar" onAction="#onRefrescar"
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="120">
+                        <font><Font size="13"/></font>
+                    </Button>
+                </HBox>
+            </VBox>
+            
+            <!-- PANEL DERECHO: Formulario -->
+            <VBox spacing="15" prefWidth="380" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <Label fx:id="lblFormTitle" text="Nuevo Salón">
+                    <font><Font name="System Bold" size="18"/></font>
+                </Label>
+                
+                <Separator/>
+                
+                <!-- Campo: Nombre -->
+                <VBox spacing="5">
+                    <Label fx:id="lblNombre" text="Nombre del Salón:" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="txtNombre" promptText="Ej: Salón Principal">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                </VBox>
+                
+                <!-- Campo: Tipo -->
+                <VBox spacing="5">
+                    <Label fx:id="lblTipo" text="Tipo de Sección:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="cmbTipo" promptText="Seleccione un tipo" prefWidth="340">
+                        <tooltip><Tooltip text="SALON: requiere diseño de mesas | BARRA: venta directa sin mesas"/></tooltip>
+                    </ComboBox>
+                    <Label fx:id="lblTipoInfo" text="SALON: Con diseño de mesas | BARRA: Venta directa" 
+                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <!-- Campo: Cobra Servicio -->
+                <VBox spacing="5">
+                    <Label fx:id="lblOpciones" text="Opciones:" style="-fx-font-weight: bold;"/>
+                    <CheckBox fx:id="chkCobraServicio" text="Cobra Impuesto de Servicio" selected="true">
+                        <font><Font size="13"/></font>
+                    </CheckBox>
+                    <Label text="Si está marcado, las órdenes de este salón incluirán el impuesto de servicio." 
+                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <!-- Campo: Imagen de Mesa (solo para SALON) -->
+                <VBox spacing="5" fx:id="vboxImagenMesa" managed="false" visible="false">
+                    <Label fx:id="lblImagenMesa" text="Imagen de Mesa:" style="-fx-font-weight: bold;"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Button fx:id="btnSeleccionarImagen" text="📁 Seleccionar Imagen" onAction="#onSeleccionarImagen"
+                                style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                            <font><Font size="12"/></font>
+                        </Button>
+                        <Label fx:id="lblImagenSeleccionada" text="Sin imagen" style="-fx-text-fill: gray;"/>
+                    </HBox>
+                    <Label text="Imagen que se usará para representar las mesas en el diseño." 
+                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                </VBox>
+                
+                <!-- Campo: Estado -->
+                <VBox spacing="5">
+                    <Label fx:id="lblEstado" text="Estado:" style="-fx-font-weight: bold;"/>
+                    <CheckBox fx:id="chkActivo" text="Activo" selected="true">
+                        <font><Font size="13"/></font>
+                    </CheckBox>
+                </VBox>
+                
+                <Region VBox.vgrow="ALWAYS"/>
+                
+                <!-- Botones del formulario -->
+                <HBox spacing="10">
+                    <Button fx:id="btnGuardar" text="💾 Guardar" onAction="#onGuardar" 
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
+                            prefWidth="170" HBox.hgrow="ALWAYS">
+                        <font><Font name="System Bold" size="14"/></font>
+                    </Button>
+                    <Button fx:id="btnCancelar" text="✖️ Cancelar" onAction="#onCancelar" 
+                            style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
+                            prefWidth="170" HBox.hgrow="ALWAYS">
+                        <font><Font size="14"/></font>
+                    </Button>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

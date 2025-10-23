@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="cr.ac.una.restunaclient.controller.OrdenesController"
+            style="-fx-background-color: #F5F5F0;">
+    
+    <!-- TOP: Header -->
+    <top>
+        <VBox spacing="10" style="-fx-background-color: white;">
+            <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
+            
+            <!-- Primera fila: Título y botones -->
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <Label fx:id="lblTitle" text="📝 Gestión de Orden">
+                    <font><Font name="System Bold" size="22"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblUsuario" text="Salonero: Juan Pérez" style="-fx-text-fill: #333;">
+                    <font><Font size="13"/></font>
+                </Label>
+                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver" 
+                        style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="13"/></font>
+                </Button>
+            </HBox>
+            
+            <!-- Segunda fila: Info de la orden -->
+            <HBox spacing="20" alignment="CENTER_LEFT">
+                <Label fx:id="lblMesaInfo" text="Mesa: 5" style="-fx-font-weight: bold; -fx-text-fill: #FF7A00;">
+                    <font><Font size="14"/></font>
+                </Label>
+                <Separator orientation="VERTICAL" prefHeight="20"/>
+                <Label fx:id="lblSalonInfo" text="Salón: Principal" style="-fx-text-fill: #666;">
+                    <font><Font size="13"/></font>
+                </Label>
+                <Separator orientation="VERTICAL" prefHeight="20"/>
+                <Label fx:id="lblFechaHora" text="20/10/2025 14:30" style="-fx-text-fill: #666;">
+                    <font><Font size="13"/></font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="btnCancelarOrden" text="❌ Cancelar Orden" onAction="#onCancelarOrden" 
+                        style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
+                    <font><Font size="13"/></font>
+                </Button>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- CENTER: Contenido principal -->
+    <center>
+        <HBox spacing="15" BorderPane.alignment="CENTER">
+            <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
+            
+            <!-- PANEL IZQUIERDO: Selector de productos -->
+            <VBox spacing="15" prefWidth="450" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <Label text="Seleccionar Productos" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                
+                <!-- Búsqueda y filtro -->
+                <HBox spacing="10">
+                    <TextField fx:id="txtBuscarProducto" promptText="Buscar producto..." HBox.hgrow="ALWAYS">
+                        <font><Font size="13"/></font>
+                    </TextField>
+                    <ComboBox fx:id="cmbGrupos" prefWidth="180" promptText="Todos los grupos"/>
+                </HBox>
+                
+                <!-- Productos (FlowPane dentro de ScrollPane) -->
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" 
+                           style="-fx-background: transparent; -fx-background-color: transparent;">
+                    <FlowPane fx:id="flowProductos" hgap="10" vgap="10" 
+                             style="-fx-background-color: #F5F5F0; -fx-padding: 10; -fx-background-radius: 8;"/>
+                </ScrollPane>
+            </VBox>
+            
+            <!-- PANEL DERECHO: Detalles de la orden -->
+            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+                
+                <Label text="Detalles de la Orden" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                
+                <!-- Tabla de detalles -->
+                <TableView fx:id="tblDetalles" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colProducto" text="Producto" prefWidth="250"/>
+                        <TableColumn fx:id="colCantidad" text="Cant." prefWidth="70"/>
+                        <TableColumn fx:id="colPrecio" text="Precio" prefWidth="100"/>
+                        <TableColumn fx:id="colSubtotal" text="Subtotal" prefWidth="100"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="No hay productos agregados" style="-fx-text-fill: #999;"/>
+                    </placeholder>
+                </TableView>
+                
+                <Separator/>
+                
+                <!-- Observaciones -->
+                <VBox spacing="5">
+                    <Label text="Observaciones:" style="-fx-font-weight: bold;"/>
+                    <TextArea fx:id="txtObservaciones" prefHeight="80" wrapText="true" 
+                             promptText="Observaciones adicionales..."/>
+                </VBox>
+                
+                <Separator/>
+                
+                <!-- Total y botón guardar -->
+                <HBox spacing="15" alignment="CENTER">
+                    <Label text="TOTAL:" style="-fx-font-weight: bold; -fx-font-size: 18px;"/>
+                    <Label fx:id="lblTotal" text="₡0.00" style="-fx-text-fill: #FF7A00; -fx-font-weight: bold; -fx-font-size: 24px;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="btnGuardar" text="💾 Guardar Orden" onAction="#onGuardar" 
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8; -fx-font-size: 15px; -fx-padding: 12 30;">
+                        <font><Font name="System Bold" size="15"/></font>
+                    </Button>
+                </HBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

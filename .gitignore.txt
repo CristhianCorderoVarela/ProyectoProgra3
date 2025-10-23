@@ -1,0 +1,86 @@
+###############################
+# ARCHIVOS DE NETBEANS
+###############################
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+target/
+*.jar
+*.war
+*.ear
+
+# Archivos generados por NetBeans
+nbactions.xml
+nb-configuration.xml
+private.properties
+
+###############################
+# MAVEN
+###############################
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
+
+###############################
+# IDEs (Eclipse / IntelliJ / VSCode)
+###############################
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+###############################
+# ARCHIVOS DE SISTEMA
+###############################
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+###############################
+# LOGS Y TEMPORALES
+###############################
+*.log
+*.swp
+*~
+*.tmp
+*.bak
+*.orig
+
+###############################
+# PAYARA / GLASSFISH
+###############################
+generated/
+logs/
+domain1/
+payara5/
+payara6/
+glassfish/
+.derby/
+local-resources.xml
+
+###############################
+# CONFIGURACIONES LOCALES
+###############################
+.env
+*.properties.local
+application.properties
+persistence.xml
+config/
+secrets/
+.credentials/

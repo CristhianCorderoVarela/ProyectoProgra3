@@ -20,11 +20,9 @@ import java.util.ResourceBundle;
 /**
  * Controlador del menú principal
  * Muestra opciones según el rol del usuario
- * 
- * CAMBIOS:
- * - Agregado módulo de Clientes (visible para Admin y Cajero)
- * - Habilitados módulos ya implementados (Grupos, Productos, Parametros, Salones)
- * - Los módulos en desarrollo quedan deshabilitados con mensaje
+ *
+ * CAMBIO: todas las navegaciones conservan tamaño con goToViewKeepSize(...)
+ * y el Logout usa login modal (no carga Login dentro del mainStage).
  */
 public class MenuPrincipalController implements Initializable {
 
@@ -34,11 +32,11 @@ public class MenuPrincipalController implements Initializable {
     @FXML private Button btnLanguage;
     @FXML private Button btnLogout;
     @FXML private Label lblWelcome;
-    
+
     // Labels de secciones
     @FXML private Label lblMantenimientos;
     @FXML private Label lblOperaciones;
-    
+
     // Botones de mantenimientos
     @FXML private VBox btnUsuarios;
     @FXML private Label lblUsuarios;
@@ -48,11 +46,11 @@ public class MenuPrincipalController implements Initializable {
     @FXML private Label lblGrupos;
     @FXML private VBox btnProductos;
     @FXML private Label lblProductos;
-    @FXML private VBox btnClientes;        // ⭐ NUEVO
-    @FXML private Label lblClientes;       // ⭐ NUEVO
+    @FXML private VBox btnClientes;
+    @FXML private Label lblClientes;
     @FXML private VBox btnParametros;
     @FXML private Label lblParametros;
-    
+
     // Botones de operaciones
     @FXML private VBox btnVerSalones;
     @FXML private Label lblVerSalones;
@@ -70,16 +68,18 @@ public class MenuPrincipalController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         usuarioLogueado = AppContext.getInstance().getUsuarioLogueado();
-        
+
         if (usuarioLogueado == null) {
-            Mensaje.showError("Error", "No hay usuario logueado");
-            FlowController.getInstance().goToView("Login", "RestUNA - Login", 1024, 768);
+            // Si por alguna razón se cargó este controller sin usuario, inicia flujo de login modal.
+            Mensaje.showInfo(I18n.get("app.informacion"),
+                    I18n.isSpanish() ? "Sesión finalizada. Inicie sesión nuevamente." : "Session ended. Please log in again.");
+            FlowController.getInstance().startLogoutFlow();
             return;
         }
-        
-        lblUsuario.setText(I18n.isSpanish() ? "Usuario: " : "User: " + usuarioLogueado.getNombre());
-        lblRol.setText(I18n.isSpanish() ? "Rol: " : "Role: " + obtenerRolTraducido());
-        
+
+        lblUsuario.setText((I18n.isSpanish() ? "Usuario: " : "User: ") + usuarioLogueado.getNombre());
+        lblRol.setText((I18n.isSpanish() ? "Rol: " : "Role: ") + obtenerRolTraducido());
+
         configurarAccesosPorRol();
         actualizarTextos();
     }
@@ -91,12 +91,12 @@ public class MenuPrincipalController implements Initializable {
         // Por defecto, ocultar TODO
         ocultarTodoMantenimientos();
         ocultarTodasOperaciones();
-        
+
         if (AppContext.getInstance().isAdministrador()) {
             // ✅ ADMIN: acceso total
             mostrarTodoMantenimientos();
             mostrarTodasOperaciones();
-            
+
         } else if (AppContext.getInstance().isCajero()) {
             // ✅ CAJERO: puede gestionar clientes, facturar, cerrar caja
             btnClientes.setVisible(true);
@@ -108,7 +108,7 @@ public class MenuPrincipalController implements Initializable {
             btnReportes.setVisible(true);
             btnReportes.setManaged(true);
         }
-        // SALONERO: solo Ver Salones y Órdenes (visible por defecto)
+        // SALONERO: sólo lo que corresponda (aquí visible por defecto donde aplique)
     }
 
     private void ocultarTodoMantenimientos() {
@@ -120,8 +120,8 @@ public class MenuPrincipalController implements Initializable {
         btnGrupos.setManaged(false);
         btnProductos.setVisible(false);
         btnProductos.setManaged(false);
-        btnClientes.setVisible(false);     // ⭐ NUEVO
-        btnClientes.setManaged(false);     // ⭐ NUEVO
+        btnClientes.setVisible(false);
+        btnClientes.setManaged(false);
         btnParametros.setVisible(false);
         btnParametros.setManaged(false);
     }
@@ -135,8 +135,8 @@ public class MenuPrincipalController implements Initializable {
         btnGrupos.setManaged(true);
         btnProductos.setVisible(true);
         btnProductos.setManaged(true);
-        btnClientes.setVisible(true);      // ⭐ NUEVO
-        btnClientes.setManaged(true);      // ⭐ NUEVO
+        btnClientes.setVisible(true);
+        btnClientes.setManaged(true);
         btnParametros.setVisible(true);
         btnParametros.setManaged(true);
     }
@@ -172,45 +172,70 @@ public class MenuPrincipalController implements Initializable {
     }
 
     // ==================== MANTENIMIENTOS ====================
-    
-    @FXML
-    private void onUsuarios(MouseEvent event) {
-        FlowController.getInstance().goToView("Usuarios", "RestUNA - Gestión de Usuarios", 1400, 800);
-    }
+@FXML
+private void onUsuarios(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "Usuarios",
+        "RestUNA - Gestión de Usuarios",
+        1200, 800
+    );
+}
 
-    @FXML
-    private void onSalones(MouseEvent event) {
-        FlowController.getInstance().goToView("Salones", "RestUNA - Gestión de Salones", 1300, 850);
-    }
+@FXML
+private void onSalones(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "Salones",
+        "RestUNA - Gestión de Salones",
+        1200, 800
+    );
+}
 
-    @FXML
-    private void onGrupos(MouseEvent event) {
-        FlowController.getInstance().goToView("GruposProducto", "RestUNA - Grupos de Productos", 1300, 800);
-    }
+@FXML
+private void onGrupos(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "GruposProducto",
+        "RestUNA - Grupos de Productos",
+        1200, 800
+    );
+}
 
-    @FXML
-    private void onProductos(MouseEvent event) {
-        FlowController.getInstance().goToView("Productos", "RestUNA - Gestión de Productos", 1400, 850);
-    }
+@FXML
+private void onProductos(MouseEvent e) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "Productos",
+        "RestUNA - Gestión de Productos",
+        1200, 800
+    );
+}
 
-    // ⭐ NUEVO MÉTODO
-    @FXML
-    private void onClientes(MouseEvent event) {
-        FlowController.getInstance().goToView("Clientes", "RestUNA - Gestión de Clientes", 1300, 800);
-    }
+@FXML
+private void onClientes(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "Clientes",
+        "RestUNA - Gestión de Clientes",
+        1200, 800
+    );
+}
 
-    @FXML
-    private void onParametros(MouseEvent event) {
-        FlowController.getInstance().goToView("Parametros", "RestUNA - Parámetros Generales", 900, 700);
-    }
+@FXML
+private void onParametros(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "Parametros",
+        "RestUNA - Parámetros Generales",
+        1200, 800
+    );
+}
 
-    // ==================== OPERACIONES ====================
-    
-    @FXML
-    private void onVerSalones(MouseEvent event) {
-        FlowController.getInstance().goToView("VistaSalones", "RestUNA - Salones", 1400, 800);
-    }
+// ==================== OPERACIONES ====================
 
+@FXML
+private void onVerSalones(MouseEvent event) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "VistaSalones",
+        "RestUNA - Salones",
+        1200, 800
+    );
+}
     @FXML
     private void onOrdenes(MouseEvent event) {
         // TODO: Gestión de órdenes
@@ -236,7 +261,7 @@ public class MenuPrincipalController implements Initializable {
     }
 
     // ==================== HEADER ====================
-    
+
     @FXML
     private void onLanguageChange(ActionEvent event) {
         if (I18n.isSpanish()) {
@@ -250,31 +275,35 @@ public class MenuPrincipalController implements Initializable {
     @FXML
     private void onLogout(ActionEvent event) {
         if (Mensaje.showConfirmation(
-                I18n.get("app.confirmacion"), 
+                I18n.get("app.confirmacion"),
                 I18n.isSpanish() ? "¿Está seguro de cerrar sesión?" : "Are you sure you want to logout?")) {
-            
+
             AppContext.getInstance().logout();
-            FlowController.getInstance().goToView("Login", "RestUNA - Login", 1024, 768);
+
+            // 🔒 En lugar de cargar Login dentro del mainStage (lo cerraría luego),
+            // mostramos el Login como MODAL y dejamos el mainStage intacto.
+            FlowController.getInstance().startLogoutFlow();
         }
     }
 
     private void actualizarTextos() {
         lblSubtitle.setText(I18n.get("app.nombre"));
-        lblWelcome.setText(I18n.isSpanish() ? 
+        lblWelcome.setText(I18n.isSpanish() ?
             "Bienvenido al Sistema" : "Welcome to the System");
         lblUsuario.setText((I18n.isSpanish() ? "Usuario: " : "User: ") + usuarioLogueado.getNombre());
+        // 👇 corregido el paréntesis para que siempre concatene el rol traducido
         lblRol.setText((I18n.isSpanish() ? "Rol: " : "Role: ") + obtenerRolTraducido());
-        
+
         lblMantenimientos.setText(I18n.get("menu.mantenimientos"));
         lblOperaciones.setText(I18n.get("menu.operaciones"));
-        
+
         lblUsuarios.setText(I18n.get("menu.usuarios"));
         lblSalones.setText(I18n.get("menu.salones"));
         lblGrupos.setText(I18n.get("menu.grupos"));
         lblProductos.setText(I18n.get("menu.productos"));
-        lblClientes.setText(I18n.get("menu.clientes"));  // ⭐ NUEVO
+        lblClientes.setText(I18n.get("menu.clientes"));
         lblParametros.setText(I18n.get("menu.parametros"));
-        
+
         lblVerSalones.setText(I18n.isSpanish() ? "Ver Salones" : "View Rooms");
         lblOrdenes.setText(I18n.get("menu.ordenes"));
         lblFacturacion.setText(I18n.get("menu.facturacion"));

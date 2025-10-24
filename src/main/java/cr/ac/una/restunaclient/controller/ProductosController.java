@@ -24,16 +24,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-/**
- * Controlador para CRUD de Productos del Menú
- * Permite crear, editar, eliminar y listar productos
- */
 public class ProductosController implements Initializable {
+
+    // ======= CONSTANTE de base de diseño (COHERENTE con MenuPrincipal y el FlowController) =======
+    private static final double BASE_W = 1200;
+    private static final double BASE_H = 800;
 
     // ==================== COMPONENTES DEL HEADER ====================
     @FXML private Label lblTitle;
     @FXML private Button btnVolver;
-    
+
     // ==================== COMPONENTES DE LA TABLA ====================
     @FXML private TextField txtBuscar;
     @FXML private ComboBox<GrupoProducto> cmbFiltroGrupo;
@@ -49,7 +49,7 @@ public class ProductosController implements Initializable {
     @FXML private Button btnEditar;
     @FXML private Button btnEliminar;
     @FXML private Button btnRefrescar;
-    
+
     // ==================== COMPONENTES DEL FORMULARIO ====================
     @FXML private Label lblFormTitle;
     @FXML private Label lblNombre;
@@ -65,7 +65,7 @@ public class ProductosController implements Initializable {
     @FXML private CheckBox chkActivo;
     @FXML private Button btnGuardar;
     @FXML private Button btnCancelar;
-    
+
     // ==================== VARIABLES DE CLASE ====================
     private ObservableList<Producto> listaProductos;
     private FilteredList<Producto> listaFiltrada;
@@ -78,10 +78,10 @@ public class ProductosController implements Initializable {
         // Verificar permisos
         if (!AppContext.getInstance().isAdministrador()) {
             Mensaje.showError("Acceso Denegado", "Solo los administradores pueden gestionar productos.");
-            onVolver(null);
+            onVolver(null); // vuelve manteniendo escala
             return;
         }
-        
+
         configurarTabla();
         cargarGrupos();
         configurarBusqueda();
@@ -91,69 +91,59 @@ public class ProductosController implements Initializable {
     }
 
     // ==================== CONFIGURACIÓN INICIAL ====================
-    
-    /**
-     * Configura las columnas de la tabla
-     */
+
     private void configurarTabla() {
-        colNombre.setCellValueFactory(data -> 
+        colNombre.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getNombre())
         );
-        
-        colNombreCorto.setCellValueFactory(data -> 
+
+        colNombreCorto.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().getNombreCorto())
         );
-        
-        colGrupo.setCellValueFactory(data -> 
-            new SimpleStringProperty(data.getValue().getGrupo() != null ? 
+
+        colGrupo.setCellValueFactory(data ->
+            new SimpleStringProperty(data.getValue().getGrupo() != null ?
                 data.getValue().getGrupo().getNombre() : "Sin grupo")
         );
-        
-        colPrecio.setCellValueFactory(data -> 
+
+        colPrecio.setCellValueFactory(data ->
             new SimpleStringProperty("₡" + String.format("%.2f", data.getValue().getPrecio()))
         );
-        
-        colMenuRapido.setCellValueFactory(data -> 
+
+        colMenuRapido.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().isMenuRapido() ? "✓ Sí" : "✗ No")
         );
-        
-        colVentas.setCellValueFactory(data -> 
-            new SimpleStringProperty(data.getValue().getTotalVentas() != null ? 
+
+        colVentas.setCellValueFactory(data ->
+            new SimpleStringProperty(data.getValue().getTotalVentas() != null ?
                 data.getValue().getTotalVentas().toString() : "0")
         );
-        
-        colEstado.setCellValueFactory(data -> 
+
+        colEstado.setCellValueFactory(data ->
             new SimpleStringProperty(data.getValue().isActivo() ? "Activo" : "Inactivo")
         );
-        
-        // Listener para selección
+
         tblProductos.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSelection, newSelection) -> {
-                if (newSelection != null) {
-                    productoSeleccionado = newSelection;
-                    habilitarBotonesAccion(true);
-                }
+                productoSeleccionado = newSelection;
+                habilitarBotonesAccion(newSelection != null);
             }
         );
     }
 
-    /**
-     * Carga los grupos de productos desde el backend
-     */
     private void cargarGrupos() {
         try {
             String jsonResponse = RestClient.get("/grupos");
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-            
+
             if (Boolean.TRUE.equals(response.get("success"))) {
                 Gson gson = new Gson();
                 String dataJson = gson.toJson(response.get("data"));
-                List<GrupoProducto> grupos = gson.fromJson(dataJson, 
+                List<GrupoProducto> grupos = gson.fromJson(dataJson,
                     new TypeToken<List<GrupoProducto>>(){}.getType());
-                
+
                 listaGrupos = FXCollections.observableArrayList(grupos);
-                
-                // Configurar ComboBox del formulario
+
                 cmbGrupo.setItems(listaGrupos);
                 cmbGrupo.setCellFactory(param -> new ListCell<GrupoProducto>() {
                     @Override
@@ -169,15 +159,14 @@ public class ProductosController implements Initializable {
                         setText(empty || item == null ? null : item.getNombre());
                     }
                 });
-                
-                // Configurar ComboBox de filtro
+
                 ObservableList<GrupoProducto> gruposConTodos = FXCollections.observableArrayList();
                 GrupoProducto todos = new GrupoProducto();
                 todos.setId(-1L);
                 todos.setNombre("-- Todos los grupos --");
                 gruposConTodos.add(todos);
                 gruposConTodos.addAll(grupos);
-                
+
                 cmbFiltroGrupo.setItems(gruposConTodos);
                 cmbFiltroGrupo.setCellFactory(param -> new ListCell<GrupoProducto>() {
                     @Override
@@ -194,8 +183,7 @@ public class ProductosController implements Initializable {
                     }
                 });
                 cmbFiltroGrupo.getSelectionModel().selectFirst();
-                
-                System.out.println("✅ Grupos cargados: " + grupos.size());
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -203,74 +191,54 @@ public class ProductosController implements Initializable {
         }
     }
 
-    /**
-     * Configura el filtro de búsqueda
-     */
     private void configurarBusqueda() {
-        // Filtro por texto
-        txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> {
-            aplicarFiltros();
-        });
-        
-        // Filtro por grupo
-        cmbFiltroGrupo.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldVal, newVal) -> {
-                aplicarFiltros();
-            }
-        );
+        txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> aplicarFiltros());
+        cmbFiltroGrupo.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> aplicarFiltros());
     }
 
-    /**
-     * Aplica los filtros combinados (texto + grupo)
-     */
     private void aplicarFiltros() {
         if (listaFiltrada == null) return;
-        
+
         listaFiltrada.setPredicate(producto -> {
-            // Filtro por texto de búsqueda
             String busqueda = txtBuscar.getText();
             boolean cumpleBusqueda = true;
-            
+
             if (busqueda != null && !busqueda.isEmpty()) {
-                String busquedaLower = busqueda.toLowerCase();
-                cumpleBusqueda = producto.getNombre().toLowerCase().contains(busquedaLower) ||
-                                producto.getNombreCorto().toLowerCase().contains(busquedaLower);
+                String q = busqueda.toLowerCase();
+                cumpleBusqueda =
+                        (producto.getNombre() != null && producto.getNombre().toLowerCase().contains(q)) ||
+                        (producto.getNombreCorto() != null && producto.getNombreCorto().toLowerCase().contains(q));
             }
-            
-            // Filtro por grupo
+
             GrupoProducto grupoFiltro = cmbFiltroGrupo.getSelectionModel().getSelectedItem();
             boolean cumpleGrupo = true;
-            
+
             if (grupoFiltro != null && grupoFiltro.getId() != -1L) {
-                cumpleGrupo = producto.getGrupo() != null && 
-                             producto.getGrupo().getId().equals(grupoFiltro.getId());
+                cumpleGrupo = producto.getGrupo() != null &&
+                              producto.getGrupo().getId() != null &&
+                              producto.getGrupo().getId().equals(grupoFiltro.getId());
             }
-            
+
             return cumpleBusqueda && cumpleGrupo;
         });
     }
 
     // ==================== CARGA DE DATOS ====================
-    
-    /**
-     * Carga todos los productos desde el backend
-     */
+
     private void cargarProductos() {
         try {
             String jsonResponse = RestClient.get("/productos");
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-            
+
             if (Boolean.TRUE.equals(response.get("success"))) {
                 Gson gson = new Gson();
                 String dataJson = gson.toJson(response.get("data"));
-                List<Producto> productos = gson.fromJson(dataJson, 
+                List<Producto> productos = gson.fromJson(dataJson,
                     new TypeToken<List<Producto>>(){}.getType());
-                
+
                 listaProductos = FXCollections.observableArrayList(productos);
                 listaFiltrada = new FilteredList<>(listaProductos, p -> true);
                 tblProductos.setItems(listaFiltrada);
-                
-                System.out.println("✅ Productos cargados: " + productos.size());
             } else {
                 Mensaje.showWarning("Aviso", "No se pudieron cargar los productos.");
             }
@@ -281,11 +249,13 @@ public class ProductosController implements Initializable {
     }
 
     // ==================== EVENTOS DE BOTONES ====================
-    
+
     @FXML
-    private void onVolver(ActionEvent event) {
-        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
-    }
+private void onVolver(ActionEvent e) {
+    FlowController.getInstance().goToViewKeepSizeScaled(
+        "MenuPrincipal", "RestUNA - Menú Principal", 1200, 800
+    );
+}
 
     @FXML
     private void onNuevo(ActionEvent event) {
@@ -302,7 +272,6 @@ public class ProductosController implements Initializable {
             Mensaje.showWarning("Aviso", "Seleccione un producto de la tabla para editar.");
             return;
         }
-        
         modoEdicion = true;
         cargarProductoEnFormulario(productoSeleccionado);
         lblFormTitle.setText(I18n.isSpanish() ? "Editar Producto" : "Edit Product");
@@ -315,18 +284,17 @@ public class ProductosController implements Initializable {
             Mensaje.showWarning("Aviso", "Seleccione un producto de la tabla para eliminar.");
             return;
         }
-        
+
         boolean confirmar = Mensaje.showConfirmation(
             "Confirmar Eliminación",
             "¿Está seguro de eliminar el producto '" + productoSeleccionado.getNombre() + "'?"
         );
-        
         if (!confirmar) return;
-        
+
         try {
             String jsonResponse = RestClient.delete("/productos/" + productoSeleccionado.getId());
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-            
+
             if (Boolean.TRUE.equals(response.get("success"))) {
                 Mensaje.showSuccess("Éxito", "Producto eliminado correctamente.");
                 cargarProductos();
@@ -350,42 +318,34 @@ public class ProductosController implements Initializable {
     @FXML
     private void onGuardar(ActionEvent event) {
         if (!validarFormulario()) return;
-        
+
         try {
             Producto producto = new Producto();
-            
+
             if (modoEdicion && productoSeleccionado != null) {
                 producto.setId(productoSeleccionado.getId());
                 producto.setVersion(productoSeleccionado.getVersion());
             }
-            
+
             producto.setNombre(txtNombre.getText().trim());
             producto.setNombreCorto(txtNombreCorto.getText().trim());
             producto.setPrecio(new BigDecimal(txtPrecio.getText().trim()));
             producto.setMenuRapido(chkMenuRapido.isSelected() ? "S" : "N");
             producto.setEstado(chkActivo.isSelected() ? "A" : "I");
-            
-            // Asignar grupo
+
             GrupoProducto grupoSeleccionado = cmbGrupo.getSelectionModel().getSelectedItem();
             if (grupoSeleccionado != null) {
                 producto.setGrupo(grupoSeleccionado);
             }
-            
-            // Llamar al backend
-            String jsonResponse;
-            if (modoEdicion) {
-                jsonResponse = RestClient.put("/productos/" + producto.getId(), producto);
-            } else {
-                jsonResponse = RestClient.post("/productos", producto);
-            }
-            
+
+            String jsonResponse = modoEdicion
+                    ? RestClient.put("/productos/" + producto.getId(), producto)
+                    : RestClient.post("/productos", producto);
+
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-            
+
             if (Boolean.TRUE.equals(response.get("success"))) {
-                String mensaje = modoEdicion ? 
-                    "Producto actualizado correctamente." : 
-                    "Producto creado correctamente.";
-                Mensaje.showSuccess("Éxito", mensaje);
+                Mensaje.showSuccess("Éxito", modoEdicion ? "Producto actualizado correctamente." : "Producto creado correctamente.");
                 cargarProductos();
                 limpiarFormulario();
             } else {
@@ -404,35 +364,32 @@ public class ProductosController implements Initializable {
     }
 
     // ==================== MÉTODOS AUXILIARES ====================
-    
-    /**
-     * Valida el formulario
-     */
+
     private boolean validarFormulario() {
         if (txtNombre.getText() == null || txtNombre.getText().trim().isEmpty()) {
             Mensaje.showWarning("Campo Requerido", "El nombre del producto es obligatorio.");
             txtNombre.requestFocus();
             return false;
         }
-        
+
         if (txtNombreCorto.getText() == null || txtNombreCorto.getText().trim().isEmpty()) {
             Mensaje.showWarning("Campo Requerido", "El nombre corto es obligatorio.");
             txtNombreCorto.requestFocus();
             return false;
         }
-        
+
         if (cmbGrupo.getSelectionModel().getSelectedItem() == null) {
             Mensaje.showWarning("Campo Requerido", "Debe seleccionar un grupo.");
             cmbGrupo.requestFocus();
             return false;
         }
-        
+
         if (txtPrecio.getText() == null || txtPrecio.getText().trim().isEmpty()) {
             Mensaje.showWarning("Campo Requerido", "El precio es obligatorio.");
             txtPrecio.requestFocus();
             return false;
         }
-        
+
         try {
             BigDecimal precio = new BigDecimal(txtPrecio.getText().trim());
             if (precio.compareTo(BigDecimal.ZERO) < 0) {
@@ -445,13 +402,10 @@ public class ProductosController implements Initializable {
             txtPrecio.requestFocus();
             return false;
         }
-        
+
         return true;
     }
 
-    /**
-     * Limpia el formulario
-     */
     private void limpiarFormulario() {
         txtNombre.clear();
         txtNombreCorto.clear();
@@ -465,20 +419,16 @@ public class ProductosController implements Initializable {
         habilitarBotonesAccion(false);
     }
 
-    /**
-     * Carga un producto en el formulario
-     */
-    private void cargarProductoEnFormulario(Producto producto) {
-        txtNombre.setText(producto.getNombre());
-        txtNombreCorto.setText(producto.getNombreCorto());
-        txtPrecio.setText(producto.getPrecio().toString());
-        chkMenuRapido.setSelected(producto.isMenuRapido());
-        chkActivo.setSelected(producto.isActivo());
-        
-        // Seleccionar el grupo en el ComboBox
-        if (producto.getGrupo() != null) {
+    private void cargarProductoEnFormulario(Producto p) {
+        txtNombre.setText(p.getNombre());
+        txtNombreCorto.setText(p.getNombreCorto());
+        txtPrecio.setText(p.getPrecio().toString());
+        chkMenuRapido.setSelected(p.isMenuRapido());
+        chkActivo.setSelected(p.isActivo());
+
+        if (p.getGrupo() != null) {
             for (GrupoProducto g : cmbGrupo.getItems()) {
-                if (g.getId().equals(producto.getGrupo().getId())) {
+                if (g.getId().equals(p.getGrupo().getId())) {
                     cmbGrupo.getSelectionModel().select(g);
                     break;
                 }
@@ -486,27 +436,21 @@ public class ProductosController implements Initializable {
         }
     }
 
-    /**
-     * Habilita/deshabilita botones de acción
-     */
     private void habilitarBotonesAccion(boolean habilitar) {
         btnEditar.setDisable(!habilitar);
         btnEliminar.setDisable(!habilitar);
     }
 
-    /**
-     * Actualiza textos según idioma
-     */
     private void actualizarTextos() {
         boolean esEspanol = I18n.isSpanish();
-        
+
         lblTitle.setText(esEspanol ? "Gestión de Productos del Menú" : "Menu Products Management");
         btnVolver.setText(esEspanol ? "← Volver" : "← Back");
-        
+
         txtBuscar.setPromptText(esEspanol ? "Buscar producto..." : "Search product...");
         cmbFiltroGrupo.setPromptText(esEspanol ? "Filtrar por grupo" : "Filter by group");
         btnNuevo.setText(esEspanol ? "+ Nuevo Producto" : "+ New Product");
-        
+
         colNombre.setText(esEspanol ? "Nombre" : "Name");
         colNombreCorto.setText(esEspanol ? "Nombre Corto" : "Short Name");
         colGrupo.setText(esEspanol ? "Grupo" : "Group");
@@ -514,11 +458,11 @@ public class ProductosController implements Initializable {
         colMenuRapido.setText(esEspanol ? "Menú Rápido" : "Quick Menu");
         colVentas.setText(esEspanol ? "Ventas" : "Sales");
         colEstado.setText(esEspanol ? "Estado" : "Status");
-        
+
         btnEditar.setText(esEspanol ? "✏️ Editar" : "✏️ Edit");
         btnEliminar.setText(esEspanol ? "🗑️ Eliminar" : "🗑️ Delete");
         btnRefrescar.setText(esEspanol ? "🔄 Refrescar" : "🔄 Refresh");
-        
+
         lblNombre.setText(esEspanol ? "Nombre del Producto:" : "Product Name:");
         lblNombreCorto.setText(esEspanol ? "Nombre Corto:" : "Short Name:");
         lblGrupo.setText(esEspanol ? "Grupo:" : "Group:");
@@ -526,7 +470,7 @@ public class ProductosController implements Initializable {
         lblOpciones.setText(esEspanol ? "Opciones:" : "Options:");
         chkMenuRapido.setText(esEspanol ? "Incluir en Menú Rápido" : "Include in Quick Menu");
         chkActivo.setText(esEspanol ? "Activo" : "Active");
-        
+
         btnGuardar.setText(esEspanol ? "💾 Guardar" : "💾 Save");
         btnCancelar.setText(esEspanol ? "✖️ Cancelar" : "✖️ Cancel");
     }

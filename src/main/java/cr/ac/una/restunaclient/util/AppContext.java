@@ -11,15 +11,15 @@ import java.util.Map;
  * @author Tu Nombre
  */
 public class AppContext {
-    
+
     private static AppContext instance;
     private Usuario usuarioLogueado;
     private Map<String, Object> context;
-    
+
     private AppContext() {
         context = new HashMap<>();
     }
-    
+
     /**
      * Obtiene la instancia única del contexto (Singleton)
      */
@@ -29,28 +29,28 @@ public class AppContext {
         }
         return instance;
     }
-    
+
     /**
      * Establece el usuario logueado
      */
     public void setUsuarioLogueado(Usuario usuario) {
         this.usuarioLogueado = usuario;
     }
-    
+
     /**
      * Obtiene el usuario logueado
      */
     public Usuario getUsuarioLogueado() {
         return usuarioLogueado;
     }
-    
+
     /**
      * Verifica si hay un usuario logueado
      */
     public boolean isLoggedIn() {
         return usuarioLogueado != null;
     }
-    
+
     /**
      * Cierra la sesión del usuario
      */
@@ -58,55 +58,55 @@ public class AppContext {
         usuarioLogueado = null;
         context.clear();
     }
-    
+
     /**
      * Almacena un valor en el contexto
      */
     public void set(String key, Object value) {
         context.put(key, value);
     }
-    
+
     /**
      * Obtiene un valor del contexto
      */
     public Object get(String key) {
         return context.get(key);
     }
-    
+
     /**
      * Elimina un valor del contexto
      */
     public void remove(String key) {
         context.remove(key);
     }
-    
+
     /**
      * Limpia todo el contexto
      */
     public void clear() {
         context.clear();
     }
-    
+
     /**
      * Verifica si el usuario es administrador
      */
     public boolean isAdministrador() {
         return usuarioLogueado != null && "ADMINISTRATIVO".equals(usuarioLogueado.getRol());
     }
-    
+
     /**
      * Verifica si el usuario es cajero
      */
     public boolean isCajero() {
-        return usuarioLogueado != null && 
+        return usuarioLogueado != null &&
                ("CAJERO".equals(usuarioLogueado.getRol()) || isAdministrador());
     }
-    
+
     /**
      * Verifica si el usuario es salonero
      */
     public boolean isSalonero() {
-        return usuarioLogueado != null && 
+        return usuarioLogueado != null &&
                ("SALONERO".equals(usuarioLogueado.getRol()) || isCajero());
     }
 }

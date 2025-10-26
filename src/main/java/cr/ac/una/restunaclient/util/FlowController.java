@@ -38,7 +38,6 @@ public class FlowController {
     private final double MIN_HEIGHT  = 480;
 
     // Último tamaño "normal" (no maximizado) recordado
-    // Se usa para restaurar después de maximizar y para navegar entre pantallas
     private double lastNormalWidth  = BASE_WIDTH;
     private double lastNormalHeight = BASE_HEIGHT;
 
@@ -50,8 +49,7 @@ public class FlowController {
     private StackPane contentPane;
     private Node homeSnapshot;
 
-    private FlowController() {
-    }
+    private FlowController() {}
 
     public static FlowController getInstance() {
         if (instance == null) {
@@ -68,9 +66,7 @@ public class FlowController {
         mainStage.setResizable(true);
         mainStage.setMinWidth(MIN_WIDTH);
         mainStage.setMinHeight(MIN_HEIGHT);
-
-        // Adjuntar listeners que mantienen actualizado el tamaño "normal"
-        attachSizeTrackers();
+        attachSizeTrackers(); // recuerda tamaño normal cuando no está maximizada
     }
 
     public Stage getMainStage() {
@@ -78,64 +74,52 @@ public class FlowController {
     }
 
     /**
-     * Muestra el menú principal con el tamaño base (900x560),
-     * aplica mínimos y configura restauración post-maximizar.
-     *
-     * También inicializa lastNormalWidth/Height por primera vez.
+     * Muestra el menú principal. En la primera carga fija tamaño base.
+     * Si ya existe escena, solo cambia el root para no alterar el tamaño actual.
      */
     public void showMenuPrincipal() {
-        // aseguramos que el primer "tamaño normal" sea el base
-        lastNormalWidth  = BASE_WIDTH;
-        lastNormalHeight = BASE_HEIGHT;
+        try {
+            Parent root = loadView("MenuPrincipal");
 
-        goToViewInternal(
-                "MenuPrincipal",
-                "RestUNA - Menú Principal",
-                BASE_WIDTH,
-                BASE_HEIGHT,
-                true
-        );
+            boolean firstShow = (mainStage.getScene() == null);
+            if (firstShow) {
+                // primera vez: crea scene con tamaño base
+                Scene scene = new Scene(root, BASE_WIDTH, BASE_HEIGHT);
+                mainStage.setScene(scene);
+                mainStage.setTitle("RestUNA - Menú Principal");
+                lastNormalWidth  = BASE_WIDTH;
+                lastNormalHeight = BASE_HEIGHT;
+                attachRestoreSizeListenerIfNeeded();
+                mainStage.centerOnScreen();
+                mainStage.show();
+            } else {
+                // ya hay escena: preserva tamaño/estado actual
+                swapRootPreservingStage(root, "RestUNA - Menú Principal");
+            }
+            mainStage.toFront();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error", "No se pudo cargar la vista: MenuPrincipal\n" + e.getMessage());
+        }
     }
 
     /**
-     * Va a una vista usando el tamaño preferido del FXML sin forzar width/height,
-     * pero ahora es "inteligente":
-     *
-     * - Si la ventana está maximizada, se queda maximizada.
-     * - Si NO está maximizada, se mantiene el último tamaño normal recordado.
+     * Va a una vista usando el tamaño preferido del FXML, preservando
+     * el tamaño/estado actual del Stage (maximizado o manual).
      */
     public void goToView(String fxmlName, String title) {
         try {
             Parent root = loadView(fxmlName);
-
-            boolean wasMaximized = mainStage.isMaximized();
-
-            Scene scene;
-            if (wasMaximized) {
-                // seguimos en grande
-                scene = new Scene(root, mainStage.getWidth(), mainStage.getHeight());
+            // si no existe escena aún (caso raro), créala con el último tamaño normal
+            if (mainStage.getScene() == null) {
+                Scene scene = new Scene(root, lastNormalWidth, lastNormalHeight);
+                mainStage.setScene(scene);
+                mainStage.setTitle(title);
+                attachRestoreSizeListenerIfNeeded();
+                mainStage.show();
             } else {
-                // usamos el tamaño normal recordado
-                scene = new Scene(root, lastNormalWidth, lastNormalHeight);
+                swapRootPreservingStage(root, title);
             }
-
-            mainStage.setScene(scene);
-            mainStage.setTitle(title);
-
-            mainStage.setMinWidth(MIN_WIDTH);
-            mainStage.setMinHeight(MIN_HEIGHT);
-
-            // conserva estado de maximizado
-            mainStage.setMaximized(wasMaximized);
-
-            attachRestoreSizeListenerIfNeeded();
-
-            if (!mainStage.isMaximized()) {
-                // solo centramos si no está maximizada
-                mainStage.centerOnScreen();
-            }
-
-            mainStage.show();
             mainStage.toFront();
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,79 +128,74 @@ public class FlowController {
     }
 
     /**
-     * Va a una vista forzando un tamaño concreto.
-     *
-     * - Si el stage está MAXIMIZADO: mantén maximizado.
-     * - Si NO: aplica ese width/height y actualiza el tamaño normal recordado.
+     * Va a una vista forzando un tamaño concreto SOLO si aún no hay Scene.
+     * Si ya hay Scene, se preserva el tamaño/estado actual del Stage.
      */
     public void goToView(String fxmlName, String title, double width, double height) {
-        goToViewInternal(fxmlName, title, width, height, false);
-    }
-
-    /**
-     * Lógica compartida entre showMenuPrincipal() y goToView(...,width,height)
-     *
-     * forceBaseSize:
-     *   true  = este tamaño pasa a ser el tamaño "normal" inicial (p.ej. menú principal)
-     *   false = úsalo solo si no estás maximizado
-     */
-    private void goToViewInternal(String fxmlName,
-                                  String title,
-                                  double width,
-                                  double height,
-                                  boolean forceBaseSize) {
         try {
             Parent root = loadView(fxmlName);
 
-            boolean wasMaximized = mainStage.isMaximized();
-
-            Scene scene;
-            if (wasMaximized) {
-                // mantener tamaños grandes actuales si estaba maximizada
-                scene = new Scene(root, mainStage.getWidth(), mainStage.getHeight());
-            } else {
-                // usar el size solicitado explícitamente
-                scene = new Scene(root, width, height);
-
-                // si estamos forzando tamaño base (primera carga) o navegando sin maximizar,
-                // este pasa a ser el último tamaño normal conocido
-                if (forceBaseSize) {
-                    lastNormalWidth  = width;
-                    lastNormalHeight = height;
-                } else {
-                    lastNormalWidth  = width;
-                    lastNormalHeight = height;
-                }
-            }
-
-            mainStage.setScene(scene);
-            mainStage.setTitle(title);
-
-            mainStage.setMinWidth(MIN_WIDTH);
-            mainStage.setMinHeight(MIN_HEIGHT);
-
-            if (wasMaximized) {
-                mainStage.setMaximized(true);
-            } else {
-                mainStage.setMaximized(false);
-                mainStage.setWidth(lastNormalWidth);
-                mainStage.setHeight(lastNormalHeight);
-            }
-
-            mainStage.setResizable(true);
-
-            attachRestoreSizeListenerIfNeeded();
-
-            if (!mainStage.isMaximized()) {
+            if (mainStage.getScene() == null) {
+                // No hay escena: crea con el tamaño solicitado
+                Scene scene = new Scene(root, width, height);
+                mainStage.setScene(scene);
+                mainStage.setTitle(title);
+                mainStage.setMinWidth(MIN_WIDTH);
+                mainStage.setMinHeight(MIN_HEIGHT);
+                mainStage.setResizable(true);
+                lastNormalWidth  = width;
+                lastNormalHeight = height;
+                attachRestoreSizeListenerIfNeeded();
                 mainStage.centerOnScreen();
+                mainStage.show();
+            } else {
+                // Ya hay escena: preserva tamaño/estado (no lo pisamos)
+                swapRootPreservingStage(root, title);
             }
-
-            mainStage.show();
             mainStage.toFront();
         } catch (Exception e) {
             e.printStackTrace();
             Mensaje.showError("Error", "No se pudo cargar la vista: " + fxmlName + "\n" + e.getMessage());
         }
+    }
+
+    /**
+     * Reemplaza el root de la Scene actual preservando:
+     * - tamaño del Stage
+     * - estado maximizado
+     * - mínimos y resizable
+     */
+    private void swapRootPreservingStage(Parent newRoot, String title) {
+        boolean wasMaximized = mainStage.isMaximized();
+        double currentW = mainStage.getWidth();
+        double currentH = mainStage.getHeight();
+
+        // Si por alguna razón llegan 0s (algunas plataformas previas al show),
+        // usa el último tamaño normal recordado.
+        if (currentW <= 0) currentW = lastNormalWidth;
+        if (currentH <= 0) currentH = lastNormalHeight;
+
+        Scene scene = mainStage.getScene();
+        if (scene == null) {
+            scene = new Scene(newRoot, currentW, currentH);
+            mainStage.setScene(scene);
+        } else {
+            scene.setRoot(newRoot);
+        }
+
+        mainStage.setTitle(title);
+        mainStage.setMinWidth(MIN_WIDTH);
+        mainStage.setMinHeight(MIN_HEIGHT);
+        mainStage.setResizable(true);
+
+        // restablece estado/tamaño exactamente como estaba
+        mainStage.setMaximized(wasMaximized);
+        if (!wasMaximized) {
+            mainStage.setWidth(currentW);
+            mainStage.setHeight(currentH);
+        }
+
+        attachRestoreSizeListenerIfNeeded();
     }
 
     /**
@@ -270,10 +249,7 @@ public class FlowController {
             stage.setHeight(height);
 
             stage.centerOnScreen();
-
-            // bloquea hasta que cierre
             stage.showAndWait();
-
             return stage;
         } catch (Exception e) {
             e.printStackTrace();
@@ -290,11 +266,9 @@ public class FlowController {
      * Limpia cache para tener siempre versiones frescas.
      */
     private Parent loadView(String fxmlName) throws IOException {
-        // limpiar cache para tener versión fresca
-        loaders.remove(fxmlName);
+        loaders.remove(fxmlName); // fuerza recarga fresca
 
         FXMLLoader loader = new FXMLLoader();
-
         String fxmlPath = "/cr/ac/una/restunaclient/view/" + fxmlName + "View.fxml";
         System.out.println("Intentando cargar: " + fxmlPath);
 
@@ -381,7 +355,6 @@ public class FlowController {
 
         mainStage.maximizedProperty().addListener((obs, wasMax, isNowMax) -> {
             if (!isNowMax) {
-                // restaurar el tamaño normal más reciente
                 mainStage.setWidth(lastNormalWidth);
                 mainStage.setHeight(lastNormalHeight);
                 mainStage.centerOnScreen();
@@ -391,12 +364,9 @@ public class FlowController {
 
     /**
      * (Compatibilidad con tu versión anterior.)
-     * Antes devolvía siempre width/height fijos.
-     * Ahora lo que hacemos es actualizar nuestro "tamaño normal"
-     * inicial y luego delegar al listener normal.
+     * Actualiza el "tamaño normal" base y adjunta listener.
      */
     private void attachRestoreSizeListener(double width, double height) {
-        // actualizar tamaño normal base
         lastNormalWidth  = width;
         lastNormalHeight = height;
         attachRestoreSizeListenerIfNeeded();
@@ -430,29 +400,14 @@ public class FlowController {
     // Navegación interna con fade
     // =========================
 
-    /**
-     * El MenuPrincipalController nos pasa el StackPane central donde
-     * debemos meter las subpantallas.
-     */
     public void setContentPane(StackPane pane) {
         this.contentPane = pane;
     }
 
-    /**
-     * Guardamos el dashboard inicial (homeView) para poder volver luego
-     * con animación sin recargar toda la escena.
-     */
     public void captureHomeSnapshot(Node homeRoot) {
         this.homeSnapshot = homeRoot;
     }
 
-    /**
-     * Carga una vista interna (por nombre FXML sin "View.fxml"),
-     * la pone dentro de contentPane y hace fade-in.
-     *
-     * Ejemplo:
-     * FlowController.getInstance().swapCenterContent("Productos");
-     */
     public void swapCenterContent(String fxmlName) {
         if (contentPane == null) {
             System.out.println("swapCenterContent llamado pero contentPane es null.");
@@ -476,13 +431,8 @@ public class FlowController {
         }
     }
 
-    /**
-     * Regresa al dashboard inicial (homeSnapshot) con fade-in.
-     * Si no hay snapshot por alguna razón, reabre el menú principal completo.
-     */
     public void goHomeWithFade() {
         if (contentPane == null || homeSnapshot == null) {
-            // fallback seguro
             showMenuPrincipal();
             return;
         }

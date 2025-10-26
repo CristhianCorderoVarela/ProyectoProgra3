@@ -117,6 +117,7 @@ private void onLogin(ActionEvent event) {
 
     } catch (Exception e) {
         e.printStackTrace();
+        
         Mensaje.showError(I18n.get("app.error"), I18n.get("login.error.conexion") + "\n" + e.getMessage());
     } finally {
         btnLogin.setDisable(false);

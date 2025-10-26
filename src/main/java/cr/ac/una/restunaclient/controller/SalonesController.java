@@ -203,9 +203,9 @@ public class SalonesController implements Initializable {
     // ==================== EVENTOS DE BOTONES ====================
     
     @FXML
-    private void onVolver(ActionEvent event) {
-        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
-    }
+private void onVolver(ActionEvent event) {
+    FlowController.getInstance().goHomeWithFade();
+}
 
     @FXML
     private void onNuevo(ActionEvent event) {

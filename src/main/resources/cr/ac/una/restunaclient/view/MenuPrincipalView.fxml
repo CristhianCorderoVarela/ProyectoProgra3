@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
@@ -17,95 +18,110 @@
             style="-fx-background-color: #F5F5F0;"
             stylesheets="@styles.css"
 
-            prefWidth="900.0" prefHeight="560.0"
+            prefWidth="1000.0" prefHeight="560.0"
             minWidth="750.0" minHeight="480.0"
             maxWidth="-Infinity" maxHeight="-Infinity">
 
     <!-- ========== HEADER SUPERIOR ========== -->
     <top>
-        <HBox alignment="CENTER_LEFT"
-              spacing="16.0"
-              style="-fx-background-color: white; -fx-padding: 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
+        <!-- BorderPane para que el bloque derecho no se monte sobre el izquierdo -->
+        <BorderPane
+                style="-fx-background-color: white; -fx-padding: 10; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
             <padding>
                 <Insets left="16.0" right="16.0" top="8.0" bottom="8.0"/>
             </padding>
-            <children>
 
-                <!-- Logo -->
-                <StackPane prefHeight="40.0" prefWidth="40.0"
-                           style="-fx-background-color: #FF7A00; -fx-background-radius: 10;">
-                    <Label text="🍽" textFill="WHITE">
-                        <font>
-                            <Font size="20.0" />
-                        </font>
-                    </Label>
-                </StackPane>
-
-                <!-- Título / subtítulo -->
-                <VBox spacing="2.0" HBox.hgrow="ALWAYS">
+            <!-- IZQUIERDA: logo + título/subtítulo -->
+            <left>
+                <HBox alignment="CENTER_LEFT" spacing="16.0">
                     <children>
-                        <Label text="RestUNA" textFill="#333333">
-                            <font>
-                                <Font name="System Bold" size="20.0" />
-                            </font>
-                        </Label>
-                        <Label fx:id="lblSubtitle"
-                               text="Sistema de Gestión de Restaurante"
-                               textFill="#666666">
-                            <font>
-                                <Font size="12.0" />
-                            </font>
-                        </Label>
-                    </children>
-                </VBox>
 
-                <!-- Usuario / rol -->
-                <VBox alignment="CENTER_RIGHT" spacing="2.0">
+                        <!-- Logo -->
+                        <StackPane prefHeight="40.0" prefWidth="40.0"
+                                   style="-fx-background-color: #FF7A00; -fx-background-radius: 10;">
+                            <Label text="🍽" textFill="WHITE">
+                                <font>
+                                    <Font size="20.0" />
+                                </font>
+                            </Label>
+                        </StackPane>
+
+                        <!-- Título / subtítulo -->
+                        <VBox spacing="2.0">
+                            <children>
+                                <Label text="RestUNA" textFill="#333333">
+                                    <font>
+                                        <Font name="System Bold" size="20.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="lblSubtitle"
+                                       text="Sistema de Gestión de Restaurante"
+                                       textFill="#666666">
+                                    <font>
+                                        <Font size="12.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </VBox>
+
+                    </children>
+                </HBox>
+            </left>
+
+            <!-- DERECHA: info usuario + botones -->
+            <right>
+                <HBox spacing="16.0" alignment="CENTER_RIGHT">
                     <children>
-                        <Label fx:id="lblUsuario"
-                               text="Usuario: Admin"
-                               textFill="#333333">
-                            <font>
-                                <Font name="System Bold" size="13.0" />
-                            </font>
-                        </Label>
-                        <Label fx:id="lblRol"
-                               text="Rol: Administrativo"
-                               textFill="#666666">
-                            <font>
-                                <Font size="11.0" />
-                            </font>
-                        </Label>
+
+                        <!-- Usuario / rol -->
+                        <VBox alignment="CENTER_RIGHT" spacing="2.0">
+                            <children>
+                                <Label fx:id="lblUsuario"
+                                       text="Usuario: Admin"
+                                       textFill="#333333">
+                                    <font>
+                                        <Font name="System Bold" size="13.0" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="lblRol"
+                                       text="Rol: Administrativo"
+                                       textFill="#666666">
+                                    <font>
+                                        <Font size="11.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </VBox>
+
+                        <!-- Idioma / Logout -->
+                        <VBox spacing="6.0" alignment="CENTER_RIGHT">
+                            <children>
+                                <Button fx:id="btnLanguage"
+                                        onAction="#onLanguageChange"
+                                        prefHeight="32.0" prefWidth="32.0"
+                                        style="-fx-background-color: #F5F5F0; -fx-background-radius: 8; -fx-cursor: hand;"
+                                        text="🌐">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Button>
+
+                                <Button fx:id="btnLogout"
+                                        onAction="#onLogout"
+                                        prefHeight="32.0" prefWidth="32.0"
+                                        style="-fx-background-color: #FFE0E0; -fx-background-radius: 8; -fx-cursor: hand;"
+                                        text="🚪">
+                                    <font>
+                                        <Font size="14.0" />
+                                    </font>
+                                </Button>
+                            </children>
+                        </VBox>
+
                     </children>
-                </VBox>
-
-                <!-- Idioma / Logout -->
-                <VBox spacing="6.0" alignment="CENTER_RIGHT">
-                    <children>
-                        <Button fx:id="btnLanguage"
-                                onAction="#onLanguageChange"
-                                prefHeight="32.0" prefWidth="32.0"
-                                style="-fx-background-color: #F5F5F0; -fx-background-radius: 8; -fx-cursor: hand;"
-                                text="🌐">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </Button>
-
-                        <Button fx:id="btnLogout"
-                                onAction="#onLogout"
-                                prefHeight="32.0" prefWidth="32.0"
-                                style="-fx-background-color: #FFE0E0; -fx-background-radius: 8; -fx-cursor: hand;"
-                                text="🚪">
-                            <font>
-                                <Font size="14.0" />
-                            </font>
-                        </Button>
-                    </children>
-                </VBox>
-
-            </children>
-        </HBox>
+                </HBox>
+            </right>
+        </BorderPane>
     </top>
 
     <!-- ========== CONTENIDO CENTRAL DINÁMICO ========== -->
@@ -113,334 +129,354 @@
     <center>
         <StackPane fx:id="contentPane" BorderPane.alignment="CENTER">
 
-            <!-- homeView = dashboard inicial (se captura para volver con fade) -->
-            <VBox fx:id="homeView"
-                  alignment="TOP_CENTER"
-                  spacing="20.0"
-                  maxWidth="Infinity" maxHeight="Infinity"
-                  prefWidth="Infinity">
-                <padding>
-                    <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
-                </padding>
-                <children>
+            <!-- ScrollPane para evitar que el contenido se aplaste verticalmente.
+                 fitToWidth="true" hace que todo use el ancho disponible sin scrollbar horizontal -->
+            <ScrollPane fx:id="homeScroll"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        style="-fx-background-color:transparent;"
+                        styleClass="edge-to-edge-no-bg">
 
-                    <!-- Bienvenida -->
-                    <Label fx:id="lblWelcome"
-                           text="Bienvenido al Sistema"
-                           textFill="#333333">
-                        <font>
-                            <Font name="System Bold" size="22.0" />
-                        </font>
-                    </Label>
+                <content>
 
-                    <!-- ====== BLOQUE MANTENIMIENTOS ====== -->
-                    <VBox spacing="10.0"
+                    <!-- homeView = dashboard inicial (lo capturamos en el controller para volver con fade).
+                         fillWidth="true" para que las secciones internas ocupen todo el ancho disponible -->
+                    <VBox fx:id="homeView"
+                          alignment="TOP_CENTER"
+                          spacing="20.0"
+                          fillWidth="true"
                           maxWidth="Infinity"
                           prefWidth="Infinity">
+                        <padding>
+                            <Insets top="20.0" right="20.0" bottom="20.0" left="20.0" />
+                        </padding>
                         <children>
 
-                            <Label fx:id="lblMantenimientos"
-                                   text="MANTENIMIENTOS"
-                                   textFill="#666666">
+                            <!-- Bienvenida -->
+                            <Label fx:id="lblWelcome"
+                                   text="Bienvenido al Sistema"
+                                   textFill="#333333">
                                 <font>
-                                    <Font name="System Bold" size="14.0" />
+                                    <Font name="System Bold" size="22.0" />
                                 </font>
                             </Label>
 
-                            <!-- FlowPane de tarjetas de mantenimientos -->
-                            <FlowPane hgap="15.0"
-                                      vgap="15.0"
-                                      maxWidth="Infinity"
-                                      prefWidth="Infinity"
-                                      prefWrapLength="700.0">
+                            <!-- ====== BLOQUE MANTENIMIENTOS ====== -->
+                            <VBox spacing="10.0"
+                                  maxWidth="Infinity"
+                                  prefWidth="Infinity">
                                 <children>
 
-                                    <!-- Usuarios -->
-                                    <VBox fx:id="btnUsuarios"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onUsuarios"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="👥" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblUsuarios"
-                                                   text="Usuarios"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
+                                    <Label fx:id="lblMantenimientos"
+                                           text="MANTENIMIENTOS"
+                                           textFill="#666666">
+                                        <font>
+                                            <Font name="System Bold" size="14.0" />
+                                        </font>
+                                    </Label>
 
-                                    <!-- Salones -->
-                                    <VBox fx:id="btnSalones"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onSalones"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                    <!-- FlowPane de tarjetas de mantenimientos -->
+                                    <!-- prefWrapLength="0.0" -> wrapea dinámico
+                                         rowValignment="TOP"   -> tarjetas alineadas arriba -->
+                                    <FlowPane hgap="15.0"
+                                              vgap="15.0"
+                                              rowValignment="TOP"
+                                              maxWidth="Infinity"
+                                              prefWidth="Infinity"
+                                              prefWrapLength="0.0">
                                         <children>
-                                            <Label text="🏠" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblSalones"
-                                                   text="Salones"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
 
-                                    <!-- Grupos -->
-                                    <VBox fx:id="btnGrupos"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onGrupos"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="📁" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblGrupos"
-                                                   text="Grupos"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
+                                            <!-- Usuarios -->
+                                            <VBox fx:id="btnUsuarios"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onUsuarios"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="👥" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblUsuarios"
+                                                           text="Usuarios"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
-                                    <!-- Productos -->
-                                    <VBox fx:id="btnProductos"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onProductos"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="🍽️" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblProductos"
-                                                   text="Productos"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
+                                            <!-- Salones -->
+                                            <VBox fx:id="btnSalones"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onSalones"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="🏠" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblSalones"
+                                                           text="Salones"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
-                                    <!-- Clientes -->
-                                    <VBox fx:id="btnClientes"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onClientes"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="🧑‍🤝‍🧑" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblClientes"
-                                                   text="Clientes"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
+                                            <!-- Grupos -->
+                                            <VBox fx:id="btnGrupos"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onGrupos"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="📁" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblGrupos"
+                                                           text="Grupos"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
-                                    <!-- Parámetros -->
-                                    <VBox fx:id="btnParametros"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onParametros"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="⚙️" textFill="#FF7A00">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblParametros"
-                                                   text="Parámetros"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
+                                            <!-- Productos -->
+                                            <VBox fx:id="btnProductos"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onProductos"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="🍽️" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblProductos"
+                                                           text="Productos"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
+                                            <!-- Clientes -->
+                                            <VBox fx:id="btnClientes"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onClientes"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="🧑‍🤝‍🧑" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblClientes"
+                                                           text="Clientes"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                            <!-- Parámetros -->
+                                            <VBox fx:id="btnParametros"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onParametros"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="⚙️" textFill="#FF7A00">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblParametros"
+                                                           text="Parámetros"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                        </children>
+                                    </FlowPane>
                                 </children>
-                            </FlowPane>
+                            </VBox>
+
+                            <!-- ====== BLOQUE OPERACIONES ====== -->
+                            <VBox spacing="10.0"
+                                  maxWidth="Infinity"
+                                  prefWidth="Infinity">
+                                <children>
+
+                                    <Label fx:id="lblOperaciones"
+                                           text="OPERACIONES"
+                                           textFill="#666666">
+                                        <font>
+                                            <Font name="System Bold" size="14.0" />
+                                        </font>
+                                    </Label>
+
+                                    <FlowPane hgap="15.0"
+                                              vgap="15.0"
+                                              rowValignment="TOP"
+                                              maxWidth="Infinity"
+                                              prefWidth="Infinity"
+                                              prefWrapLength="0.0">
+                                        <children>
+
+                                            <!-- Ver Salones -->
+                                            <VBox fx:id="btnVerSalones"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onVerSalones"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="🪑" textFill="#4CAF50">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblVerSalones"
+                                                           text="Ver Salones"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                            <!-- Órdenes -->
+                                            <VBox fx:id="btnOrdenes"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onOrdenes"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="📋" textFill="#4CAF50">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblOrdenes"
+                                                           text="Órdenes"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                            <!-- Facturación -->
+                                            <VBox fx:id="btnFacturacion"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onFacturacion"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="💳" textFill="#4CAF50">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblFacturacion"
+                                                           text="Facturación"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                            <!-- Cierres de Caja -->
+                                            <VBox fx:id="btnCierres"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onCierres"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="💰" textFill="#4CAF50">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblCierres"
+                                                           text="Cierres de Caja"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                            <!-- Reportes -->
+                                            <VBox fx:id="btnReportes"
+                                                  alignment="CENTER"
+                                                  onMouseClicked="#onReportes"
+                                                  prefHeight="110.0" prefWidth="130.0"
+                                                  spacing="6.0"
+                                                  style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
+                                                <children>
+                                                    <Label text="📊" textFill="#4CAF50">
+                                                        <font>
+                                                            <Font size="36.0" />
+                                                        </font>
+                                                    </Label>
+                                                    <Label fx:id="lblReportes"
+                                                           text="Reportes"
+                                                           textFill="#333333">
+                                                        <font>
+                                                            <Font name="System Bold" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+
+                                        </children>
+                                    </FlowPane>
+                                </children>
+                            </VBox>
+
                         </children>
                     </VBox>
 
-                    <!-- ====== BLOQUE OPERACIONES ====== -->
-                    <VBox spacing="10.0"
-                          maxWidth="Infinity"
-                          prefWidth="Infinity">
-                        <children>
-
-                            <Label fx:id="lblOperaciones"
-                                   text="OPERACIONES"
-                                   textFill="#666666">
-                                <font>
-                                    <Font name="System Bold" size="14.0" />
-                                </font>
-                            </Label>
-
-                            <FlowPane hgap="15.0"
-                                      vgap="15.0"
-                                      maxWidth="Infinity"
-                                      prefWidth="Infinity"
-                                      prefWrapLength="700.0">
-                                <children>
-
-                                    <!-- Ver Salones -->
-                                    <VBox fx:id="btnVerSalones"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onVerSalones"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="🪑" textFill="#4CAF50">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblVerSalones"
-                                                   text="Ver Salones"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
-
-                                    <!-- Órdenes -->
-                                    <VBox fx:id="btnOrdenes"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onOrdenes"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="📋" textFill="#4CAF50">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblOrdenes"
-                                                   text="Órdenes"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
-
-                                    <!-- Facturación -->
-                                    <VBox fx:id="btnFacturacion"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onFacturacion"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="💳" textFill="#4CAF50">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblFacturacion"
-                                                   text="Facturación"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
-
-                                    <!-- Cierres de Caja -->
-                                    <VBox fx:id="btnCierres"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onCierres"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="💰" textFill="#4CAF50">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblCierres"
-                                                   text="Cierres de Caja"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
-
-                                    <!-- Reportes -->
-                                    <VBox fx:id="btnReportes"
-                                          alignment="CENTER"
-                                          onMouseClicked="#onReportes"
-                                          prefHeight="110.0" prefWidth="130.0"
-                                          spacing="6.0"
-                                          style="-fx-background-color: white; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-padding: 10;">
-                                        <children>
-                                            <Label text="📊" textFill="#4CAF50">
-                                                <font>
-                                                    <Font size="36.0" />
-                                                </font>
-                                            </Label>
-                                            <Label fx:id="lblReportes"
-                                                   text="Reportes"
-                                                   textFill="#333333">
-                                                <font>
-                                                    <Font name="System Bold" size="12.0" />
-                                                </font>
-                                            </Label>
-                                        </children>
-                                    </VBox>
-
-                                </children>
-                            </FlowPane>
-                        </children>
-                    </VBox>
-
-                </children>
-            </VBox>
+                </content>
+            </ScrollPane>
 
         </StackPane>
     </center>

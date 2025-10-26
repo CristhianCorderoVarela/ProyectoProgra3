@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import javafx.stage.Stage;
 
 /**
  * Controlador para la vista de inicio de sesión.
@@ -54,108 +55,76 @@ public class LoginController implements Initializable {
      * Maneja el evento de inicio de sesión.
      * Valida credenciales y autentica al usuario contra el backend.
      */
-    @FXML
-    private void onLogin(ActionEvent event) {
-        // Validar usuario
-        if (txtUsername.getText() == null || txtUsername.getText().trim().isEmpty()) {
-            Mensaje.showError(
-                    I18n.get("app.error"),
-                    I18n.get("login.error.camposVacios")
-            );
-            txtUsername.requestFocus();
-            return;
-        }
+   @FXML
+private void onLogin(ActionEvent event) {
+    // Validar usuario
+    if (txtUsername.getText() == null || txtUsername.getText().trim().isEmpty()) {
+        Mensaje.showError(I18n.get("app.error"), I18n.get("login.error.camposVacios"));
+        txtUsername.requestFocus();
+        return;
+    }
 
-        // Validar contraseña
-        if (txtPassword.getText() == null || txtPassword.getText().trim().isEmpty()) {
-            Mensaje.showError(
-                    I18n.get("app.error"),
-                    I18n.get("login.error.camposVacios")
-            );
-            txtPassword.requestFocus();
-            return;
-        }
+    // Validar contraseña
+    if (txtPassword.getText() == null || txtPassword.getText().trim().isEmpty()) {
+        Mensaje.showError(I18n.get("app.error"), I18n.get("login.error.camposVacios"));
+        txtPassword.requestFocus();
+        return;
+    }
 
-        try {
-            // Deshabilitar botón mientras se procesa
-            btnLogin.setDisable(true);
-            btnLogin.setText(I18n.isSpanish() ? "Ingresando..." : "Logging in...");
+    Stage loginStage = (Stage) btnLogin.getScene().getWindow();
 
-            // Armar credenciales para enviar al backend
-            Map<String, String> credentials = new HashMap<>();
-            credentials.put("usuario", txtUsername.getText().trim());
-            credentials.put("clave", txtPassword.getText());
+    try {
+        btnLogin.setDisable(true);
+        btnLogin.setText(I18n.isSpanish() ? "Ingresando..." : "Logging in...");
 
-            // Llamar al servicio REST de autenticación
-            String rawResponse = RestClient.post("/usuarios/login", credentials);
+        Map<String, String> credentials = new HashMap<>();
+        credentials.put("usuario", txtUsername.getText().trim());
+        credentials.put("clave", txtPassword.getText());
 
-            // DEBUG: ver respuesta cruda del backend
-            System.out.println("DEBUG Login raw response: " + rawResponse);
+        String rawResponse = RestClient.post("/usuarios/login", credentials);
+        System.out.println("DEBUG Login raw response: " + rawResponse);
 
-            Map<String, Object> response = RestClient.parseResponse(rawResponse);
+        Map<String, Object> response = RestClient.parseResponse(rawResponse);
 
-            // ¿Login exitoso?
-            if (Boolean.TRUE.equals(response.get("success"))) {
-
-                // Intentar mapear data -> Usuario
-                Object dataObj = response.get("data");
-                Usuario usuario = null;
-                if (dataObj != null) {
-                    String dataJson = RestClient.toJson(dataObj);
-                    usuario = RestClient.fromJson(dataJson, Usuario.class);
-                }
-
-                // Guardar usuario en el contexto si vino
-                if (usuario != null) {
-                    AppContext.getInstance().setUsuarioLogueado(usuario);
-                }
-
-                // Mensaje de bienvenida
-                String nombreMostrar = (usuario != null && usuario.getNombre() != null)
-                        ? usuario.getNombre()
-                        : txtUsername.getText().trim();
-
-                Mensaje.showSuccess(
-                        I18n.get("app.exito"),
-                        I18n.get("login.exito", nombreMostrar)
-                );
-
-                // Ir al menú principal
-                FlowController.getInstance().goToView(
-                        "MenuPrincipal",
-                        "RestUNA - Menú Principal",
-                        1200,
-                        800
-                );
-
-            } else {
-                // Falló el login (credenciales inválidas o backend respondió error)
-                String backendMsg = String.valueOf(
-                        response.getOrDefault("message", I18n.get("login.error.credenciales"))
-                );
-
-                Mensaje.showError(
-                        I18n.get("app.error"),
-                        backendMsg
-                );
-
-                txtPassword.clear();
-                txtPassword.requestFocus();
+        if (Boolean.TRUE.equals(response.get("success"))) {
+            // Mapear data -> Usuario y guardarlo
+            Object dataObj = response.get("data");
+            Usuario usuario = null;
+            if (dataObj != null) {
+                String dataJson = RestClient.toJson(dataObj);
+                usuario = RestClient.fromJson(dataJson, Usuario.class);
+            }
+            if (usuario != null) {
+                AppContext.getInstance().setUsuarioLogueado(usuario);
             }
 
-        } catch (Exception e) {
-            // Excepción de red / server caído / etc.
-            e.printStackTrace();
-            Mensaje.showError(
-                    I18n.get("app.error"),
-                    I18n.get("login.error.conexion") + "\n" + e.getMessage()
+            String nombreMostrar = (usuario != null && usuario.getNombre() != null)
+                    ? usuario.getNombre()
+                    : txtUsername.getText().trim();
+            Mensaje.showSuccess(I18n.get("app.exito"), I18n.get("login.exito", nombreMostrar));
+
+            // ✅ SOLO cerrar el login (ventana separada). NO navegar aquí.
+            loginStage.close();
+
+        } else {
+            String backendMsg = String.valueOf(
+                    response.getOrDefault("message", I18n.get("login.error.credenciales"))
             );
-        } finally {
-            // Rehabilitar botón siempre
-            btnLogin.setDisable(false);
-            btnLogin.setText(I18n.get("login.btnIngresar"));
+            Mensaje.showError(I18n.get("app.error"), backendMsg);
+            txtPassword.clear();
+            txtPassword.requestFocus();
         }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        Mensaje.showError(I18n.get("app.error"), I18n.get("login.error.conexion") + "\n" + e.getMessage());
+    } finally {
+        btnLogin.setDisable(false);
+        btnLogin.setText(I18n.get("login.btnIngresar"));
     }
+}
+
+
 
     /**
      * Abre la pantalla de registro

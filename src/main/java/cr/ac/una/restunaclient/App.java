@@ -1,4 +1,5 @@
 package cr.ac.una.restunaclient;
+import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -8,13 +9,22 @@ import javafx.stage.Stage;
  */
 public class App extends Application {
     @Override
-    public void start(Stage stage) {
-        // Configurar el FlowController con el stage principal
-        FlowController.getInstance().setMainStage(stage);
+public void start(Stage stage) {
+    FlowController.getInstance().setMainStage(stage);
 
-        // Navegar a la vista de login
-        FlowController.getInstance().goToView("Login", "RestUNA - Login", 1024, 768);
+    // Mostrar login como modal
+    FlowController.getInstance().goToViewInModal("Login", "RestUNA - Iniciar sesión", stage);
+
+    if (AppContext.getInstance().getUsuarioLogueado() != null) {
+        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
+        stage.show();
+    } else {
+        stage.close();
     }
+}
+
+
+
     public static void main(String[] args) {
         launch(args);
     }

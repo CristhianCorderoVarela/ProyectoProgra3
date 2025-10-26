@@ -16,6 +16,7 @@ import javafx.scene.layout.VBox;
 import java.net.URL;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import javafx.stage.Stage;
 
 /**
  * Controlador del menú principal
@@ -248,15 +249,35 @@ public class MenuPrincipalController implements Initializable {
     }
 
     @FXML
-    private void onLogout(ActionEvent event) {
-        if (Mensaje.showConfirmation(
-                I18n.get("app.confirmacion"), 
-                I18n.isSpanish() ? "¿Está seguro de cerrar sesión?" : "Are you sure you want to logout?")) {
-            
-            AppContext.getInstance().logout();
-            FlowController.getInstance().goToView("Login", "RestUNA - Login", 1024, 768);
+private void onLogout(ActionEvent event) {
+    if (Mensaje.showConfirmation(
+            I18n.get("app.confirmacion"),
+            I18n.isSpanish() ? "¿Está seguro de cerrar sesión?" : "Are you sure you want to logout?")) {
+
+        // 1) limpiar sesión
+        AppContext.getInstance().logout();
+
+        // 2) ocultar la ventana principal para que SOLO se vea el login
+        FlowController fc = FlowController.getInstance();
+        Stage main = fc.getMainStage();
+        main.hide();  // <-- CLAVE: oculta la principal
+
+        // 3) abrir login como MODAL (bloquea hasta que cierre)
+        fc.goToViewInModal("Login", "RestUNA - Iniciar sesión", main);
+
+        // 4) decidir qué hacer después del login modal
+        if (AppContext.getInstance().getUsuarioLogueado() != null) {
+            // Login correcto: (re)cargar menú y volver a mostrar principal
+            fc.goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
+            main.show();
+        } else {
+            // Canceló o falló: cerrar la app o quedarte oculto (elige)
+            main.close();
         }
     }
+}
+
+
 
     private void actualizarTextos() {
         lblSubtitle.setText(I18n.get("app.nombre"));

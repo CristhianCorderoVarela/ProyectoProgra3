@@ -12,144 +12,218 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
-            prefHeight="768.0" prefWidth="1024.0" style="-fx-background-color: #F5F5F0;" 
-            stylesheets="@styles.css"
-            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="cr.ac.una.restunaclient.controller.LoginController">
-   <children>
-      <!-- Logo y título superior -->
-      <HBox alignment="CENTER_LEFT" layoutX="50.0" layoutY="50.0" spacing="15.0">
-         <children>
-            <StackPane prefHeight="80.0" prefWidth="80.0" style="-fx-background-color: #FF7A00; -fx-background-radius: 15;">
-            </StackPane>
-            <VBox spacing="0.0">
-               <children>
-                  <Label text="RestUNA" textFill="#333333">
-                     <font>
-                        <Font name="System Bold" size="32.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="lblAppSubtitle" text="Sistema de Gestión de Restaurante" textFill="#666666">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                  </Label>
-               </children>
-            </VBox>
-         </children>
-      </HBox>
-      
-      <!-- Botón de idioma -->
-      <Button fx:id="btnLanguage" layoutX="914.0" layoutY="60.0" mnemonicParsing="false" 
-              onAction="#onLanguageChange" prefHeight="60.0" prefWidth="60.0" 
-              style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #E0E0E0; -fx-border-radius: 10; -fx-cursor: hand;" 
-              text="🌐">
-         <font>
-            <Font size="24.0" />
-         </font>
-      </Button>
-      
-      <!-- Panel central de login -->
-      <StackPane layoutX="312.0" layoutY="200.0" prefHeight="420.0" prefWidth="400.0" 
-                 style="-fx-background-color: white; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 20, 0, 0, 5);">
-         <children>
-            <VBox alignment="TOP_CENTER" spacing="25.0">
-               <padding>
-                  <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
-               </padding>
-               <children>
-                  <!-- Título del formulario -->
-                  <VBox alignment="CENTER" spacing="5.0">
-                     <children>
-                        <Label fx:id="lblTitle" text="Iniciar Sesión" textFill="#000000">
-                           <font>
-                              <Font name="System Bold" size="28.0" />
-                           </font>
+<AnchorPane
+        fx:id="root"
+        prefHeight="480.0" prefWidth="800.0"
+        minHeight="-Infinity" minWidth="-Infinity"
+        maxHeight="-Infinity" maxWidth="-Infinity"
+        style="-fx-background-color: #F5F5F0;"
+        stylesheets="@styles.css"
+        xmlns="http://javafx.com/javafx/21"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="cr.ac.una.restunaclient.controller.LoginController">
+
+    <children>
+
+        <!-- HEADER IZQUIERDA (logo + textos) -->
+        <HBox spacing="12.0"
+              AnchorPane.topAnchor="16.0"
+              AnchorPane.leftAnchor="16.0">
+            <children>
+                <!-- Bloque naranja tipo logo -->
+                <StackPane prefHeight="48.0" prefWidth="48.0"
+                           style="-fx-background-color: #FF7A00; -fx-background-radius: 12;" />
+                <VBox spacing="2.0">
+                    <children>
+                        <Label text="RestUNA" textFill="#333333">
+                            <font>
+                                <Font name="System Bold" size="24.0" />
+                            </font>
                         </Label>
-                        <Label fx:id="lblSubtitle" text="Sistema de Gestión de Restaurante" textFill="#666666">
-                           <font>
-                              <Font size="13.0" />
-                           </font>
+                        <Label fx:id="lblAppSubtitle"
+                               text="RestUNA - Sistema de Facturación"
+                               textFill="#666666">
+                            <font>
+                                <Font size="12.0" />
+                            </font>
                         </Label>
-                     </children>
-                  </VBox>
-                  
-                  <!-- Campo Usuario -->
-                  <VBox spacing="8.0">
-                     <children>
-                        <Label fx:id="lblUsername" text="Usuario" textFill="#333333">
-                           <font>
-                              <Font name="System Bold" size="14.0" />
-                           </font>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+
+        <!-- BOTÓN IDIOMA ARRIBA DERECHA -->
+        <Button fx:id="btnLanguage"
+                prefHeight="36.0" prefWidth="36.0"
+                mnemonicParsing="false"
+                onAction="#onLanguageChange"
+                style="-fx-background-color: white;
+                       -fx-background-radius: 10;
+                       -fx-border-color: #E0E0E0;
+                       -fx-border-radius: 10;
+                       -fx-cursor: hand;"
+                text="🌐"
+                AnchorPane.topAnchor="16.0"
+                AnchorPane.rightAnchor="16.0">
+            <font>
+                <Font size="14.0"/>
+            </font>
+        </Button>
+
+        <!-- ZONA CENTRAL que se expande con la ventana -->
+        <StackPane
+                AnchorPane.topAnchor="80.0"
+                AnchorPane.bottomAnchor="16.0"
+                AnchorPane.leftAnchor="16.0"
+                AnchorPane.rightAnchor="16.0">
+
+            <children>
+
+                <!-- Contenedor vertical que centra la tarjeta y el footer -->
+                <VBox alignment="CENTER"
+                      spacing="16.0"
+                      fillWidth="false">
+
+                    <children>
+
+                        <!-- TARJETA BLANCA DE LOGIN (tamaño fijo, no escala) -->
+                        <StackPane
+                                prefWidth="400.0" prefHeight="260.0"
+                                maxWidth="400.0" maxHeight="260.0"
+                                style="-fx-background-color: white;
+                                       -fx-background-radius: 16;
+                                       -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 16, 0, 0, 4);">
+                            <children>
+                                <VBox alignment="TOP_CENTER" spacing="18.0">
+                                    <padding>
+                                        <Insets top="24.0" right="24.0" bottom="24.0" left="24.0" />
+                                    </padding>
+
+                                    <children>
+                                        <!-- Título del formulario -->
+                                        <VBox alignment="CENTER" spacing="4.0">
+                                            <children>
+                                                <Label fx:id="lblTitle"
+                                                       text="Iniciar Sesión"
+                                                       textFill="#000000">
+                                                    <font>
+                                                        <Font name="System Bold" size="20.0" />
+                                                    </font>
+                                                </Label>
+
+                                                <Label fx:id="lblSubtitle"
+                                                       text="RestUNA - Sistema de Facturación"
+                                                       textFill="#666666">
+                                                    <font>
+                                                        <Font size="11.0" />
+                                                    </font>
+                                                </Label>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Campo Usuario -->
+                                        <VBox spacing="6.0">
+                                            <children>
+                                                <Label fx:id="lblUsername"
+                                                       text="Usuario:"
+                                                       textFill="#333333">
+                                                    <font>
+                                                        <Font name="System Bold" size="13.0" />
+                                                    </font>
+                                                </Label>
+
+                                                <TextField fx:id="txtUsername"
+                                                           promptText="Usuario:"
+                                                           onAction="#onLogin"
+                                                           style="-fx-background-radius: 6;
+                                                                  -fx-border-radius: 6;
+                                                                  -fx-border-color: #FF7A00;">
+                                                    <font>
+                                                        <Font size="12.0" />
+                                                    </font>
+                                                </TextField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Campo Contraseña -->
+                                        <VBox spacing="6.0">
+                                            <children>
+                                                <Label fx:id="lblPassword"
+                                                       text="Contraseña:"
+                                                       textFill="#333333">
+                                                    <font>
+                                                        <Font name="System Bold" size="13.0" />
+                                                    </font>
+                                                </Label>
+
+                                                <PasswordField fx:id="txtPassword"
+                                                               promptText="Contraseña:"
+                                                               onAction="#onLogin"
+                                                               style="-fx-background-radius: 6;
+                                                                      -fx-border-radius: 6;">
+                                                    <font>
+                                                        <Font size="12.0" />
+                                                    </font>
+                                                </PasswordField>
+                                            </children>
+                                        </VBox>
+
+                                        <!-- Botón Ingresar -->
+                                        <Button fx:id="btnLogin"
+                                                mnemonicParsing="false"
+                                                onAction="#onLogin"
+                                                prefHeight="40.0" prefWidth="260.0"
+                                                style="-fx-background-color: #FF7A00;
+                                                       -fx-background-radius: 10;
+                                                       -fx-cursor: hand;"
+                                                text="Iniciar Sesión"
+                                                textFill="WHITE">
+                                            <font>
+                                                <Font name="System Bold" size="14.0" />
+                                            </font>
+                                        </Button>
+
+                                        <!-- Enlace de registro -->
+                                        <HBox alignment="CENTER" spacing="4.0">
+                                            <children>
+                                                <Label fx:id="lblNoAccount"
+                                                       text="¿No tiene cuenta?"
+                                                       textFill="#666666">
+                                                    <font>
+                                                        <Font size="12.0" />
+                                                    </font>
+                                                </Label>
+
+                                                <Hyperlink fx:id="linkRegister"
+                                                           onAction="#onRegister"
+                                                           text="Registrarse aquí"
+                                                           textFill="#FF7A00">
+                                                    <font>
+                                                        <Font name="System Bold" size="12.0" />
+                                                    </font>
+                                                </Hyperlink>
+                                            </children>
+                                        </HBox>
+
+                                    </children>
+                                </VBox>
+                            </children>
+                        </StackPane>
+
+                        <!-- FOOTER debajo de la tarjeta -->
+                        <Label fx:id="lblFooter"
+                               alignment="CENTER"
+                               text="Universidad Nacional - Sede Regional Brunca"
+                               textFill="#999999">
+                            <font>
+                                <Font size="11.0" />
+                            </font>
                         </Label>
-                        <TextField fx:id="txtUsername" promptText="Ingrese su usuario" 
-                                   onAction="#onLogin">
-                           <font>
-                              <Font size="13.0" />
-                           </font>
-                        </TextField>
-                     </children>
-                  </VBox>
-                  
-                  <!-- Campo Contraseña -->
-                  <VBox spacing="8.0">
-                     <children>
-                        <Label fx:id="lblPassword" text="Contraseña" textFill="#333333">
-                           <font>
-                              <Font name="System Bold" size="14.0" />
-                           </font>
-                        </Label>
-                        <PasswordField fx:id="txtPassword" promptText="Ingrese su contraseña"
-                                       onAction="#onLogin">
-                           <font>
-                              <Font size="13.0" />
-                           </font>
-                        </PasswordField>
-                     </children>
-                  </VBox>
-                  
-                  <!-- Botón Ingresar -->
-                  <Button fx:id="btnLogin" mnemonicParsing="false" onAction="#onLogin" 
-                          prefHeight="50.0" prefWidth="320.0" 
-                          style="-fx-background-color: #FF7A00; -fx-background-radius: 10; -fx-cursor: hand;" 
-                          text="Ingresar" textFill="WHITE">
-                     <font>
-                        <Font name="System Bold" size="16.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets top="10.0" />
-                     </VBox.margin>
-                  </Button>
-                  
-                  <!-- Enlace de registro -->
-                  <HBox alignment="CENTER" spacing="5.0">
-                     <children>
-                        <Label fx:id="lblNoAccount" text="¿No tiene cuenta?" textFill="#666666">
-                           <font>
-                              <Font size="13.0" />
-                           </font>
-                        </Label>
-                        <Hyperlink fx:id="linkRegister" onAction="#onRegister" 
-                                   text="Registrarse aquí" textFill="#FF7A00">
-                           <font>
-                              <Font name="System Bold" size="13.0" />
-                           </font>
-                        </Hyperlink>
-                     </children>
-                  </HBox>
-               </children>
-            </VBox>
-         </children>
-      </StackPane>
-      
-      <!-- Footer -->
-      <Label fx:id="lblFooter" alignment="CENTER" layoutX="312.0" layoutY="700.0" 
-             prefWidth="400.0" text="Universidad Nacional - Sede Regional Brunca" 
-             textFill="#999999">
-         <font>
-            <Font size="13.0" />
-         </font>
-      </Label>
-   </children>
+
+                    </children>
+                </VBox>
+            </children>
+        </StackPane>
+
+    </children>
 </AnchorPane>

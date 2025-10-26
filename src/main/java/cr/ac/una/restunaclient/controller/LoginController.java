@@ -18,10 +18,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * Controlador para la vista de inicio de sesión
- * Maneja la autenticación de usuarios y navegación
- * 
- * @author RestUNA Team
+ * Controlador para la vista de inicio de sesión.
+ * Maneja la autenticación de usuarios y la navegación.
  */
 public class LoginController implements Initializable {
 
@@ -42,104 +40,134 @@ public class LoginController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         // Cargar textos iniciales según idioma
         actualizarTextos();
-        
-        // Establecer valores por defecto para pruebas (comentar en producción)
+
+        // Para pruebas rápidas (comentá en producción si no te gusta dejar esto)
         // txtUsername.setText("admin");
         // txtPassword.setText("admin123");
-        
-        // Agregar listener para Enter en los campos
+
+        // Enter en los campos dispara login
         txtUsername.setOnAction(this::onLogin);
         txtPassword.setOnAction(this::onLogin);
     }
 
     /**
-     * Maneja el evento de inicio de sesión
-     * Valida credenciales y autentica al usuario contra el backend
+     * Maneja el evento de inicio de sesión.
+     * Valida credenciales y autentica al usuario contra el backend.
      */
     @FXML
     private void onLogin(ActionEvent event) {
-        // Validar que el campo de usuario no esté vacío
+        // Validar usuario
         if (txtUsername.getText() == null || txtUsername.getText().trim().isEmpty()) {
             Mensaje.showError(
-                I18n.get("app.error"), 
-                I18n.get("login.error.camposVacios")
+                    I18n.get("app.error"),
+                    I18n.get("login.error.camposVacios")
             );
             txtUsername.requestFocus();
             return;
         }
 
-        // Validar que el campo de contraseña no esté vacío
+        // Validar contraseña
         if (txtPassword.getText() == null || txtPassword.getText().trim().isEmpty()) {
             Mensaje.showError(
-                I18n.get("app.error"), 
-                I18n.get("login.error.camposVacios")
+                    I18n.get("app.error"),
+                    I18n.get("login.error.camposVacios")
             );
             txtPassword.requestFocus();
             return;
         }
 
         try {
-            // Deshabilitar botón mientras se procesa la petición
+            // Deshabilitar botón mientras se procesa
             btnLogin.setDisable(true);
             btnLogin.setText(I18n.isSpanish() ? "Ingresando..." : "Logging in...");
 
-            // Preparar credenciales para enviar al backend
+            // Armar credenciales para enviar al backend
             Map<String, String> credentials = new HashMap<>();
             credentials.put("usuario", txtUsername.getText().trim());
             credentials.put("clave", txtPassword.getText());
 
             // Llamar al servicio REST de autenticación
-            String jsonResponse = RestClient.post("/usuarios/login", credentials);
-            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+            String rawResponse = RestClient.post("/usuarios/login", credentials);
 
-            // Verificar si la autenticación fue exitosa
+            // DEBUG: ver respuesta cruda del backend
+            System.out.println("DEBUG Login raw response: " + rawResponse);
+
+            Map<String, Object> response = RestClient.parseResponse(rawResponse);
+
+            // ¿Login exitoso?
             if (Boolean.TRUE.equals(response.get("success"))) {
-                // Deserializar el objeto Usuario desde la respuesta
-                String dataJson = RestClient.toJson(response.get("data"));
-                Usuario usuario = RestClient.fromJson(dataJson, Usuario.class);
 
-                // Guardar usuario en el contexto de la aplicación
-                AppContext.getInstance().setUsuarioLogueado(usuario);
+                // Intentar mapear data -> Usuario
+                Object dataObj = response.get("data");
+                Usuario usuario = null;
+                if (dataObj != null) {
+                    String dataJson = RestClient.toJson(dataObj);
+                    usuario = RestClient.fromJson(dataJson, Usuario.class);
+                }
 
-                // Mostrar mensaje de bienvenida
+                // Guardar usuario en el contexto si vino
+                if (usuario != null) {
+                    AppContext.getInstance().setUsuarioLogueado(usuario);
+                }
+
+                // Mensaje de bienvenida
+                String nombreMostrar = (usuario != null && usuario.getNombre() != null)
+                        ? usuario.getNombre()
+                        : txtUsername.getText().trim();
+
                 Mensaje.showSuccess(
-                    I18n.get("app.exito"),
-                    I18n.get("login.exito", usuario.getNombre())
+                        I18n.get("app.exito"),
+                        I18n.get("login.exito", nombreMostrar)
                 );
 
-                // Navegar al menú principal
-                FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
+                // Ir al menú principal
+                FlowController.getInstance().goToView(
+                        "MenuPrincipal",
+                        "RestUNA - Menú Principal",
+                        1200,
+                        800
+                );
 
             } else {
-                // Credenciales inválidas
-                Mensaje.showError(
-                    I18n.get("app.error"),
-                    I18n.get("login.error.credenciales")
+                // Falló el login (credenciales inválidas o backend respondió error)
+                String backendMsg = String.valueOf(
+                        response.getOrDefault("message", I18n.get("login.error.credenciales"))
                 );
+
+                Mensaje.showError(
+                        I18n.get("app.error"),
+                        backendMsg
+                );
+
                 txtPassword.clear();
                 txtPassword.requestFocus();
             }
 
         } catch (Exception e) {
-            // Error de conexión o del servidor
+            // Excepción de red / server caído / etc.
             e.printStackTrace();
             Mensaje.showError(
-                I18n.get("app.error"),
-                I18n.get("login.error.conexion") + "\n" + e.getMessage()
+                    I18n.get("app.error"),
+                    I18n.get("login.error.conexion") + "\n" + e.getMessage()
             );
         } finally {
-            // Rehabilitar botón
+            // Rehabilitar botón siempre
             btnLogin.setDisable(false);
             btnLogin.setText(I18n.get("login.btnIngresar"));
         }
     }
 
     /**
-     * Navega a la vista de registro de usuarios
+     * Abre la pantalla de registro
      */
     @FXML
     private void onRegister(ActionEvent event) {
-        FlowController.getInstance().goToView("Register", "RestUNA - Registro", 1024, 826);
+        FlowController.getInstance().goToView(
+                "Register",
+                "RestUNA - Registro",
+                1024,
+                826
+        );
     }
 
     /**
@@ -156,7 +184,7 @@ public class LoginController implements Initializable {
     }
 
     /**
-     * Actualiza todos los textos de la interfaz según el idioma actual
+     * Actualiza todos los textos visibles según el idioma actual
      */
     private void actualizarTextos() {
         lblAppSubtitle.setText(I18n.get("app.nombre"));

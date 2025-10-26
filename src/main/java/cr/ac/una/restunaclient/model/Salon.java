@@ -1,5 +1,6 @@
 package cr.ac.una.restunaclient.model;
 
+import com.google.gson.annotations.JsonAdapter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,13 +12,14 @@ public class Salon {
     private Long id;
     private String nombre;
     private String tipo; // SALON, BARRA
+    
+    @JsonAdapter(ByteArrayBase64Adapter.class)
     private byte[] imagenMesa;
+    
     private String tipoImagen;
     private String cobraServicio; // S=Sí, N=No
     private String estado; // A=Activo, I=Inactivo
     private Long version;
-    
-    // Lista de mesas del salón
     private List<Mesa> mesas;
     
     public Salon() {
@@ -25,14 +27,7 @@ public class Salon {
         this.cobraServicio = "S";
         this.mesas = new ArrayList<>();
     }
-
-    public Salon(Long id, String nombre, String tipo) {
-        this();
-        this.id = id;
-        this.nombre = nombre;
-        this.tipo = tipo;
-    }
-
+    
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -60,15 +55,13 @@ public class Salon {
     
     public List<Mesa> getMesas() { return mesas; }
     public void setMesas(List<Mesa> mesas) { this.mesas = mesas; }
-
+    
     // Métodos auxiliares
     public boolean isSalon() { return "SALON".equals(this.tipo); }
     public boolean isBarra() { return "BARRA".equals(this.tipo); }
     public boolean cobraServicio() { return "S".equals(this.cobraServicio); }
     public boolean isActivo() { return "A".equals(this.estado); }
-
+    
     @Override
-    public String toString() {
-        return nombre;
-    }
+    public String toString() { return nombre; }
 }

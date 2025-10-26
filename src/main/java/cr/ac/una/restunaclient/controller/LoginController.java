@@ -42,11 +42,11 @@ public class LoginController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         // Cargar textos iniciales según idioma
         actualizarTextos();
-
+        
         // Establecer valores por defecto para pruebas (comentar en producción)
         // txtUsername.setText("admin");
         // txtPassword.setText("admin123");
-
+        
         // Agregar listener para Enter en los campos
         txtUsername.setOnAction(this::onLogin);
         txtPassword.setOnAction(this::onLogin);
@@ -107,8 +107,8 @@ public class LoginController implements Initializable {
                     I18n.get("login.exito", usuario.getNombre())
                 );
 
-                // 🚀 Abrir el mainStage con MenuPrincipal (fade + tamaño fijo) y CERRAR la ventana de Login
-                FlowController.getInstance().openMainFromLoginAndClose(btnLogin.getScene());
+                // Navegar al menú principal
+                FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
 
             } else {
                 // Credenciales inválidas
@@ -136,7 +136,6 @@ public class LoginController implements Initializable {
 
     /**
      * Navega a la vista de registro de usuarios
-     * (Se mantiene; si quieres también en ventana aparte, se podría ajustar similar al login)
      */
     @FXML
     private void onRegister(ActionEvent event) {

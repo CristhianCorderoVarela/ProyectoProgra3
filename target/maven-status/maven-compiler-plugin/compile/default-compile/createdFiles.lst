@@ -30,6 +30,7 @@ cr\ac\una\restunaclient\controller\ParametrosController.class
 cr\ac\una\restunaclient\controller\SalonesController.class
 cr\ac\una\restunaclient\controller\ProductosController$4.class
 cr\ac\una\restunaclient\controller\ProductosController$1.class
+cr\ac\una\restunaclient\model\ByteArrayBase64Adapter.class
 cr\ac\una\restunaclient\util\Mensaje.class
 module-info.class
 cr\ac\una\restunaclient\controller\OrdenesController$4.class

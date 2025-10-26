@@ -26,24 +26,36 @@ public class RestClient {
     
     private static final String BASE_URL = "http://localhost:8080/WsRestUNA/api";
     private static final Gson gson;
-    
+ 
     static {
-        // Configurar Gson con adaptadores para LocalDate y LocalDateTime
+        // Configurar Gson con adaptadores para LocalDate, LocalDateTime y byte[]
         gson = new GsonBuilder()
                 // SERIALIZER para LocalDate (Object -> JSON)
-                .registerTypeAdapter(LocalDate.class, (JsonSerializer<LocalDate>) (src, typeOfSrc, context) ->
-                        new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+                .registerTypeAdapter(LocalDate.class, (JsonSerializer<LocalDate>) (src, typeOfSrc, context)
+                        -> new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE)))
                 // DESERIALIZER para LocalDate (JSON -> Object)
-                .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>) (json, type, context) ->
-                        LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE))
+                .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>) (json, type, context)
+                        -> LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE))
                 // SERIALIZER para LocalDateTime (Object -> JSON)
-                .registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (src, typeOfSrc, context) ->
-                        new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+                .registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (src, typeOfSrc, context)
+                        -> new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                 // DESERIALIZER para LocalDateTime (JSON -> Object)
-                .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>) (json, type, context) ->
-                        LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>) (json, type, context)
+                        -> LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                // ⭐ NUEVO: SERIALIZER para byte[] (convertir a Base64)
+                .registerTypeAdapter(byte[].class, (JsonSerializer<byte[]>) (src, typeOfSrc, context)
+                        -> new JsonPrimitive(java.util.Base64.getEncoder().encodeToString(src)))
+                // ⭐ NUEVO: DESERIALIZER para byte[] (convertir desde Base64)
+                .registerTypeAdapter(byte[].class, (JsonDeserializer<byte[]>) (json, type, context) -> {
+                    try {
+                        return java.util.Base64.getDecoder().decode(json.getAsString());
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
                 .create();
     }
+    
     
     /**
      * Realiza una petición GET
@@ -142,35 +154,7 @@ public class RestClient {
      * @return Map con success, message y data
      */
     @SuppressWarnings("unchecked")
-public static Map<String, Object> parseResponse(String jsonResponse) {
-    if (jsonResponse == null) {
-        return Map.of("success", false, "message", "Respuesta nula del servidor");
+    public static Map<String, Object> parseResponse(String jsonResponse) {
+        return gson.fromJson(jsonResponse, Map.class);
     }
-    String s = jsonResponse.trim();
-    if (s.isEmpty()) {
-        return Map.of("success", false, "message", "Respuesta vacía del servidor");
-    }
-
-    try {
-        // Caso 1: empieza como JSON objeto/arreglo
-        if (s.startsWith("{")) {
-            return gson.fromJson(s, Map.class); // objeto esperado
-        } else if (s.startsWith("[")) {
-            // si vino una lista, la envolvemos en un objeto estándar
-            Object list = gson.fromJson(s, Object.class);
-            return Map.of("success", true, "message", "OK", "data", list);
-        } else if (s.startsWith("\"") && s.endsWith("\"")) {
-            // Caso 2: cadena JSON entrecomillada => des-escapar y tratar como mensaje
-            String text = gson.fromJson(s, String.class);
-            return Map.of("success", false, "message", text);
-        } else {
-            // Caso 3: texto plano (HTML, “Usuario creado”, etc.)
-            return Map.of("success", false, "message", s);
-        }
-    } catch (Exception ex) {
-        // Si igual falló, no tumbar la app: devolver mensaje como texto
-        return Map.of("success", false, "message", s, "error", ex.getClass().getSimpleName());
-    }
-}
-
 }

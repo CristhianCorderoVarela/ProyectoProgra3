@@ -170,13 +170,9 @@ public class GruposProductoController implements Initializable {
      * Volver al menú principal
      */
     @FXML
-private void onVolver(ActionEvent event) {
-    FlowController.getInstance().goToViewKeepSizeScaled(
-        "MenuPrincipal",
-        "RestUNA - Menú Principal",
-        1200, 800
-    );
-}
+    private void onVolver(ActionEvent event) {
+        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
+    }
 
     /**
      * Preparar formulario para nuevo grupo

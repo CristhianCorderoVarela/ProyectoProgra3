@@ -203,13 +203,9 @@ public class SalonesController implements Initializable {
     // ==================== EVENTOS DE BOTONES ====================
     
     @FXML
-private void onVolver(ActionEvent event) {
-    FlowController.getInstance().goToViewKeepSizeScaled(
-        "MenuPrincipal",
-        "RestUNA - Menú Principal",
-        1200, 800
-    );
-}
+    private void onVolver(ActionEvent event) {
+        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Principal", 1200, 800);
+    }
 
     @FXML
     private void onNuevo(ActionEvent event) {
@@ -290,23 +286,41 @@ private void onVolver(ActionEvent event) {
         Mensaje.showSuccess("Actualizado", "Lista de salones refrescada.");
     }
 
+    
     @FXML
     private void onSeleccionarImagen(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Seleccionar Imagen de Mesa");
         fileChooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Imágenes", ".png", ".jpg", ".jpeg", ".gif")
+                new FileChooser.ExtensionFilter("Imágenes", ".png", ".jpg", ".jpeg", ".gif")
         );
-        
+
         File archivo = fileChooser.showOpenDialog(btnSeleccionarImagen.getScene().getWindow());
-        
+
         if (archivo != null) {
             try {
                 imagenMesaBytes = Files.readAllBytes(archivo.toPath());
                 tipoImagen = Files.probeContentType(archivo.toPath());
-                lblImagenSeleccionada.setText(archivo.getName());
+
+                // ⭐ VALIDACIÓN: Si no detecta el tipo, asignarlo manualmente
+                if (tipoImagen == null) {
+                    String nombre = archivo.getName().toLowerCase();
+                    if (nombre.endsWith(".png")) {
+                        tipoImagen = "image/png";
+                    } else if (nombre.endsWith(".jpg") || nombre.endsWith(".jpeg")) {
+                        tipoImagen = "image/jpeg";
+                    } else if (nombre.endsWith(".gif")) {
+                        tipoImagen = "image/gif";
+                    } else {
+                        tipoImagen = "image/png"; // Por defecto
+                    }
+                }
+
+                lblImagenSeleccionada.setText(archivo.getName() + " (" + imagenMesaBytes.length + " bytes)");
                 lblImagenSeleccionada.setStyle("-fx-text-fill: green;");
-                System.out.println("✅ Imagen seleccionada: " + archivo.getName());
+                System.out.println("✅ Imagen seleccionada: " + archivo.getName()
+                        + " | Tamaño: " + imagenMesaBytes.length + " bytes"
+                        + " | Tipo: " + tipoImagen);
             } catch (IOException e) {
                 e.printStackTrace();
                 Mensaje.showError("Error", "No se pudo cargar la imagen:\n" + e.getMessage());
@@ -314,47 +328,61 @@ private void onVolver(ActionEvent event) {
         }
     }
 
+    
     @FXML
     private void onGuardar(ActionEvent event) {
-        if (!validarFormulario()) return;
-        
+        if (!validarFormulario()) {
+            return;
+        }
+
         try {
             Salon salon = new Salon();
-            
+
             if (modoEdicion && salonSeleccionado != null) {
                 salon.setId(salonSeleccionado.getId());
                 salon.setVersion(salonSeleccionado.getVersion());
             }
-            
+
             salon.setNombre(txtNombre.getText().trim());
             salon.setTipo(cmbTipo.getSelectionModel().getSelectedItem());
             salon.setCobraServicio(chkCobraServicio.isSelected() ? "S" : "N");
             salon.setEstado(chkActivo.isSelected() ? "A" : "I");
-            
-            // Agregar imagen si se seleccionó una nueva
-            if (imagenMesaBytes != null) {
+
+            // ⭐ MANEJO DE IMAGEN CON LOGS DETALLADOS
+            if (imagenMesaBytes != null && imagenMesaBytes.length > 0) {
                 salon.setImagenMesa(imagenMesaBytes);
                 salon.setTipoImagen(tipoImagen);
-            } else if (modoEdicion && salonSeleccionado != null) {
-                // Mantener la imagen anterior si existe
+                System.out.println("✅ CONTROLLER: Agregando nueva imagen al salón");
+                System.out.println("   - Tamaño: " + imagenMesaBytes.length + " bytes");
+                System.out.println("   - Tipo: " + tipoImagen);
+            } else if (modoEdicion && salonSeleccionado != null
+                    && salonSeleccionado.getImagenMesa() != null) {
                 salon.setImagenMesa(salonSeleccionado.getImagenMesa());
                 salon.setTipoImagen(salonSeleccionado.getTipoImagen());
+                System.out.println("✅ CONTROLLER: Manteniendo imagen anterior del salón");
+                System.out.println("   - Tamaño: " + salonSeleccionado.getImagenMesa().length + " bytes");
+            } else {
+                System.out.println("⚠ CONTROLLER: Salón sin imagen");
             }
-            
+
             // Llamar al backend
             String jsonResponse;
             if (modoEdicion) {
+                System.out.println("📤 Enviando PUT a /salones/" + salon.getId());
                 jsonResponse = RestClient.put("/salones/" + salon.getId(), salon);
             } else {
+                System.out.println("📤 Enviando POST a /salones");
                 jsonResponse = RestClient.post("/salones", salon);
             }
-            
+
+            System.out.println("📥 Respuesta del servidor: " + jsonResponse);
+
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-            
+
             if (Boolean.TRUE.equals(response.get("success"))) {
-                String mensaje = modoEdicion ? 
-                    "Salón actualizado correctamente." : 
-                    "Salón creado correctamente.";
+                String mensaje = modoEdicion
+                        ? "Salón actualizado correctamente."
+                        : "Salón creado correctamente.";
                 Mensaje.showSuccess("Éxito", mensaje);
                 cargarSalones();
                 limpiarFormulario();
@@ -366,6 +394,10 @@ private void onVolver(ActionEvent event) {
             Mensaje.showError("Error", "Error al guardar salón:\n" + e.getMessage());
         }
     }
+
+    
+    
+    
 
     @FXML
     private void onCancelar(ActionEvent event) {
@@ -422,9 +454,9 @@ private void onVolver(ActionEvent event) {
         cmbTipo.getSelectionModel().select(salon.getTipo());
         chkCobraServicio.setSelected(salon.cobraServicio());
         chkActivo.setSelected(salon.isActivo());
-        
-        // Cargar imagen si existe
-        if (salon.getImagenMesa() != null) {
+
+        // ⭐ Cargar imagen si existe
+        if (salon.getImagenMesa() != null && salon.getImagenMesa().length > 0) {
             imagenMesaBytes = salon.getImagenMesa();
             tipoImagen = salon.getTipoImagen();
             lblImagenSeleccionada.setText("Imagen cargada");

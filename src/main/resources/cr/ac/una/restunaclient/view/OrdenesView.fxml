@@ -94,6 +94,19 @@
                 <Label fx:id="lblFechaHora" text="--/--/---- --:--" style="-fx-text-fill: #666;">
                     <font><Font size="13"/></font>
                 </Label>
+
+                <Separator orientation="VERTICAL" prefHeight="20"/>
+
+                <!-- 🔎 Cliente con autocompletado -->
+                <Label text="Cliente:" style="-fx-text-fill: #666;">
+                    <font><Font size="13"/></font>
+                </Label>
+                <!-- ComboBox editable, más ancho, para autocompletar por nombre/correo/teléfono -->
+                <ComboBox fx:id="cmbCliente"
+                          editable="true"
+                          promptText="Nombre, correo o teléfono"
+                          prefWidth="320"/>
+
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button fx:id="btnCancelarOrden" text="❌ Cancelar Orden" onAction="#onCancelarOrden" 
                         style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">

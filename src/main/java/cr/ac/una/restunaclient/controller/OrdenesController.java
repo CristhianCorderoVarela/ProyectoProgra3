@@ -151,7 +151,7 @@ private final Gson gson = new GsonBuilder()
         actualizarCabeceraVisual();
         actualizarInfoOrden();
         actualizarTextos();
-
+        cargarListaOrdenes();
         // Búsqueda dinámica de productos
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> filtrarProductos(val));
     }
@@ -1191,6 +1191,85 @@ private void onGuardar(ActionEvent event) {
                 ? "Error al buscar cliente:\n" + ex.getMessage()
                 : "Error searching client:\n" + ex.getMessage());
         return null;
+    }
+}
+    
+    @FXML
+private ScrollPane scrollOrdenes;
+@FXML
+private VBox vboxOrdenes;
+private final ObservableList<Orden> listaOrdenes = FXCollections.observableArrayList();
+
+/**
+ * Carga y lista visualmente las órdenes activas del backend en el panel lateral.
+ */
+private void cargarListaOrdenes() {
+    try {
+        String jsonResponse = RestClient.get("/ordenes/activas");
+        Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+        if (!Boolean.TRUE.equals(response.get("success"))) {
+            vboxOrdenes.getChildren().setAll(new Label("No hay órdenes activas."));
+            return;
+        }
+
+        String dataJson = gson.toJson(response.get("data"));
+        List<Orden> ordenes = gson.fromJson(dataJson, new TypeToken<List<Orden>>() {}.getType());
+        listaOrdenes.setAll(ordenes == null ? Collections.emptyList() : ordenes);
+        mostrarOrdenesEnLista();
+    } catch (Exception e) {
+        e.printStackTrace();
+        vboxOrdenes.getChildren().setAll(new Label("Error al cargar órdenes."));
+    }
+}
+
+/**
+ * Renderiza visualmente cada orden como una tarjeta dentro del VBox con scroll.
+ */
+private void mostrarOrdenesEnLista() {
+    vboxOrdenes.getChildren().clear();
+
+    if (listaOrdenes.isEmpty()) {
+        Label lblVacio = new Label("No hay órdenes activas");
+        lblVacio.setStyle("-fx-text-fill: #999; -fx-font-size: 13px;");
+        vboxOrdenes.getChildren().add(lblVacio);
+        return;
+    }
+
+    for (Orden o : listaOrdenes) {
+        VBox card = new VBox(4);
+        card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
+                    + "-fx-padding: 10; -fx-border-color: #FF7A00; "
+                    + "-fx-border-radius: 8; -fx-cursor: hand;");
+        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #FFEBD2; -fx-background-radius: 8; "
+                    + "-fx-padding: 10; -fx-border-color: #FF7A00; -fx-border-radius: 8; -fx-cursor: hand;"));
+        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
+                    + "-fx-padding: 10; -fx-border-color: #FF7A00; -fx-border-radius: 8; -fx-cursor: hand;"));
+
+        Label lblMesa = new Label("🪑 " + (o.getMesaId() != null ? "Mesa " + o.getMesaId() : "Barra"));
+        lblMesa.setStyle("-fx-font-weight: bold; -fx-text-fill: #333;");
+        Label lblCliente = new Label("👤 Cliente: " + (o.getUsuarioNombre() != null ? o.getUsuarioNombre() : "—"));
+        Label lblEstado = new Label("📅 " + o.getEstado());
+        lblEstado.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+
+        card.getChildren().addAll(lblMesa, lblCliente, lblEstado);
+        card.setOnMouseClicked(e -> abrirOrdenExistente(o));
+        vboxOrdenes.getChildren().add(card);
+    }
+}
+
+/**
+ * Abre una orden existente al hacer clic en la lista lateral.
+ */
+private void abrirOrdenExistente(Orden orden) {
+    try {
+        this.ordenActual = orden;
+        this.modoEdicion = true;
+        cargarDetallesDeOrden();
+        lblEstadoOrden.setText("En curso");
+        Mensaje.showInfo("Orden", "Orden #" + orden.getId() + " cargada para continuar.");
+    } catch (Exception e) {
+        Mensaje.showError("Error", "No se pudo cargar la orden seleccionada.");
     }
 }
 }

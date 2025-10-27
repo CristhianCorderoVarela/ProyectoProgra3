@@ -89,4 +89,14 @@ public class Orden {
     public String toString() {
         return "Orden #" + id;
     }
+    
+    /**
+ * Devuelve el nombre del usuario asociado a la orden (si existe).
+ */
+public String getUsuarioNombre() {
+    if (usuario != null && usuario.getNombre() != null) {
+        return usuario.getNombre();
+    }
+    return "—";
+}
 }

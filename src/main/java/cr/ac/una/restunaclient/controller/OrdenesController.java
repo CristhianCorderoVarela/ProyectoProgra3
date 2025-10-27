@@ -63,7 +63,7 @@ public class OrdenesController implements Initializable {
     // ==================== SELECTOR DE PRODUCTOS ====================
     @FXML private TextField txtBuscarProducto;
     @FXML private ComboBox<GrupoProducto> cmbGrupos;
-    // ❌ Eliminado el ComboBox<Cliente> cmbCliente; ya no usamos clientes
+    // ComboBox<Cliente> eliminado en esta versión
     @FXML private FlowPane flowProductos;
 
     // ==================== TABLA DE DETALLES ====================
@@ -966,13 +966,44 @@ public class OrdenesController implements Initializable {
         try {
             if (o.getMesa() != null) {
                 Mesa m = o.getMesa();
+
+                // Texto de mesa: preferir identificador legible, si no el ID
                 String mesaTxt = (m.getIdentificador() != null && !m.getIdentificador().isBlank())
                         ? m.getIdentificador()
                         : (m.getId() != null ? String.valueOf(m.getId()) : "—");
-                String salonTxt = (m.getSalonId() != null)
-                        ? String.valueOf(m.getSalonId())
-                        : "—";
-                return "Salón " + salonTxt + " · Mesa " + mesaTxt;
+
+                // Intentar obtener el nombre real del salón
+                String salonTxt = null;
+                Long salonIdMesa = null;
+                try {
+                    salonIdMesa = m.getSalonId();
+                } catch (Exception ignore) {
+                    // si Mesa no tiene getSalonId() esto quedaría null,
+                    // pero según tu código anterior sí lo tiene
+                }
+
+                if (salonIdMesa != null) {
+                    // Buscar ese salón en los salones cargados
+                    for (Salon s : listaSalonesDisponibles) {
+                        if (s.getId() != null && s.getId().equals(salonIdMesa)) {
+                            if (s.getNombre() != null && !s.getNombre().isBlank()) {
+                                salonTxt = s.getNombre();
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // Fallback si no logramos nombre
+                if (salonTxt == null || salonTxt.isBlank()) {
+                    if (salonIdMesa != null) {
+                        salonTxt = "Salón " + salonIdMesa;
+                    } else {
+                        salonTxt = "Salón";
+                    }
+                }
+
+                return salonTxt + " · Mesa " + mesaTxt;
             }
         } catch (Exception ignore) {
         }

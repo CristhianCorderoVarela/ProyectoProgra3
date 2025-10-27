@@ -35,10 +35,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javafx.util.StringConverter;
 
-/**
- * Controlador para gestión de órdenes
- * Permite crear/editar órdenes, agregar productos y gestionar detalles
- */
 public class OrdenesController implements Initializable {
 
     // ==================== HEADER ====================
@@ -62,13 +58,12 @@ public class OrdenesController implements Initializable {
     @FXML private Label lblSalonInfo;
     @FXML private Label lblFechaHora;
     @FXML private TextArea txtObservaciones;
-    // Campo ya existente: lo reutilizamos como término de búsqueda (nombre/correo/teléfono)
-    @FXML private TextField txtCompradorId;
+    @FXML private TextField txtCompradorId; // lo dejamos declarado porque existe en tu código original y puede que esté en el model, aunque ya no lo usamos
 
     // ==================== SELECTOR DE PRODUCTOS ====================
     @FXML private TextField txtBuscarProducto;
     @FXML private ComboBox<GrupoProducto> cmbGrupos;
-    @FXML private ComboBox<Cliente> cmbCliente;
+    // ❌ Eliminado el ComboBox<Cliente> cmbCliente; ya no usamos clientes
     @FXML private FlowPane flowProductos;
 
     // ==================== TABLA DE DETALLES ====================
@@ -81,6 +76,10 @@ public class OrdenesController implements Initializable {
     // ==================== TOTALES ====================
     @FXML private Label lblTotal;
 
+    // ==================== PANEL DERECHO ====================
+    @FXML private ScrollPane scrollOrdenes;
+    @FXML private VBox vboxOrdenes;
+
     // ==================== VARIABLES DE ESTADO ====================
     private Orden ordenActual;
     private Mesa mesaSeleccionada;
@@ -88,103 +87,89 @@ public class OrdenesController implements Initializable {
     private ObservableList<DetalleOrden> detallesOrden;
     private List<GrupoProducto> listaGrupos;
     private List<Producto> listaProductos;
+    private final ObservableList<Orden> listaOrdenes = FXCollections.observableArrayList();
     private boolean modoEdicion = false;
 
-    // Listas que alimentan los ComboBox
+    // ComboBox backing lists
     private final ObservableList<Salon> listaSalonesDisponibles = FXCollections.observableArrayList();
-    private final ObservableList<Mesa> listaMesasDisponibles = FXCollections.observableArrayList();
-// =======================================
-// 🔸 Instancia global de Gson configurada
-// =======================================
-private final Gson gson = new GsonBuilder()
-        .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>)
-                (je, ttype, ctx) -> LocalDate.parse(je.getAsString()))
-        .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>)
-                (je, ttype, ctx) -> {
-                    String s = je.getAsString();
-                    try {
-                        return LocalDateTime.parse(s, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                    } catch (Exception e) {
+    private final ObservableList<Mesa> listaMesasDisponibles   = FXCollections.observableArrayList();
+
+    // Gson config
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>)
+                    (je, ttype, ctx) -> LocalDate.parse(je.getAsString()))
+            .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>)
+                    (je, ttype, ctx) -> {
+                        String s = je.getAsString();
                         try {
-                            return LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
-                        } catch (Exception e2) {
-                            throw new RuntimeException("Fecha inválida: " + s, e2);
+                            return LocalDateTime.parse(s, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                        } catch (Exception e) {
+                            try {
+                                return LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+                            } catch (Exception e2) {
+                                throw new RuntimeException("Fecha inválida: " + s, e2);
+                            }
                         }
-                    }
-                })
-        .create();
-    // Tipo de orden actual (Mesa o Barra)
+                    })
+            .create();
+
     private enum TipoOrden { MESA, BARRA }
     private TipoOrden tipoOrdenActual = TipoOrden.MESA;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Recuperar lo que dejó la vista anterior (VistaSalones, etc.)
-        mesaSeleccionada = (Mesa) AppContext.getInstance().get("mesaSeleccionada");
+        mesaSeleccionada  = (Mesa)  AppContext.getInstance().get("mesaSeleccionada");
         salonSeleccionado = (Salon) AppContext.getInstance().get("salonSeleccionado");
 
-        // Si no viene mesa => asumimos barra
         tipoOrdenActual = (mesaSeleccionada == null) ? TipoOrden.BARRA : TipoOrden.MESA;
 
-        configurarAutocompleteCliente();
         configurarTabla();
         configurarCombosProductos();
         configurarCabeceraTipoOrden();
-        
 
-        // 1. Cargar salones desde el backend
         cargarSalones();
-
-        // 2. Seleccionar salón / mesa inicial según lo que venía del contexto
         inicializarSeleccionMesa();
-
-        // 3. Llenar panel izquierdo (productos)
         cargarGrupos();
         cargarProductos();
-
-        // 4. Si la mesa está ocupada, cargar la orden existente, si no crear una nueva
         cargarOrdenExistente();
 
-        // (No forzamos comprador aquí; se elegirá por búsqueda al guardar)
-
-        // 5. Refrescar labels
         actualizarCabeceraVisual();
         actualizarInfoOrden();
         actualizarTextos();
+
         cargarListaOrdenes();
-        // Búsqueda dinámica de productos
+
         txtBuscarProducto.textProperty().addListener((obs, old, val) -> filtrarProductos(val));
     }
 
-    // ==================== CONFIG TABLA DETALLES ====================
+    // ==================== TABLA DETALLES ====================
 
     private void configurarTabla() {
         colProducto.setCellValueFactory(data ->
-            new SimpleStringProperty(
-                data.getValue().getProducto() != null
-                    ? data.getValue().getProducto().getNombre()
-                    : ""
-            )
+                new SimpleStringProperty(
+                        data.getValue().getProducto() != null
+                                ? data.getValue().getProducto().getNombre()
+                                : ""
+                )
         );
 
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
 
         colPrecio.setCellValueFactory(data ->
-            new SimpleStringProperty(
-                String.format("₡%.2f", data.getValue().getPrecioUnitario())
-            )
+                new SimpleStringProperty(
+                        String.format("₡%.2f", data.getValue().getPrecioUnitario())
+                )
         );
 
         colSubtotal.setCellValueFactory(data ->
-            new SimpleStringProperty(
-                String.format("₡%.2f", data.getValue().getSubtotal())
-            )
+                new SimpleStringProperty(
+                        String.format("₡%.2f", data.getValue().getSubtotal())
+                )
         );
 
         detallesOrden = FXCollections.observableArrayList();
         tblDetalles.setItems(detallesOrden);
 
-        // Doble clic para editar cantidad
         tblDetalles.setOnMouseClicked(e -> {
             if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
                 DetalleOrden detalle = tblDetalles.getSelectionModel().getSelectedItem();
@@ -193,14 +178,10 @@ private final Gson gson = new GsonBuilder()
                 }
             }
         });
-        
-        
-        
 
-        // Menú contextual (clic derecho)
         ContextMenu contextMenu = new ContextMenu();
-        MenuItem itemEditar = new MenuItem(I18n.isSpanish() ? "✏️ Editar cantidad" : "✏️ Edit quantity");
-        MenuItem itemEliminar = new MenuItem(I18n.isSpanish() ? "🗑️ Eliminar" : "🗑️ Delete");
+        MenuItem itemEditar   = new MenuItem(I18n.isSpanish() ? "✏️ Editar cantidad" : "✏️ Edit quantity");
+        MenuItem itemEliminar = new MenuItem(I18n.isSpanish() ? "🗑️ Eliminar"        : "🗑️ Delete");
 
         itemEditar.setOnAction(e -> {
             DetalleOrden d = tblDetalles.getSelectionModel().getSelectedItem();
@@ -216,7 +197,7 @@ private final Gson gson = new GsonBuilder()
         tblDetalles.setContextMenu(contextMenu);
     }
 
-    // ==================== CONFIG COMBO DE GRUPOS ====================
+    // ==================== GRUPOS / PRODUCTOS ====================
 
     private void configurarCombosProductos() {
         cmbGrupos.setConverter(new javafx.util.StringConverter<GrupoProducto>() {
@@ -231,34 +212,26 @@ private final Gson gson = new GsonBuilder()
         });
 
         cmbGrupos.getSelectionModel().selectedItemProperty().addListener(
-            (obs, old, grupo) -> {
-                if (grupo != null) {
-                    filtrarProductosPorGrupo(grupo);
-                } else {
-                    mostrarProductos(listaProductos);
+                (obs, old, grupo) -> {
+                    if (grupo != null) {
+                        filtrarProductosPorGrupo(grupo);
+                    } else {
+                        mostrarProductos(listaProductos);
+                    }
                 }
-            }
         );
     }
 
-    // ==================== CONFIG CABECERA MESA / BARRA ====================
+    // ==================== CABECERA MESA / BARRA ====================
 
-    /**
-     * Configura los toggles Mesa/Barra y los ComboBox de salón y mesa.
-     * Aquí seteamos converters, celdas y listeners.
-     */
     private void configurarCabeceraTipoOrden() {
-        // Estado inicial visual de los toggles
         tgMesa.setSelected(tipoOrdenActual == TipoOrden.MESA);
         tgBarra.setSelected(tipoOrdenActual == TipoOrden.BARRA);
 
-        // Cambiar tipo de orden cuando se presionan
         tgMesa.setOnAction(e -> setTipoOrden(TipoOrden.MESA));
         tgBarra.setOnAction(e -> setTipoOrden(TipoOrden.BARRA));
 
-        // ====== Salón ======
         cmbSalonSelect.setItems(listaSalonesDisponibles);
-
         cmbSalonSelect.setConverter(new javafx.util.StringConverter<Salon>() {
             @Override
             public String toString(Salon salon) {
@@ -286,16 +259,13 @@ private final Gson gson = new GsonBuilder()
             }
         });
 
-        // Cuando el usuario selecciona un salón
         cmbSalonSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevoSalon) -> {
             salonSeleccionado = nuevoSalon;
-            cargarMesasDeSalon(nuevoSalon != null ? nuevoSalon.getId() : null); // <-- carga mesas reales del backend
+            cargarMesasDeSalon(nuevoSalon != null ? nuevoSalon.getId() : null);
             actualizarCabeceraVisual();
         });
 
-        // ====== Mesa ======
         cmbMesaSelect.setItems(listaMesasDisponibles);
-
         cmbMesaSelect.setConverter(new javafx.util.StringConverter<Mesa>() {
             @Override
             public String toString(Mesa mesa) {
@@ -323,17 +293,15 @@ private final Gson gson = new GsonBuilder()
             }
         });
 
-        // Cuando el usuario elige una mesa específica
         cmbMesaSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevaMesa) -> {
             mesaSeleccionada = nuevaMesa;
             actualizarCabeceraVisual();
         });
 
-        // Aplicar habilitado inicial (Mesa vs Barra)
         aplicarHabilitadoMesa();
     }
 
-    // ==================== CARGA DE SALONES Y MESAS ====================
+    // ==================== SALONES / MESAS ====================
 
     private void cargarSalones() {
         try {
@@ -470,7 +438,7 @@ private final Gson gson = new GsonBuilder()
         aplicarHabilitadoMesa();
     }
 
-    // ==================== CARGA GRUPOS / PRODUCTOS / ORDEN ====================
+    // ==================== GRUPOS / PRODUCTOS / ORDEN ====================
 
     private void cargarGrupos() {
         try {
@@ -483,7 +451,7 @@ private final Gson gson = new GsonBuilder()
                 listaGrupos = gson.fromJson(dataJson, new TypeToken<List<GrupoProducto>>(){}.getType());
 
                 cmbGrupos.getItems().clear();
-                cmbGrupos.getItems().add(null); // Opción "Todos"
+                cmbGrupos.getItems().add(null);
                 cmbGrupos.getItems().addAll(listaGrupos);
             }
         } catch (Exception e) {
@@ -527,6 +495,12 @@ private final Gson gson = new GsonBuilder()
         if (mesaSeleccionada == null || !mesaSeleccionada.isOcupada()) {
             ordenActual = new Orden();
             ordenActual.setMesaId(mesaSeleccionada != null ? mesaSeleccionada.getId() : null);
+
+            Usuario logged = AppContext.getInstance().getUsuarioLogueado();
+            if (logged != null && logged.getId() != null) {
+                ordenActual.setUsuarioId(logged.getId());
+            }
+
             modoEdicion = false;
             lblEstadoOrden.setText(I18n.isSpanish() ? "Nueva" : "New");
             return;
@@ -547,12 +521,24 @@ private final Gson gson = new GsonBuilder()
             } else {
                 ordenActual = new Orden();
                 ordenActual.setMesaId(mesaSeleccionada.getId());
+
+                Usuario logged = AppContext.getInstance().getUsuarioLogueado();
+                if (logged != null && logged.getId() != null) {
+                    ordenActual.setUsuarioId(logged.getId());
+                }
+
                 modoEdicion = false;
                 lblEstadoOrden.setText(I18n.isSpanish() ? "Nueva" : "New");
             }
         } catch (Exception e) {
             ordenActual = new Orden();
             ordenActual.setMesaId(mesaSeleccionada.getId());
+
+            Usuario logged = AppContext.getInstance().getUsuarioLogueado();
+            if (logged != null && logged.getId() != null) {
+                ordenActual.setUsuarioId(logged.getId());
+            }
+
             modoEdicion = false;
             lblEstadoOrden.setText(I18n.isSpanish() ? "Nueva" : "New");
         }
@@ -584,14 +570,14 @@ private final Gson gson = new GsonBuilder()
         }
     }
 
-    // ==================== PINTAR PRODUCTOS ====================
+    // ==================== PRODUCTOS ====================
 
     private void mostrarProductos(List<Producto> productos) {
         flowProductos.getChildren().clear();
 
         if (productos == null || productos.isEmpty()) {
             Label lblVacio = new Label(
-                I18n.isSpanish() ? "No hay productos disponibles" : "No products available"
+                    I18n.isSpanish() ? "No hay productos disponibles" : "No products available"
             );
             lblVacio.setStyle("-fx-text-fill: #999; -fx-font-size: 14px;");
             flowProductos.getChildren().add(lblVacio);
@@ -608,9 +594,9 @@ private final Gson gson = new GsonBuilder()
         card.setAlignment(Pos.CENTER);
         card.setPrefSize(120, 100);
         card.setStyle(
-            "-fx-background-color: white; -fx-background-radius: 10;" +
-            "-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 10;" +
-            "-fx-padding: 10; -fx-cursor: hand;"
+                "-fx-background-color: white; -fx-background-radius: 10;" +
+                        "-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 10;" +
+                        "-fx-padding: 10; -fx-cursor: hand;"
         );
 
         Label lblNombre = new Label(producto.getNombreDisplay());
@@ -626,18 +612,18 @@ private final Gson gson = new GsonBuilder()
 
         card.setOnMouseEntered(e -> {
             card.setStyle(
-                "-fx-background-color: #FFF8F0; -fx-background-radius: 10;" +
-                "-fx-border-color: #FF7A00; -fx-border-width: 2; -fx-border-radius: 10;" +
-                "-fx-padding: 10; -fx-cursor: hand;" +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
+                    "-fx-background-color: #FFF8F0; -fx-background-radius: 10;" +
+                            "-fx-border-color: #FF7A00; -fx-border-width: 2; -fx-border-radius: 10;" +
+                            "-fx-padding: 10; -fx-cursor: hand;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"
             );
         });
 
         card.setOnMouseExited(e -> {
             card.setStyle(
-                "-fx-background-color: white; -fx-background-radius: 10;" +
-                "-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 10;" +
-                "-fx-padding: 10; -fx-cursor: hand;"
+                    "-fx-background-color: white; -fx-background-radius: 10;" +
+                            "-fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 10;" +
+                            "-fx-padding: 10; -fx-cursor: hand;"
             );
         });
 
@@ -666,7 +652,7 @@ private final Gson gson = new GsonBuilder()
 
         for (Producto p : listaProductos) {
             if ((p.getNombre() != null && p.getNombre().toLowerCase().contains(filtro)) ||
-                (p.getNombreCorto() != null && p.getNombreCorto().toLowerCase().contains(filtro))) {
+                    (p.getNombreCorto() != null && p.getNombreCorto().toLowerCase().contains(filtro))) {
                 filtrados.add(p);
             }
         }
@@ -696,7 +682,7 @@ private final Gson gson = new GsonBuilder()
     private void agregarProducto(Producto producto) {
         for (DetalleOrden detalle : detallesOrden) {
             if (detalle.getProducto() != null &&
-                detalle.getProducto().getId().equals(producto.getId())) {
+                    detalle.getProducto().getId().equals(producto.getId())) {
 
                 detalle.setCantidad(detalle.getCantidad() + 1);
                 detalle.calcularSubtotal();
@@ -734,23 +720,23 @@ private final Gson gson = new GsonBuilder()
                     calcularTotal();
                 } else {
                     Mensaje.showWarning("Error", I18n.isSpanish()
-                        ? "La cantidad debe ser mayor a 0"
-                        : "Quantity must be greater than 0");
+                            ? "La cantidad debe ser mayor a 0"
+                            : "Quantity must be greater than 0");
                 }
             } catch (NumberFormatException ex) {
                 Mensaje.showWarning("Error", I18n.isSpanish()
-                    ? "Cantidad inválida"
-                    : "Invalid quantity");
+                        ? "Cantidad inválida"
+                        : "Invalid quantity");
             }
         });
     }
 
     private void eliminarDetalle(DetalleOrden detalle) {
         boolean confirmar = Mensaje.showConfirmation(
-            I18n.isSpanish() ? "Confirmar" : "Confirm",
-            I18n.isSpanish()
-                ? "¿Eliminar " + detalle.getProducto().getNombre() + "?"
-                : "Delete " + detalle.getProducto().getNombre() + "?"
+                I18n.isSpanish() ? "Confirmar" : "Confirm",
+                I18n.isSpanish()
+                        ? "¿Eliminar " + detalle.getProducto().getNombre() + "?"
+                        : "Delete " + detalle.getProducto().getNombre() + "?"
         );
 
         if (confirmar) {
@@ -767,232 +753,83 @@ private final Gson gson = new GsonBuilder()
         lblTotal.setText(String.format("₡%.2f", total));
     }
 
-    // ==================== EVENTOS DE BOTONES MAIN ====================
+    // ==================== BOTONES MAIN ====================
 
     @FXML
     private void onVolver(ActionEvent event) {
         if (!detallesOrden.isEmpty()) {
             boolean confirmar = Mensaje.showConfirmation(
-                I18n.isSpanish() ? "Confirmar" : "Confirm",
-                I18n.isSpanish()
-                    ? "¿Salir sin guardar? Se perderán los cambios."
-                    : "Exit without saving? Changes will be lost."
+                    I18n.isSpanish() ? "Confirmar" : "Confirm",
+                    I18n.isSpanish()
+                            ? "¿Salir sin guardar? Se perderán los cambios."
+                            : "Exit without saving? Changes will be lost."
             );
             if (!confirmar) return;
         }
 
         FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Salonero", 1000, 560);
     }
-    
-    private Long obtenerClienteSeleccionadoId() {
-    Cliente seleccionado = cmbCliente.getValue();
-    if (seleccionado != null && seleccionado.getId() != null) return seleccionado.getId();
-
-    // Si no hay selección pero hay texto, intentamos resolver único
-    String term = cmbCliente.getEditor() != null ? cmbCliente.getEditor().getText().trim() : "";
-    if (term.isEmpty()) return null;
-
-    try {
-        String q = java.net.URLEncoder.encode(term, java.nio.charset.StandardCharsets.UTF_8);
-        String json = RestClient.get("/clientes/buscar?q=" + q);
-        Map<String, Object> resp = RestClient.parseResponse(json);
-        if (!Boolean.TRUE.equals(resp.get("success"))) return null;
-
-        String dataJson = gson.toJson(resp.get("data"));
-        java.util.List<Cliente> candidatos = gson.fromJson(
-                dataJson, new com.google.gson.reflect.TypeToken<java.util.List<Cliente>>(){}.getType());
-
-        if (candidatos == null || candidatos.isEmpty()) return null;
-
-        if (candidatos.size() == 1) {
-            cmbCliente.setValue(candidatos.get(0));
-            return candidatos.get(0).getId();
-        }
-
-        // Si hay varios: exigir selección explícita
-        Mensaje.showWarning("Aviso", I18n.isSpanish()
-                ? "Hay varias coincidencias. Seleccione el cliente del listado."
-                : "Multiple matches. Please select the client from the list.");
-        cmbCliente.show();
-        return null;
-    } catch (Exception e) {
-        e.printStackTrace();
-        return null;
-    }
-}
-    
-    
-    private javafx.animation.PauseTransition clienteDebounce;
-private final ObservableList<Cliente> sugerenciasClientes = FXCollections.observableArrayList();
-
-private void configurarAutocompleteCliente() {
-    // Converter PRIMERO (evita ClassCastException al commitValue con String)
-    cmbCliente.setConverter(new StringConverter<Cliente>() {
-        @Override
-        public String toString(Cliente c) {
-            if (c == null) return "";
-            String nom = c.getNombre() == null ? "" : c.getNombre();
-            String cor = c.getCorreo() == null ? "" : c.getCorreo();
-            String tel = c.getTelefono() == null ? "" : c.getTelefono();
-            return nom + "  |  " + cor + "  |  " + tel + "  (ID: " + c.getId() + ")";
-        }
-
-        @Override
-        public Cliente fromString(String string) {
-            return cmbCliente.getItems().stream()
-                    .filter(c -> toString(c).equals(string))
-                    .findFirst()
-                    .orElse(null);
-        }
-    });
-
-    cmbCliente.setEditable(true);
-    cmbCliente.setItems(sugerenciasClientes);
-
-    // Celdas de lista
-    cmbCliente.setCellFactory(listView -> new ListCell<Cliente>() {
-        @Override
-        protected void updateItem(Cliente item, boolean empty) {
-            super.updateItem(item, empty);
-            setText(empty || item == null ? null : cmbCliente.getConverter().toString(item));
-        }
-    });
-
-    // Botón/caja
-    cmbCliente.setButtonCell(new ListCell<Cliente>() {
-        @Override
-        protected void updateItem(Cliente item, boolean empty) {
-            super.updateItem(item, empty);
-            setText(empty || item == null ? null : cmbCliente.getConverter().toString(item));
-        }
-    });
-
-    // Debounce de búsqueda
-    clienteDebounce = new javafx.animation.PauseTransition(javafx.util.Duration.millis(220));
-    clienteDebounce.setOnFinished(e -> {
-        String t = cmbCliente.getEditor().getText();
-        // 🔹 Evita recargar si el texto coincide con el seleccionado
-        if (cmbCliente.getValue() != null &&
-            t.equals(cmbCliente.getConverter().toString(cmbCliente.getValue()))) {
-            return;
-        }
-        buscarClientes(t);
-    });
-
-    // Disparar debounce al teclear
-    cmbCliente.getEditor().textProperty().addListener((obs, ov, nv) -> {
-        clienteDebounce.playFromStart();
-    });
-
-    // Mantener visible la selección textual
-    cmbCliente.valueProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal != null) {
-            cmbCliente.getEditor().setText(cmbCliente.getConverter().toString(newVal));
-        }
-    });
-}
-    
-    private void buscarClientes(String termino) {
-    try {
-        String t = termino == null ? "" : termino.trim();
-        if (t.isEmpty()) {
-            sugerenciasClientes.clear();
-            cmbCliente.hide();
-            return;
-        }
-        String enc = java.net.URLEncoder.encode(t, java.nio.charset.StandardCharsets.UTF_8);
-
-        // Solo q= para backend flexible (evita "Nombre requerido")
-        String json = RestClient.get("/clientes/buscar?q=" + enc);
-        Map<String, Object> resp = RestClient.parseResponse(json);
-        if (!Boolean.TRUE.equals(resp.get("success"))) {
-            sugerenciasClientes.clear();
-            cmbCliente.hide();
-            return;
-        }
-
-        // Gson con adaptadores java.time ya configurado en el controller (campo 'gson')
-        String dataJson = gson.toJson(resp.get("data"));
-        java.util.List<Cliente> candidatos = gson.fromJson(
-                dataJson, new com.google.gson.reflect.TypeToken<java.util.List<Cliente>>(){}.getType());
-
-        sugerenciasClientes.setAll(candidatos == null ? java.util.Collections.emptyList() : candidatos);
-
-        if (!sugerenciasClientes.isEmpty() && cmbCliente.isFocused()) {
-            cmbCliente.show();
-        } else {
-            cmbCliente.hide();
-        }
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        sugerenciasClientes.clear();
-        cmbCliente.hide();
-    }
-}
 
     @FXML
-private void onGuardar(ActionEvent event) {
-    if (detallesOrden.isEmpty()) {
-        Mensaje.showWarning("Aviso", I18n.isSpanish()
-            ? "Debe agregar al menos un producto"
-            : "Must add at least one product");
-        return;
-    }
-
-    // Validación según tipo de orden
-    if (tipoOrdenActual == TipoOrden.MESA) {
-        if (salonSeleccionado == null || mesaSeleccionada == null) {
+    private void onGuardar(ActionEvent event) {
+        if (detallesOrden.isEmpty()) {
             Mensaje.showWarning("Aviso", I18n.isSpanish()
-                ? "Debe seleccionar salón y mesa."
-                : "You must select room and table.");
-            return;
-        }
-        ordenActual.setMesaId(mesaSeleccionada.getId());
-    } else {
-        ordenActual.setMesaId(null);
-    }
-
-    try {
-        // === Obtener ID de cliente desde el autocompletado ===
-        Long compradorId = obtenerClienteSeleccionadoId();
-        if (compradorId == null) {
-            Mensaje.showWarning("Aviso", I18n.isSpanish()
-                    ? "Debe seleccionar un cliente."
-                    : "You must select a client.");
+                    ? "Debe agregar al menos un producto"
+                    : "Must add at least one product");
             return;
         }
 
-        ordenActual.setUsuarioId(compradorId);
-        ordenActual.setObservaciones(txtObservaciones.getText());
-        ordenActual.setDetalles(new ArrayList<>(detallesOrden));
-
-        String jsonResponse;
-        if (modoEdicion && ordenActual.getId() != null) {
-            jsonResponse = RestClient.put("/ordenes/" + ordenActual.getId(), ordenActual);
+        if (tipoOrdenActual == TipoOrden.MESA) {
+            if (salonSeleccionado == null || mesaSeleccionada == null) {
+                Mensaje.showWarning("Aviso", I18n.isSpanish()
+                        ? "Debe seleccionar salón y mesa."
+                        : "You must select room and table.");
+                return;
+            }
+            ordenActual.setMesaId(mesaSeleccionada.getId());
         } else {
-            jsonResponse = RestClient.post("/ordenes", ordenActual);
+            ordenActual.setMesaId(null);
         }
 
-        Map<String, Object> response = RestClient.parseResponse(jsonResponse);
-
-        if (Boolean.TRUE.equals(response.get("success"))) {
-            Mensaje.showSuccess("Éxito", I18n.isSpanish()
-                ? "Orden guardada correctamente"
-                : "Order saved successfully");
-
-            if (!modoEdicion && tipoOrdenActual == TipoOrden.MESA && mesaSeleccionada != null) {
-                RestClient.post("/salones/mesas/" + mesaSeleccionada.getId() + "/ocupar", null);
+        try {
+            Usuario logged = AppContext.getInstance().getUsuarioLogueado();
+            if (logged == null || logged.getId() == null) {
+                Mensaje.showError("Error", "No hay usuario logueado.");
+                return;
             }
 
-            FlowController.getInstance().goToView("VistaSalones", "RestUNA - Salones", 1400, 800);
-        } else {
-            Mensaje.showError("Error", response.get("message").toString());
+            ordenActual.setUsuarioId(logged.getId());
+            ordenActual.setObservaciones(txtObservaciones.getText());
+            ordenActual.setDetalles(new ArrayList<>(detallesOrden));
+
+            String jsonResponse;
+            if (modoEdicion && ordenActual.getId() != null) {
+                jsonResponse = RestClient.put("/ordenes/" + ordenActual.getId(), ordenActual);
+            } else {
+                jsonResponse = RestClient.post("/ordenes", ordenActual);
+            }
+
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (Boolean.TRUE.equals(response.get("success"))) {
+                Mensaje.showSuccess("Éxito", I18n.isSpanish()
+                        ? "Orden guardada correctamente"
+                        : "Order saved successfully");
+
+                if (!modoEdicion && tipoOrdenActual == TipoOrden.MESA && mesaSeleccionada != null) {
+                    try { RestClient.post("/salones/mesas/" + mesaSeleccionada.getId() + "/ocupar", null); } catch (Exception ignore) {}
+                    try { RestClient.post("/mesas/" + mesaSeleccionada.getId() + "/ocupar", null); }       catch (Exception ignore) {}
+                }
+
+                FlowController.getInstance().goToView("VistaSalones", "RestUNA - Salones", 1400, 800);
+            } else {
+                Mensaje.showError("Error", response.get("message").toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error", "Error al guardar orden:\n" + e.getMessage());
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-        Mensaje.showError("Error", "Error al guardar orden:\n" + e.getMessage());
     }
-}
 
     @FXML
     private void onCancelarOrden(ActionEvent event) {
@@ -1002,10 +839,10 @@ private void onGuardar(ActionEvent event) {
         }
 
         boolean confirmar = Mensaje.showConfirmation(
-            I18n.isSpanish() ? "Confirmar Cancelación" : "Confirm Cancellation",
-            I18n.isSpanish()
-                ? "¿Está seguro de cancelar esta orden?\nEsta acción no se puede deshacer."
-                : "Are you sure you want to cancel this order?\nThis action cannot be undone."
+                I18n.isSpanish() ? "Confirmar Cancelación" : "Confirm Cancellation",
+                I18n.isSpanish()
+                        ? "¿Está seguro de cancelar esta orden?\nEsta acción no se puede deshacer."
+                        : "Are you sure you want to cancel this order?\nThis action cannot be undone."
         );
 
         if (!confirmar) return;
@@ -1016,11 +853,12 @@ private void onGuardar(ActionEvent event) {
 
             if (Boolean.TRUE.equals(response.get("success"))) {
                 Mensaje.showSuccess("Éxito", I18n.isSpanish()
-                    ? "Orden cancelada correctamente"
-                    : "Order cancelled successfully");
+                        ? "Orden cancelada correctamente"
+                        : "Order cancelled successfully");
 
                 if (mesaSeleccionada != null && tipoOrdenActual == TipoOrden.MESA) {
-                    RestClient.post("/salones/mesas/" + mesaSeleccionada.getId() + "/liberar", null);
+                    try { RestClient.post("/salones/mesas/" + mesaSeleccionada.getId() + "/liberar", null); } catch (Exception ignore) {}
+                    try { RestClient.post("/mesas/" + mesaSeleccionada.getId() + "/liberar", null); }       catch (Exception ignore) {}
                 }
 
                 FlowController.getInstance().goToView("VistaSalones", "RestUNA - Salones", 1400, 800);
@@ -1036,10 +874,10 @@ private void onGuardar(ActionEvent event) {
     @FXML
     private void onElegirMesa(ActionEvent event) {
         Mensaje.showInfo(
-            I18n.isSpanish() ? "Seleccionar mesa" : "Select table",
-            I18n.isSpanish()
-                ? "Aquí podrías abrir el mapa de mesas para elegir visualmente."
-                : "Here you could open the floor plan to pick a table visually."
+                I18n.isSpanish() ? "Seleccionar mesa" : "Select table",
+                I18n.isSpanish()
+                        ? "Aquí podrías abrir el mapa de mesas para elegir visualmente."
+                        : "Here you could open the floor plan to pick a table visually."
         );
     }
 
@@ -1061,13 +899,6 @@ private void onGuardar(ActionEvent event) {
         cmbSalonSelect.setDisable(!esMesa);
         cmbMesaSelect.setDisable(!esMesa);
         btnElegirMesa.setDisable(!esMesa);
-
-        if (!esMesa) {
-            salonSeleccionado = null;
-            mesaSeleccionada = null;
-            cmbSalonSelect.getSelectionModel().clearSelection();
-            cmbMesaSelect.getSelectionModel().clearSelection();
-        }
     }
 
     private void actualizarCabeceraVisual() {
@@ -1123,153 +954,125 @@ private void onGuardar(ActionEvent event) {
         btnElegirMesa.setText(esEspanol ? "🪑 Elegir Mesa" : "🪑 Pick Table");
 
         lblEstadoOrden.setText(
-            modoEdicion
-                ? (esEspanol ? "En curso" : "In progress")
-                : (esEspanol ? "Nueva"    : "New")
+                modoEdicion
+                        ? (esEspanol ? "En curso" : "In progress")
+                        : (esEspanol ? "Nueva"    : "New")
         );
     }
 
-    // ==================== CLIENTE: búsqueda y selección ====================
+    // ==================== PANEL DERECHO (ÓRDENES ACTIVAS) ====================
 
-    private Long resolverClientePorBusqueda(String termino) {
-    try {
-        String q = URLEncoder.encode(termino, StandardCharsets.UTF_8);
-        String json = RestClient.get("/clientes/buscar?q=" + q);
-        Map<String, Object> resp = RestClient.parseResponse(json);
-
-        if (!Boolean.TRUE.equals(resp.get("success"))) {
-            Mensaje.showWarning("Aviso", String.valueOf(resp.get("message")));
-            return null;
+    private String formatearUbicacion(Orden o) {
+        try {
+            if (o.getMesa() != null) {
+                Mesa m = o.getMesa();
+                String mesaTxt = (m.getIdentificador() != null && !m.getIdentificador().isBlank())
+                        ? m.getIdentificador()
+                        : (m.getId() != null ? String.valueOf(m.getId()) : "—");
+                String salonTxt = (m.getSalonId() != null)
+                        ? String.valueOf(m.getSalonId())
+                        : "—";
+                return "Salón " + salonTxt + " · Mesa " + mesaTxt;
+            }
+        } catch (Exception ignore) {
         }
 
-        Gson gson = new Gson();
-        String dataJson = gson.toJson(resp.get("data"));
-        List<Cliente> candidatos = gson.fromJson(dataJson, new TypeToken<List<Cliente>>(){}.getType());
-
-        if (candidatos == null || candidatos.isEmpty()) {
-            Mensaje.showWarning("Aviso", I18n.isSpanish()
-                    ? "No se encontraron clientes que coincidan con la búsqueda."
-                    : "No clients matched the search.");
-            return null;
+        if (o.getMesaId() != null) {
+            return "Mesa " + o.getMesaId();
         }
-
-        if (candidatos.size() == 1) {
-            return candidatos.get(0).getId();
-        }
-
-        // Varias coincidencias: mostrar como Strings y mapear a ID
-        List<String> opciones = new ArrayList<>();
-        Map<String, Long> mapaOpcionId = new LinkedHashMap<>();
-
-        for (Cliente c : candidatos) {
-            String nombre = c.getNombre() == null ? "" : c.getNombre();
-            String correo = c.getCorreo() == null ? "" : c.getCorreo();
-            String tel = c.getTelefono() == null ? "" : c.getTelefono();
-            String display = nombre + "  |  " + correo + "  |  " + tel + "  (ID: " + c.getId() + ")";
-            opciones.add(display);
-            mapaOpcionId.put(display, c.getId());
-        }
-
-        ChoiceDialog<String> dlg = new ChoiceDialog<>(opciones.get(0), opciones);
-        dlg.setTitle(I18n.isSpanish() ? "Seleccionar Cliente" : "Select Client");
-        dlg.setHeaderText(I18n.isSpanish()
-                ? "Se encontraron varios clientes. Seleccione uno:"
-                : "Multiple clients found. Please select one:");
-        dlg.setContentText(I18n.isSpanish() ? "Cliente:" : "Client:");
-
-        Optional<String> elegido = dlg.showAndWait();
-        if (elegido.isPresent()) {
-            return mapaOpcionId.get(elegido.get());
-        } else {
-            // Usuario canceló la selección
-            return null;
-        }
-
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        Mensaje.showError("Error", I18n.isSpanish()
-                ? "Error al buscar cliente:\n" + ex.getMessage()
-                : "Error searching client:\n" + ex.getMessage());
-        return null;
+        return "Barra";
     }
-}
-    
-    @FXML
-private ScrollPane scrollOrdenes;
-@FXML
-private VBox vboxOrdenes;
-private final ObservableList<Orden> listaOrdenes = FXCollections.observableArrayList();
 
-/**
- * Carga y lista visualmente las órdenes activas del backend en el panel lateral.
- */
-private void cargarListaOrdenes() {
-    try {
-        String jsonResponse = RestClient.get("/ordenes/activas");
-        Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+    private void cargarListaOrdenes() {
+        try {
+            String jsonResponse = RestClient.get("/ordenes/activas");
 
-        if (!Boolean.TRUE.equals(response.get("success"))) {
-            vboxOrdenes.getChildren().setAll(new Label("No hay órdenes activas."));
+            if (jsonResponse == null || jsonResponse.trim().startsWith("<")) {
+                vboxOrdenes.getChildren().setAll(new Label("No hay órdenes activas."));
+                return;
+            }
+
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (!Boolean.TRUE.equals(response.get("success"))) {
+                vboxOrdenes.getChildren().setAll(new Label("No hay órdenes activas."));
+                return;
+            }
+
+            String dataJson = gson.toJson(response.get("data"));
+            List<Orden> ordenes = gson.fromJson(dataJson, new TypeToken<List<Orden>>() {}.getType());
+            if (ordenes == null) ordenes = Collections.emptyList();
+
+            ordenes.sort((a, b) -> {
+                LocalDateTime ta = a.getFechaHora();
+                LocalDateTime tb = b.getFechaHora();
+                if (ta != null && tb != null) {
+                    return tb.compareTo(ta);
+                }
+                if (a.getId() != null && b.getId() != null) {
+                    return Long.compare(b.getId(), a.getId());
+                }
+                return 0;
+            });
+
+            listaOrdenes.setAll(ordenes);
+            mostrarOrdenesEnLista();
+        } catch (Exception e) {
+            e.printStackTrace();
+            vboxOrdenes.getChildren().setAll(new Label("Error al cargar órdenes."));
+        }
+    }
+
+    private void mostrarOrdenesEnLista() {
+        vboxOrdenes.getChildren().clear();
+
+        if (listaOrdenes.isEmpty()) {
+            Label lblVacio = new Label("No hay órdenes activas");
+            lblVacio.setStyle("-fx-text-fill: #999; -fx-font-size: 13px;");
+            vboxOrdenes.getChildren().add(lblVacio);
             return;
         }
 
-        String dataJson = gson.toJson(response.get("data"));
-        List<Orden> ordenes = gson.fromJson(dataJson, new TypeToken<List<Orden>>() {}.getType());
-        listaOrdenes.setAll(ordenes == null ? Collections.emptyList() : ordenes);
-        mostrarOrdenesEnLista();
-    } catch (Exception e) {
-        e.printStackTrace();
-        vboxOrdenes.getChildren().setAll(new Label("Error al cargar órdenes."));
-    }
-}
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM HH:mm");
 
-/**
- * Renderiza visualmente cada orden como una tarjeta dentro del VBox con scroll.
- */
-private void mostrarOrdenesEnLista() {
-    vboxOrdenes.getChildren().clear();
-
-    if (listaOrdenes.isEmpty()) {
-        Label lblVacio = new Label("No hay órdenes activas");
-        lblVacio.setStyle("-fx-text-fill: #999; -fx-font-size: 13px;");
-        vboxOrdenes.getChildren().add(lblVacio);
-        return;
-    }
-
-    for (Orden o : listaOrdenes) {
-        VBox card = new VBox(4);
-        card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
+        for (Orden o : listaOrdenes) {
+            VBox card = new VBox(4);
+            card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
                     + "-fx-padding: 10; -fx-border-color: #FF7A00; "
                     + "-fx-border-radius: 8; -fx-cursor: hand;");
-        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #FFEBD2; -fx-background-radius: 8; "
+            card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #FFEBD2; -fx-background-radius: 8; "
                     + "-fx-padding: 10; -fx-border-color: #FF7A00; -fx-border-radius: 8; -fx-cursor: hand;"));
-        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
+            card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #FFF8F0; -fx-background-radius: 8; "
                     + "-fx-padding: 10; -fx-border-color: #FF7A00; -fx-border-radius: 8; -fx-cursor: hand;"));
 
-        Label lblMesa = new Label("🪑 " + (o.getMesaId() != null ? "Mesa " + o.getMesaId() : "Barra"));
-        lblMesa.setStyle("-fx-font-weight: bold; -fx-text-fill: #333;");
-        Label lblCliente = new Label("👤 Cliente: " + (o.getUsuarioNombre() != null ? o.getUsuarioNombre() : "—"));
-        Label lblEstado = new Label("📅 " + o.getEstado());
-        lblEstado.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+            Label lblUbicacion = new Label("🪑 " + formatearUbicacion(o));
+            lblUbicacion.setStyle("-fx-font-weight: bold; -fx-text-fill: #333;");
 
-        card.getChildren().addAll(lblMesa, lblCliente, lblEstado);
-        card.setOnMouseClicked(e -> abrirOrdenExistente(o));
-        vboxOrdenes.getChildren().add(card);
-    }
-}
+            String atendidoPor = (o.getUsuario() != null && o.getUsuario().getNombre() != null)
+                    ? o.getUsuario().getNombre()
+                    : (o.getUsuarioId() != null ? "ID " + o.getUsuarioId() : "—");
+            Label lblAtiende = new Label("👤 Atendido por: " + atendidoPor);
 
-/**
- * Abre una orden existente al hacer clic en la lista lateral.
- */
-private void abrirOrdenExistente(Orden orden) {
-    try {
-        this.ordenActual = orden;
-        this.modoEdicion = true;
-        cargarDetallesDeOrden();
-        lblEstadoOrden.setText("En curso");
-        Mensaje.showInfo("Orden", "Orden #" + orden.getId() + " cargada para continuar.");
-    } catch (Exception e) {
-        Mensaje.showError("Error", "No se pudo cargar la orden seleccionada.");
+            String fechaCorta = (o.getFechaHora() != null) ? o.getFechaHora().format(fmt) : "";
+            Label lblEstado = new Label("📅 " + (o.getEstado() != null ? o.getEstado() : "—")
+                    + (fechaCorta.isBlank() ? "" : " · " + fechaCorta));
+            lblEstado.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+
+            card.getChildren().addAll(lblUbicacion, lblAtiende, lblEstado);
+            card.setOnMouseClicked(e -> abrirOrdenExistente(o));
+            vboxOrdenes.getChildren().add(card);
+        }
     }
-}
+
+    private void abrirOrdenExistente(Orden orden) {
+        try {
+            this.ordenActual = orden;
+            this.modoEdicion = true;
+            cargarDetallesDeOrden();
+            lblEstadoOrden.setText("En curso");
+            Mensaje.showInfo("Orden", "Orden #" + orden.getId() + " cargada para continuar.");
+        } catch (Exception e) {
+            Mensaje.showError("Error", "No se pudo cargar la orden seleccionada.");
+        }
+    }
 }

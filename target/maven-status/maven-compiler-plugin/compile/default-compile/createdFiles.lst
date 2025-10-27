@@ -1,4 +1,3 @@
-cr\ac\una\restunaclient\controller\OrdenesController$14.class
 cr\ac\una\restunaclient\controller\OrdenesController$2.class
 cr\ac\una\restunaclient\util\LocalDateAdapter.class
 cr\ac\una\restunaclient\controller\ProductosController$6.class
@@ -13,7 +12,6 @@ cr\ac\una\restunaclient\controller\OrdenesController.class
 cr\ac\una\restunaclient\controller\VentanaVentasController.class
 cr\ac\una\restunaclient\model\Salon.class
 cr\ac\una\restunaclient\model\Factura.class
-cr\ac\una\restunaclient\controller\OrdenesController$18.class
 cr\ac\una\restunaclient\controller\OrdenesController$10.class
 cr\ac\una\restunaclient\controller\ProductosController$3.class
 cr\ac\una\restunaclient\model\Mesa.class
@@ -29,7 +27,6 @@ cr\ac\una\restunaclient\App.class
 cr\ac\una\restunaclient\controller\OrdenesController$11.class
 cr\ac\una\restunaclient\controller\ProductosController$2.class
 cr\ac\una\restunaclient\model\Parametros.class
-cr\ac\una\restunaclient\controller\OrdenesController$17.class
 cr\ac\una\restunaclient\util\AppContext.class
 cr\ac\una\restunaclient\controller\OrdenesController$3.class
 cr\ac\una\restunaclient\model\Cliente.class
@@ -39,7 +36,6 @@ cr\ac\una\restunaclient\controller\VentanaVentasController$1.class
 cr\ac\una\restunaclient\controller\SalonesController.class
 cr\ac\una\restunaclient\controller\OrdenesController$7.class
 cr\ac\una\restunaclient\controller\ProductosController$4.class
-cr\ac\una\restunaclient\controller\OrdenesController$16.class
 cr\ac\una\restunaclient\controller\ProductosController$1.class
 cr\ac\una\restunaclient\model\ByteArrayBase64Adapter.class
 cr\ac\una\restunaclient\controller\OrdenesController$12.class
@@ -48,7 +44,6 @@ module-info.class
 cr\ac\una\restunaclient\controller\OrdenesController$4.class
 cr\ac\una\restunaclient\controller\VistaSalonesController.class
 cr\ac\una\restunaclient\controller\UsuariosController.class
-cr\ac\una\restunaclient\controller\OrdenesController$15.class
 cr\ac\una\restunaclient\model\CierreCaja.class
 cr\ac\una\restunaclient\controller\OrdenesController$13.class
 cr\ac\una\restunaclient\controller\ClientesController$1.class
@@ -62,7 +57,6 @@ cr\ac\una\restunaclient\controller\MenuPrincipalController.class
 cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class
-cr\ac\una\restunaclient\controller\OrdenesController$19.class
 cr\ac\una\restunaclient\controller\OrdenesController$TipoOrden.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$ProductoVenta.class
 cr\ac\una\restunaclient\controller\UsuariosController$1.class

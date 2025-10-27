@@ -240,8 +240,7 @@ public class MenuPrincipalController implements Initializable {
 
     @FXML
     private void onOrdenes(MouseEvent event) {
-        // TODO: Gestión de órdenes
-        Mensaje.showInfo("Próximamente", "Módulo de Órdenes en desarrollo");
+        FlowController.getInstance().goToView("Ordenes", "RestUNA - Gestión de Órdenes", 1000, 560);
     }
 
     @FXML

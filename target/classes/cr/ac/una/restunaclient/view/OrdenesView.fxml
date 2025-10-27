@@ -8,13 +8,18 @@
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
             fx:controller="cr.ac.una.restunaclient.controller.OrdenesController"
             style="-fx-background-color: #F5F5F0;">
-    
+
     <!-- TOP: Header -->
     <top>
         <VBox spacing="10" style="-fx-background-color: white;">
             <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
+
+            <!-- 👇 Declaramos objetos no visuales como ToggleGroup aquí -->
+            <fx:define>
+                <ToggleGroup fx:id="tgTipoOrden"/>
+            </fx:define>
             
-            <!-- Primera fila: Título y botones -->
+            <!-- Fila 1: Título y botones -->
             <HBox alignment="CENTER_LEFT" spacing="15">
                 <Label fx:id="lblTitle" text="📝 Gestión de Orden">
                     <font><Font name="System Bold" size="22"/></font>
@@ -28,18 +33,65 @@
                     <font><Font size="13"/></font>
                 </Button>
             </HBox>
+
+            <!-- Fila 2: Tipo de orden y selección de mesa/salón -->
+            <HBox spacing="12" alignment="CENTER_LEFT">
+
+                <Label text="Tipo de Orden:" style="-fx-font-weight: bold;"/>
+
+                <ToggleButton fx:id="tgMesa"
+                              text="Mesa"
+                              toggleGroup="$tgTipoOrden"
+                              selected="true"
+                              style="-fx-background-radius: 8; -fx-cursor: hand;"/>
+
+                <ToggleButton fx:id="tgBarra"
+                              text="Barra"
+                              toggleGroup="$tgTipoOrden"
+                              style="-fx-background-radius: 8; -fx-cursor: hand;"/>
+
+                <Separator orientation="VERTICAL" prefHeight="20"/>
+
+                <Label text="Salón:"/>
+                <ComboBox fx:id="cmbSalonSelect"
+                          prefWidth="180"
+                          promptText="Seleccione"
+                          disable="false"/>
+
+                <Label text="Mesa:"/>
+                <ComboBox fx:id="cmbMesaSelect"
+                          prefWidth="120"
+                          promptText="Seleccione"
+                          disable="false"/>
+
+                <Button fx:id="btnElegirMesa"
+                        text="🪑 Elegir Mesa"
+                        onAction="#onElegirMesa"
+                        disable="false"
+                        style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;">
+                    <font><Font size="12"/></font>
+                </Button>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Label fx:id="lblEstadoOrden"
+                       text="Nueva"
+                       style="-fx-text-fill: #666;">
+                    <font><Font size="12"/></font>
+                </Label>
+            </HBox>
             
-            <!-- Segunda fila: Info de la orden -->
+            <!-- Fila 3: Info de la orden -->
             <HBox spacing="20" alignment="CENTER_LEFT">
-                <Label fx:id="lblMesaInfo" text="Mesa: 5" style="-fx-font-weight: bold; -fx-text-fill: #FF7A00;">
+                <Label fx:id="lblMesaInfo" text="Mesa: —" style="-fx-font-weight: bold; -fx-text-fill: #FF7A00;">
                     <font><Font size="14"/></font>
                 </Label>
                 <Separator orientation="VERTICAL" prefHeight="20"/>
-                <Label fx:id="lblSalonInfo" text="Salón: Principal" style="-fx-text-fill: #666;">
+                <Label fx:id="lblSalonInfo" text="Salón: —" style="-fx-text-fill: #666;">
                     <font><Font size="13"/></font>
                 </Label>
                 <Separator orientation="VERTICAL" prefHeight="20"/>
-                <Label fx:id="lblFechaHora" text="20/10/2025 14:30" style="-fx-text-fill: #666;">
+                <Label fx:id="lblFechaHora" text="--/--/---- --:--" style="-fx-text-fill: #666;">
                     <font><Font size="13"/></font>
                 </Label>
                 <Region HBox.hgrow="ALWAYS"/>

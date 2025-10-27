@@ -80,40 +80,41 @@ public class OrdenesController implements Initializable {
     private List<Producto> listaProductos;
     private boolean modoEdicion = false;
 
-    // Nuevas listas para combos
-    private ObservableList<Salon> listaSalonesDisponibles = FXCollections.observableArrayList();
-    private ObservableList<Mesa> listaMesasDisponibles = FXCollections.observableArrayList();
+    // Listas que alimentan los ComboBox
+    private final ObservableList<Salon> listaSalonesDisponibles = FXCollections.observableArrayList();
+    private final ObservableList<Mesa> listaMesasDisponibles = FXCollections.observableArrayList();
 
+    // Tipo de orden actual (Mesa o Barra)
     private enum TipoOrden { MESA, BARRA }
-    private TipoOrden tipoOrdenActual = TipoOrden.MESA; // default mesa
+    private TipoOrden tipoOrdenActual = TipoOrden.MESA;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Recuperar selección previa desde otra vista
+        // Recuperar lo que dejó la vista anterior (VistaSalones, etc.)
         mesaSeleccionada = (Mesa) AppContext.getInstance().get("mesaSeleccionada");
         salonSeleccionado = (Salon) AppContext.getInstance().get("salonSeleccionado");
 
-        // Si no viene mesa => asumimos que es orden de barra
+        // Si no viene mesa => asumimos barra
         tipoOrdenActual = (mesaSeleccionada == null) ? TipoOrden.BARRA : TipoOrden.MESA;
 
         configurarTabla();
         configurarCombosProductos();
         configurarCabeceraTipoOrden();
 
-        // 1. Traer salones (y mesas) del backend y poblar combos
-        cargarSalonesYMesas();
+        // 1. Cargar salones desde el backend
+        cargarSalones();
 
-        // 2. Ajustar selección inicial en combos según lo que venía del AppContext
+        // 2. Seleccionar salón / mesa inicial según lo que venía del contexto
         inicializarSeleccionMesa();
 
-        // 3. Traer datos para el panel izquierdo
+        // 3. Llenar panel izquierdo (productos)
         cargarGrupos();
         cargarProductos();
 
-        // 4. Ver si esa mesa ya tenía una orden abierta
+        // 4. Si la mesa está ocupada, cargar la orden existente, si no crear una nueva
         cargarOrdenExistente();
 
-        // Pintar labels, textos, etc.
+        // 5. Refrescar labels
         actualizarCabeceraVisual();
         actualizarInfoOrden();
         actualizarTextos();
@@ -160,7 +161,7 @@ public class OrdenesController implements Initializable {
             }
         });
 
-        // Menú contextual
+        // Menú contextual (clic derecho)
         ContextMenu contextMenu = new ContextMenu();
         MenuItem itemEditar = new MenuItem(I18n.isSpanish() ? "✏️ Editar cantidad" : "✏️ Edit quantity");
         MenuItem itemEliminar = new MenuItem(I18n.isSpanish() ? "🗑️ Eliminar" : "🗑️ Delete");
@@ -179,10 +180,9 @@ public class OrdenesController implements Initializable {
         tblDetalles.setContextMenu(contextMenu);
     }
 
-    // ==================== CONFIG COMBOS DE PRODUCTOS ====================
+    // ==================== CONFIG COMBO DE GRUPOS ====================
 
     private void configurarCombosProductos() {
-        // Combo de grupos de productos
         cmbGrupos.setConverter(new javafx.util.StringConverter<GrupoProducto>() {
             @Override
             public String toString(GrupoProducto grupo) {
@@ -199,7 +199,6 @@ public class OrdenesController implements Initializable {
                 if (grupo != null) {
                     filtrarProductosPorGrupo(grupo);
                 } else {
-                    // "Todos los grupos"
                     mostrarProductos(listaProductos);
                 }
             }
@@ -208,128 +207,109 @@ public class OrdenesController implements Initializable {
 
     // ==================== CONFIG CABECERA MESA / BARRA ====================
 
+    /**
+     * Configura los toggles Mesa/Barra y los ComboBox de salón y mesa.
+     * Aquí seteamos converters, celdas y listeners.
+     */
     private void configurarCabeceraTipoOrden() {
-    // Toggle inicial según tipo de orden
-    tgMesa.setSelected(tipoOrdenActual == TipoOrden.MESA);
-    tgBarra.setSelected(tipoOrdenActual == TipoOrden.BARRA);
+        // Estado inicial visual de los toggles
+        tgMesa.setSelected(tipoOrdenActual == TipoOrden.MESA);
+        tgBarra.setSelected(tipoOrdenActual == TipoOrden.BARRA);
 
-    // Listeners de los toggles
-    tgMesa.setOnAction(e -> setTipoOrden(TipoOrden.MESA));
-    tgBarra.setOnAction(e -> setTipoOrden(TipoOrden.BARRA));
+        // Cambiar tipo de orden cuando se presionan
+        tgMesa.setOnAction(e -> setTipoOrden(TipoOrden.MESA));
+        tgBarra.setOnAction(e -> setTipoOrden(TipoOrden.BARRA));
 
-    // ====== Combo de Salón ======
-    cmbSalonSelect.setItems(listaSalonesDisponibles);
+        // ====== Salón ======
+        cmbSalonSelect.setItems(listaSalonesDisponibles);
 
-    // Cómo se muestra el salón seleccionado (parte cerrada del combo)
-    cmbSalonSelect.setConverter(new javafx.util.StringConverter<Salon>() {
-        @Override
-        public String toString(Salon salon) {
-            return salon != null ? salon.getNombre() : "";
-        }
-        @Override
-        public Salon fromString(String string) { return null; }
-    });
-
-    // Cómo se muestran las opciones en el dropdown
-    cmbSalonSelect.setCellFactory(listView -> new ListCell<Salon>() {
-        @Override
-        protected void updateItem(Salon item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                setText(item.getNombre()); // ej: "Salón Principal"
+        cmbSalonSelect.setConverter(new javafx.util.StringConverter<Salon>() {
+            @Override
+            public String toString(Salon salon) {
+                return salon != null ? salon.getNombre() : "";
             }
-        }
-    });
-    // Botón visible cuando ya hay uno seleccionado
-    cmbSalonSelect.setButtonCell(new ListCell<Salon>() {
-        @Override
-        protected void updateItem(Salon item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                setText(item.getNombre());
+            @Override
+            public Salon fromString(String string) {
+                return null;
             }
-        }
-    });
+        });
 
-    // Cuando el usuario cambia de salón
-    cmbSalonSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevoSalon) -> {
-        salonSeleccionado = nuevoSalon;
-        actualizarMesasSegunSalon(); // <- recarga las mesas del salón
-        actualizarCabeceraVisual();
-    });
-
-    // ====== Combo de Mesa ======
-    cmbMesaSelect.setItems(listaMesasDisponibles);
-
-    // Cómo se muestra la mesa seleccionada (parte cerrada del combo)
-    cmbMesaSelect.setConverter(new javafx.util.StringConverter<Mesa>() {
-        @Override
-        public String toString(Mesa mesa) {
-            return mesa != null ? mesa.getIdentificador() : "";
-        }
-        @Override
-        public Mesa fromString(String string) { return null; }
-    });
-
-    // Cómo se muestran las opciones en el dropdown
-    cmbMesaSelect.setCellFactory(listView -> new ListCell<Mesa>() {
-        @Override
-        protected void updateItem(Mesa item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                // Acá decides qué quieres ver exactamente:
-                // solo el identificador, o algo como "M5 (ocupada)".
-                // Te lo dejo solo con el identificador como pediste.
-                setText(item.getIdentificador());
+        cmbSalonSelect.setCellFactory(listView -> new ListCell<Salon>() {
+            @Override
+            protected void updateItem(Salon item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getNombre());
             }
-        }
-    });
-    // Botón visible cuando ya hay una mesa seleccionada
-    cmbMesaSelect.setButtonCell(new ListCell<Mesa>() {
-        @Override
-        protected void updateItem(Mesa item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty || item == null) {
-                setText(null);
-            } else {
-                setText(item.getIdentificador());
+        });
+
+        cmbSalonSelect.setButtonCell(new ListCell<Salon>() {
+            @Override
+            protected void updateItem(Salon item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getNombre());
             }
-        }
-    });
+        });
 
-    // Cuando el usuario elige la mesa
-    cmbMesaSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevaMesa) -> {
-        mesaSeleccionada = nuevaMesa;
-        actualizarCabeceraVisual();
-    });
+        // Cuando el usuario selecciona un salón
+        cmbSalonSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevoSalon) -> {
+            salonSeleccionado = nuevoSalon;
+            cargarMesasDeSalon(nuevoSalon != null ? nuevoSalon.getId() : null); // <-- carga mesas reales del backend
+            actualizarCabeceraVisual();
+        });
 
-    // Aplica habilitado / deshabilitado según Mesa vs Barra
-    aplicarHabilitadoMesa();
-}
+        // ====== Mesa ======
+        cmbMesaSelect.setItems(listaMesasDisponibles);
+
+        cmbMesaSelect.setConverter(new javafx.util.StringConverter<Mesa>() {
+            @Override
+            public String toString(Mesa mesa) {
+                return mesa != null ? mesa.getIdentificador() : "";
+            }
+            @Override
+            public Mesa fromString(String string) {
+                return null;
+            }
+        });
+
+        cmbMesaSelect.setCellFactory(listView -> new ListCell<Mesa>() {
+            @Override
+            protected void updateItem(Mesa item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getIdentificador());
+            }
+        });
+
+        cmbMesaSelect.setButtonCell(new ListCell<Mesa>() {
+            @Override
+            protected void updateItem(Mesa item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getIdentificador());
+            }
+        });
+
+        // Cuando el usuario elige una mesa específica
+        cmbMesaSelect.getSelectionModel().selectedItemProperty().addListener((obs, old, nuevaMesa) -> {
+            mesaSeleccionada = nuevaMesa;
+            actualizarCabeceraVisual();
+        });
+
+        // Aplicar habilitado inicial (Mesa vs Barra)
+        aplicarHabilitadoMesa();
+    }
 
     // ==================== CARGA DE SALONES Y MESAS ====================
 
     /**
-     * Trae todos los salones del backend y llena cmbSalonSelect.
-     * También guardamos sus mesas para poder filtrarlas más tarde.
-     *
-     * Se asume que:
-     * - GET /salones devuelve un JSON con { success, data:[ {id,nombre,mesas:[...]} ] }
-     * - Cada mesa tiene id, identificador, ocupada, etc.
+     * Llama GET /salones.
+     * Este endpoint devuelve salones SIN las mesas ni la imagen.
+     * Vamos a mapearlos nosotros a objetos Salon del cliente.
      */
-    private void cargarSalonesYMesas() {
+    private void cargarSalones() {
         try {
             String jsonResponse = RestClient.get("/salones");
             Map<String, Object> response = RestClient.parseResponse(jsonResponse);
 
             if (!Boolean.TRUE.equals(response.get("success"))) {
-                // si vino error del backend, dejamos las listas vacías pero no rompemos la ventana
                 listaSalonesDisponibles.clear();
                 listaMesasDisponibles.clear();
                 return;
@@ -337,86 +317,157 @@ public class OrdenesController implements Initializable {
 
             Gson gson = new Gson();
             String dataJson = gson.toJson(response.get("data"));
-            List<Salon> salones = gson.fromJson(dataJson, new TypeToken<List<Salon>>(){}.getType());
 
-            // mostramos solo salones activos
+            // dataJson es una lista de Map<String,Object> con campos básicos del salón
+            List<Map<String,Object>> salonesRaw = gson.fromJson(
+                    dataJson,
+                    new TypeToken<List<Map<String,Object>>>(){}.getType()
+            );
+
+            List<Salon> salones = new ArrayList<>();
+            for (Map<String,Object> raw : salonesRaw) {
+                Salon s = new Salon();
+
+                // id
+                Object idObj = raw.get("id");
+                if (idObj instanceof Number) {
+                    s.setId(((Number) idObj).longValue());
+                }
+
+                s.setNombre(Objects.toString(raw.get("nombre"), ""));
+                s.setTipo(Objects.toString(raw.get("tipo"), ""));
+                s.setCobraServicio(Objects.toString(raw.get("cobraServicio"), "S"));
+                s.setEstado(Objects.toString(raw.get("estado"), "A"));
+
+                Object verObj = raw.get("version");
+                if (verObj instanceof Number) {
+                    s.setVersion(((Number) verObj).longValue());
+                }
+
+                // MUY IMPORTANTE: inicializamos lista de mesas vacía
+                s.setMesas(new ArrayList<>());
+
+                salones.add(s);
+            }
+
             listaSalonesDisponibles.setAll(salones);
 
         } catch (Exception e) {
             e.printStackTrace();
-            // si falla la llamada, sigue corriendo la ventana con lo que venía en AppContext
+            // si falla la llamada no matamos la ventana
         }
     }
 
     /**
-     * Llena cmbMesaSelect con las mesas del salón actualmente seleccionado.
-     * Si ya había una mesaSeleccionada que pertenece a ese salón, la vuelve a seleccionar.
-     * Si no, limpia selección.
+     * Dado un salón seleccionado, trae sus mesas con GET /salones/{id}/mesas
+     * y llena cmbMesaSelect usando sólo el identificador.
      */
-    private void actualizarMesasSegunSalon() {
+    private void cargarMesasDeSalon(Long salonId) {
         listaMesasDisponibles.clear();
-
-        if (salonSeleccionado != null && salonSeleccionado.getMesas() != null) {
-            // acá puedes decidir si quieres mostrar TODAS las mesas
-            // o solo las no ocupadas. Te doy la versión TODAS:
-            listaMesasDisponibles.addAll(salonSeleccionado.getMesas());
+        if (salonId == null) {
+            cmbMesaSelect.getSelectionModel().clearSelection();
+            mesaSeleccionada = null;
+            return;
         }
 
-        // si la mesa actual ya no pertenece al salón nuevo, la quitamos
-        if (mesaSeleccionada != null) {
-            boolean aunExiste = listaMesasDisponibles.stream()
-                    .anyMatch(m -> m.getId().equals(mesaSeleccionada.getId()));
-            if (aunExiste) {
-                cmbMesaSelect.getSelectionModel().select(mesaSeleccionada);
-            } else {
+        try {
+            String jsonResponse = RestClient.get("/salones/" + salonId + "/mesas");
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (!Boolean.TRUE.equals(response.get("success"))) {
+                cmbMesaSelect.getSelectionModel().clearSelection();
                 mesaSeleccionada = null;
+                return;
+            }
+
+            Gson gson = new Gson();
+            String dataJson = gson.toJson(response.get("data"));
+
+            // dataJson es lista de mesasDTO [{id, salonId, identificador, estado...}, ...]
+            List<Map<String,Object>> mesasRaw = gson.fromJson(
+                    dataJson,
+                    new TypeToken<List<Map<String,Object>>>(){}.getType()
+            );
+
+            List<Mesa> mesas = new ArrayList<>();
+            for (Map<String,Object> rawMesa : mesasRaw) {
+                Mesa m = new Mesa();
+
+                Object idObj = rawMesa.get("id");
+                if (idObj instanceof Number) {
+                    m.setId(((Number)idObj).longValue());
+                }
+
+                m.setIdentificador(Objects.toString(rawMesa.get("identificador"), ""));
+                m.setEstado(Objects.toString(rawMesa.get("estado"), "LIBRE"));
+
+                mesas.add(m);
+            }
+
+            listaMesasDisponibles.setAll(mesas);
+
+            // si ya había mesaSeleccionada en memoria, tratar de volver a marcarla
+            if (mesaSeleccionada != null) {
+                for (Mesa m : mesas) {
+                    if (m.getId().equals(mesaSeleccionada.getId())) {
+                        cmbMesaSelect.getSelectionModel().select(m);
+                        mesaSeleccionada = m;
+                        break;
+                    }
+                }
+            } else {
                 cmbMesaSelect.getSelectionModel().clearSelection();
             }
-        } else {
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            listaMesasDisponibles.clear();
             cmbMesaSelect.getSelectionModel().clearSelection();
+            mesaSeleccionada = null;
         }
     }
 
     /**
-     * Después de cargar salones desde backend y antes de mostrar la ventana
-     * ajustamos "qué está seleccionado" en los combos si veníamos de VistaSalones.
+     * Luego de cargar salones desde el servidor, intentamos:
+     * 1. Seleccionar el salón que venía en AppContext.
+     * 2. Cargar las mesas de ese salón.
+     * 3. Seleccionar la mesa que venía en AppContext (si aplica).
      */
     private void inicializarSeleccionMesa() {
-        // 1. Seleccionar el salón que venía del contexto, si existe
-        if (salonSeleccionado != null) {
-            // buscar ese salón en listaSalonesDisponibles
+        // Seleccionar el salón que venía del contexto
+        if (salonSeleccionado != null && salonSeleccionado.getId() != null) {
             for (Salon s : listaSalonesDisponibles) {
                 if (s.getId().equals(salonSeleccionado.getId())) {
                     cmbSalonSelect.getSelectionModel().select(s);
-                    salonSeleccionado = s; // usa la misma instancia que está en la lista
+                    salonSeleccionado = s; // reusar la instancia cargada aquí
                     break;
                 }
             }
         }
 
-        // Si no había salón en contexto pero hay al menos uno, no selecciono nada automáticamente,
-        // para que el salonero elija manualmente.
+        // Cargar mesas reales del salón seleccionado
+        if (salonSeleccionado != null) {
+            cargarMesasDeSalon(salonSeleccionado.getId());
+        } else {
+            cargarMesasDeSalon(null);
+        }
 
-        // 2. Ahora que ya hay salón elegido (o no),
-        // llenamos mesas según ese salón
-        actualizarMesasSegunSalon();
-
-        // 3. Seleccionamos la mesa que venía en el contexto SI pertenece a ese salón.
-        if (mesaSeleccionada != null) {
+        // Intentar seleccionar la mesa previa si existe en la lista actual
+        if (mesaSeleccionada != null && mesaSeleccionada.getId() != null) {
             for (Mesa m : listaMesasDisponibles) {
                 if (m.getId().equals(mesaSeleccionada.getId())) {
                     cmbMesaSelect.getSelectionModel().select(m);
-                    mesaSeleccionada = m; // usa instancia consistente
+                    mesaSeleccionada = m;
                     break;
                 }
             }
         }
 
-        // Y terminamos aplicando enable/disable según sea MESA o BARRA
+        // Aplicar habilitado/inhabilitado según Mesa/Barra (tipoOrdenActual)
         aplicarHabilitadoMesa();
     }
 
-    // ==================== CARGA DE GRUPOS / PRODUCTOS / ORDEN ====================
+    // ==================== CARGA GRUPOS / PRODUCTOS / ORDEN ====================
 
     private void cargarGrupos() {
         try {
@@ -429,7 +480,7 @@ public class OrdenesController implements Initializable {
                 listaGrupos = gson.fromJson(dataJson, new TypeToken<List<GrupoProducto>>(){}.getType());
 
                 cmbGrupos.getItems().clear();
-                cmbGrupos.getItems().add(null); // "Todos los grupos"
+                cmbGrupos.getItems().add(null); // Opción "Todos"
                 cmbGrupos.getItems().addAll(listaGrupos);
             }
         } catch (Exception e) {
@@ -439,12 +490,14 @@ public class OrdenesController implements Initializable {
     }
 
     /**
-     * Usa /productos (tu endpoint backend). Manejo defensivo si Payara devuelve HTML.
+     * Usa /productos.
+     * Incluye manejo defensivo si el backend responde HTML (ej. Payara error page).
      */
     private void cargarProductos() {
         try {
             String jsonResponse = RestClient.get("/productos");
 
+            // Defensa si vino un HTML en vez de JSON
             if (jsonResponse == null || jsonResponse.trim().startsWith("<")) {
                 listaProductos = new ArrayList<>();
                 mostrarProductos(listaProductos);
@@ -472,6 +525,10 @@ public class OrdenesController implements Initializable {
         }
     }
 
+    /**
+     * Si la mesa está ocupada buscamos la orden actual.
+     * Si no, creamos una orden nueva.
+     */
     private void cargarOrdenExistente() {
         // Caso barra o mesa libre => orden nueva
         if (mesaSeleccionada == null || !mesaSeleccionada.isOcupada()) {
@@ -497,7 +554,7 @@ public class OrdenesController implements Initializable {
                 modoEdicion = true;
                 lblEstadoOrden.setText(I18n.isSpanish() ? "En curso" : "In progress");
             } else {
-                // No hay orden previa; nueva orden
+                // No había orden previa, entonces nueva orden
                 ordenActual = new Orden();
                 ordenActual.setMesaId(mesaSeleccionada.getId());
                 ordenActual.setUsuarioId(AppContext.getInstance().getUsuarioLogueado().getId());
@@ -505,7 +562,7 @@ public class OrdenesController implements Initializable {
                 lblEstadoOrden.setText(I18n.isSpanish() ? "Nueva" : "New");
             }
         } catch (Exception e) {
-            System.out.println("No hay orden existente para esta mesa");
+            // Si el GET /ordenes/mesa/{id} falló, seguimos como nueva orden
             ordenActual = new Orden();
             ordenActual.setMesaId(mesaSeleccionada.getId());
             ordenActual.setUsuarioId(AppContext.getInstance().getUsuarioLogueado().getId());
@@ -524,8 +581,11 @@ public class OrdenesController implements Initializable {
             if (Boolean.TRUE.equals(response.get("success"))) {
                 Gson gson = new Gson();
                 String dataJson = gson.toJson(response.get("data"));
-                List<DetalleOrden> detalles = gson.fromJson(dataJson,
-                        new TypeToken<List<DetalleOrden>>(){}.getType());
+
+                List<DetalleOrden> detalles = gson.fromJson(
+                        dataJson,
+                        new TypeToken<List<DetalleOrden>>(){}.getType()
+                );
 
                 detallesOrden.clear();
                 detallesOrden.addAll(detalles);
@@ -577,7 +637,7 @@ public class OrdenesController implements Initializable {
 
         card.getChildren().addAll(lblNombre, lblPrecio);
 
-        // Hover style
+        // Hover
         card.setOnMouseEntered(e -> {
             card.setStyle(
                 "-fx-background-color: #FFF8F0; -fx-background-radius: 10;" +
@@ -595,7 +655,7 @@ public class OrdenesController implements Initializable {
             );
         });
 
-        // Click -> agrega producto a la orden
+        // Click -> agrega producto
         card.setOnMouseClicked(e -> agregarProducto(producto));
 
         return card;
@@ -649,7 +709,7 @@ public class OrdenesController implements Initializable {
     // ==================== DETALLES ORDEN ====================
 
     private void agregarProducto(Producto producto) {
-        // si ya existe el producto en la tabla, solo sumar cantidad
+        // Ver si el producto ya está en la orden
         for (DetalleOrden detalle : detallesOrden) {
             if (detalle.getProducto() != null &&
                 detalle.getProducto().getId().equals(producto.getId())) {
@@ -662,7 +722,7 @@ public class OrdenesController implements Initializable {
             }
         }
 
-        // si no estaba, crear una línea nueva
+        // Nuevo detalle
         DetalleOrden nuevo = new DetalleOrden();
         nuevo.setProducto(producto);
         nuevo.setProductoId(producto.getId());
@@ -724,7 +784,7 @@ public class OrdenesController implements Initializable {
         lblTotal.setText(String.format("₡%.2f", total));
     }
 
-    // ==================== EVENTOS BOTONES MAIN ====================
+    // ==================== EVENTOS DE BOTONES MAIN ====================
 
     @FXML
     private void onVolver(ActionEvent event) {
@@ -738,7 +798,6 @@ public class OrdenesController implements Initializable {
             if (!confirmar) return;
         }
 
-        // volver al menú del salonero
         FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú Salonero", 1000, 560);
     }
 
@@ -784,7 +843,7 @@ public class OrdenesController implements Initializable {
                     ? "Orden guardada correctamente"
                     : "Order saved successfully");
 
-                // Ocupar mesa si es nueva orden MESA
+                // Ocupar mesa si es nueva orden de tipo MESA
                 if (!modoEdicion && tipoOrdenActual == TipoOrden.MESA && mesaSeleccionada != null) {
                     RestClient.post("/salones/mesas/" + mesaSeleccionada.getId() + "/ocupar", null);
                 }
@@ -841,7 +900,7 @@ public class OrdenesController implements Initializable {
 
     @FXML
     private void onElegirMesa(ActionEvent event) {
-        // Aquí más adelante puedes abrir una vista visual de mesas (mapa)
+        // Lugar listo para abrir un modal visual de plano de mesas
         Mensaje.showInfo(
             I18n.isSpanish() ? "Seleccionar mesa" : "Select table",
             I18n.isSpanish()
@@ -850,8 +909,12 @@ public class OrdenesController implements Initializable {
         );
     }
 
-    // ==================== ACTUALIZAR CABECERA/INFO ====================
+    // ==================== ESTADO VISUAL CABECERA ====================
 
+    /**
+     * Cambia entre orden de MESA y orden de BARRA.
+     * Actualiza toggles, habilita/deshabilita combos y refresca labels.
+     */
     private void setTipoOrden(TipoOrden tipo) {
         tipoOrdenActual = tipo;
 
@@ -863,7 +926,8 @@ public class OrdenesController implements Initializable {
     }
 
     /**
-     * Habilita o deshabilita los combos Salón/Mesa según si la orden es de mesa o de barra.
+     * Habilita o deshabilita los combos Salón y Mesa según tipo de orden.
+     * Si pasamos a Barra, borra la selección.
      */
     private void aplicarHabilitadoMesa() {
         boolean esMesa = (tipoOrdenActual == TipoOrden.MESA);
@@ -873,7 +937,7 @@ public class OrdenesController implements Initializable {
         btnElegirMesa.setDisable(!esMesa);
 
         if (!esMesa) {
-            // al pasar a Barra limpiamos selección de mesa/salón
+            // Al pasar a Barra limpiamos todo lo de ubicación
             salonSeleccionado = null;
             mesaSeleccionada = null;
             cmbSalonSelect.getSelectionModel().clearSelection();
@@ -882,7 +946,7 @@ public class OrdenesController implements Initializable {
     }
 
     /**
-     * Refresca las etiquetas arriba (Mesa:, Salón:, etc.).
+     * Refresca las etiquetas informativas (Mesa:, Salón:) que están en la parte superior.
      */
     private void actualizarCabeceraVisual() {
         if (tipoOrdenActual == TipoOrden.MESA) {
@@ -897,6 +961,9 @@ public class OrdenesController implements Initializable {
         }
     }
 
+    /**
+     * Pinta la info del usuario, la hora de la orden y refresca cabecera mesa/salón.
+     */
     private void actualizarInfoOrden() {
         Usuario usuario = AppContext.getInstance().getUsuarioLogueado();
         lblUsuario.setText((I18n.isSpanish() ? "Salonero: " : "Waiter: ") + usuario.getNombre());
@@ -911,6 +978,9 @@ public class OrdenesController implements Initializable {
         actualizarCabeceraVisual();
     }
 
+    /**
+     * Ajusta los textos visibles según el idioma y el estado de la orden (nueva / en curso).
+     */
     private void actualizarTextos() {
         boolean esEspanol = I18n.isSpanish();
 

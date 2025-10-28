@@ -1,5 +1,6 @@
 package cr.ac.una.restunaclient.controller;
 
+import cr.ac.una.restunaclient.util.FlowController;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -256,22 +257,9 @@ public class VentanaVentasController implements Initializable {
     // ==================== Event Handlers - Header ====================
     
     @FXML
-    private void onVolver(ActionEvent event) {
-        // Confirmar si hay productos sin facturar
-        if (!productosVenta.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmar");
-            alert.setHeaderText("Hay productos sin facturar");
-            alert.setContentText("¿Está seguro que desea salir sin procesar el pago?");
-            
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                cerrarVentana();
-            }
-        } else {
-            cerrarVentana();
-        }
-    }
+private void onVolver(ActionEvent event) {
+    FlowController.getInstance().goHomeWithFade();
+}
 
     // ==================== Event Handlers - Orden ====================
     

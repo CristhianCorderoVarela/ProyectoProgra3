@@ -244,10 +244,13 @@ public class MenuPrincipalController implements Initializable {
     }
 
     @FXML
-    private void onFacturacion(MouseEvent event) {
-        // TODO: Sistema de facturación
-        Mensaje.showInfo("Próximamente", "Módulo de Facturación en desarrollo");
-    }
+private void onFacturacion(MouseEvent event) {
+    FlowController.getInstance().goToView(
+        "VentanaVentas",              // el nombre del .fxml registrado en FlowController
+        "RestUNA - Facturación",      // título de la ventana
+        1200, 700                     // tamaño; tu layout es ancho, algo tipo POS, dale más horizontal
+    );
+}
 
     @FXML
     private void onCierres(MouseEvent event) {

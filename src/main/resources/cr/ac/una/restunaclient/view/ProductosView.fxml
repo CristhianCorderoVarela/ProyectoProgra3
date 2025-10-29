@@ -32,7 +32,11 @@
             <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
             
             <!-- PANEL IZQUIERDO: Tabla de productos -->
-            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+            <VBox spacing="15"
+                  HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
                 <!-- Barra de búsqueda y filtros -->
@@ -80,64 +84,79 @@
             </VBox>
             
             <!-- PANEL DERECHO: Formulario -->
-            <VBox spacing="15" prefWidth="380" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+            <!-- Ajustado para que el contenido haga scroll y los botones queden fijos abajo -->
+            <VBox spacing="15"
+                  prefWidth="380"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
-                <Label fx:id="lblFormTitle" text="Nuevo Producto">
-                    <font><Font name="System Bold" size="18"/></font>
-                </Label>
+                <!-- Scroll interno con los campos del formulario -->
+                <ScrollPane fitToWidth="true"
+                            VBox.vgrow="ALWAYS"
+                            hbarPolicy="NEVER"
+                            vbarPolicy="AS_NEEDED"
+                            style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
+                    <content>
+                        <VBox spacing="15">
+                            <Label fx:id="lblFormTitle" text="Nuevo Producto">
+                                <font><Font name="System Bold" size="18"/></font>
+                            </Label>
+                            
+                            <Separator/>
+                            
+                            <!-- Campo: Nombre -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblNombre" text="Nombre del Producto:" style="-fx-font-weight: bold;"/>
+                                <TextField fx:id="txtNombre" promptText="Ej: Café Americano">
+                                    <font><Font size="13"/></font>
+                                </TextField>
+                            </VBox>
+                            
+                            <!-- Campo: Nombre Corto -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblNombreCorto" text="Nombre Corto:" style="-fx-font-weight: bold;"/>
+                                <TextField fx:id="txtNombreCorto" promptText="Ej: Americano">
+                                    <font><Font size="13"/></font>
+                                </TextField>
+                                <Label text="Nombre breve para pantallas de venta rápida" 
+                                       wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                            </VBox>
+                            
+                            <!-- Campo: Grupo -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblGrupo" text="Grupo:" style="-fx-font-weight: bold;"/>
+                                <ComboBox fx:id="cmbGrupo" promptText="Seleccione un grupo" prefWidth="340"/>
+                            </VBox>
+                            
+                            <!-- Campo: Precio -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblPrecio" text="Precio (₡):" style="-fx-font-weight: bold;"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label text="₡" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                                    <TextField fx:id="txtPrecio" promptText="0.00" prefWidth="280">
+                                        <font><Font size="13"/></font>
+                                    </TextField>
+                                </HBox>
+                            </VBox>
+                            
+                            <!-- Campo: Opciones -->
+                            <VBox spacing="8">
+                                <Label fx:id="lblOpciones" text="Opciones:" style="-fx-font-weight: bold;"/>
+                                <CheckBox fx:id="chkMenuRapido" text="Incluir en Menú Rápido">
+                                    <font><Font size="13"/></font>
+                                </CheckBox>
+                                <CheckBox fx:id="chkActivo" text="Activo" selected="true">
+                                    <font><Font size="13"/></font>
+                                </CheckBox>
+                            </VBox>
+                        </VBox>
+                    </content>
+                </ScrollPane>
                 
-                <Separator/>
-                
-                <!-- Campo: Nombre -->
-                <VBox spacing="5">
-                    <Label fx:id="lblNombre" text="Nombre del Producto:" style="-fx-font-weight: bold;"/>
-                    <TextField fx:id="txtNombre" promptText="Ej: Café Americano">
-                        <font><Font size="13"/></font>
-                    </TextField>
-                </VBox>
-                
-                <!-- Campo: Nombre Corto -->
-                <VBox spacing="5">
-                    <Label fx:id="lblNombreCorto" text="Nombre Corto:" style="-fx-font-weight: bold;"/>
-                    <TextField fx:id="txtNombreCorto" promptText="Ej: Americano">
-                        <font><Font size="13"/></font>
-                    </TextField>
-                    <Label text="Nombre breve para pantallas de venta rápida" 
-                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-                </VBox>
-                
-                <!-- Campo: Grupo -->
-                <VBox spacing="5">
-                    <Label fx:id="lblGrupo" text="Grupo:" style="-fx-font-weight: bold;"/>
-                    <ComboBox fx:id="cmbGrupo" promptText="Seleccione un grupo" prefWidth="340"/>
-                </VBox>
-                
-                <!-- Campo: Precio -->
-                <VBox spacing="5">
-                    <Label fx:id="lblPrecio" text="Precio (₡):" style="-fx-font-weight: bold;"/>
-                    <HBox spacing="10" alignment="CENTER_LEFT">
-                        <Label text="₡" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-                        <TextField fx:id="txtPrecio" promptText="0.00" prefWidth="280">
-                            <font><Font size="13"/></font>
-                        </TextField>
-                    </HBox>
-                </VBox>
-                
-                <!-- Campo: Opciones -->
-                <VBox spacing="8">
-                    <Label fx:id="lblOpciones" text="Opciones:" style="-fx-font-weight: bold;"/>
-                    <CheckBox fx:id="chkMenuRapido" text="Incluir en Menú Rápido">
-                        <font><Font size="13"/></font>
-                    </CheckBox>
-                    <CheckBox fx:id="chkActivo" text="Activo" selected="true">
-                        <font><Font size="13"/></font>
-                    </CheckBox>
-                </VBox>
-                
-                <Region VBox.vgrow="ALWAYS"/>
-                
-                <!-- Botones del formulario -->
+                <!-- Botones del formulario (quedan siempre visibles) -->
                 <HBox spacing="10">
                     <Button fx:id="btnGuardar" text="💾 Guardar" onAction="#onGuardar" 
                             style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 

@@ -32,7 +32,11 @@
             <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
             
             <!-- PANEL IZQUIERDO: Tabla de usuarios -->
-            <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+            <VBox spacing="15"
+                  HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
                 <!-- Barra de búsqueda y filtros -->
@@ -80,62 +84,81 @@
             </VBox>
             
             <!-- PANEL DERECHO: Formulario -->
-            <VBox spacing="15" prefWidth="380" style="-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+            <!-- Ajustado para scroll interno + botones fijos abajo -->
+            <VBox spacing="15"
+                  prefWidth="380"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
+
+                <!-- SCROLL: todo el contenido del formulario que puede ser largo -->
+                <ScrollPane fitToWidth="true"
+                            VBox.vgrow="ALWAYS"
+                            hbarPolicy="NEVER"
+                            vbarPolicy="AS_NEEDED"
+                            style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
+                    <content>
+                        <VBox spacing="15">
+                            
+                            <Label fx:id="lblFormTitle" text="Nuevo Usuario">
+                                <font><Font name="System Bold" size="18"/></font>
+                            </Label>
+                            
+                            <Separator/>
+                            
+                            <!-- Campo: Nombre -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblNombre" text="Nombre Completo:" style="-fx-font-weight: bold;"/>
+                                <TextField fx:id="txtNombre" promptText="Ej: Juan Pérez González">
+                                    <font><Font size="13"/></font>
+                                </TextField>
+                            </VBox>
+                            
+                            <!-- Campo: Usuario -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblUsuario" text="Nombre de Usuario:" style="-fx-font-weight: bold;"/>
+                                <TextField fx:id="txtUsuario" promptText="Ej: jperez">
+                                    <font><Font size="13"/></font>
+                                </TextField>
+                                <Label fx:id="lblUsuarioInfo" text="Debe ser único en el sistema" 
+                                       style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                            </VBox>
+                            
+                            <!-- Campo: Contraseña -->
+                            <VBox fx:id="vboxClave" spacing="5">
+                                <Label fx:id="lblClave" text="Contraseña:" style="-fx-font-weight: bold;"/>
+                                <PasswordField fx:id="txtClave" promptText="Mínimo 6 caracteres">
+                                    <font><Font size="13"/></font>
+                                </PasswordField>
+                            </VBox>
+                            
+                            <!-- Campo: Rol -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblRol" text="Rol del Usuario:" style="-fx-font-weight: bold;"/>
+                                <ComboBox fx:id="cmbRol" promptText="Seleccione un rol" prefWidth="340"/>
+                                <Label fx:id="lblRolInfo"
+                                       text="ADMINISTRATIVO: acceso total | CAJERO: facturación | SALONERO: solo órdenes" 
+                                       wrapText="true"
+                                       style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                            </VBox>
+                            
+                            <!-- Campo: Estado -->
+                            <VBox spacing="5">
+                                <Label fx:id="lblEstado" text="Estado:" style="-fx-font-weight: bold;"/>
+                                <CheckBox fx:id="chkActivo" text="Activo" selected="true">
+                                    <font><Font size="13"/></font>
+                                </CheckBox>
+                                <Label text="Si está desactivado, el usuario no podrá iniciar sesión" 
+                                       wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
+                            </VBox>
+
+                        </VBox>
+                    </content>
+                </ScrollPane>
                 
-                <Label fx:id="lblFormTitle" text="Nuevo Usuario">
-                    <font><Font name="System Bold" size="18"/></font>
-                </Label>
-                
-                <Separator/>
-                
-                <!-- Campo: Nombre -->
-                <VBox spacing="5">
-                    <Label fx:id="lblNombre" text="Nombre Completo:" style="-fx-font-weight: bold;"/>
-                    <TextField fx:id="txtNombre" promptText="Ej: Juan Pérez González">
-                        <font><Font size="13"/></font>
-                    </TextField>
-                </VBox>
-                
-                <!-- Campo: Usuario -->
-                <VBox spacing="5">
-                    <Label fx:id="lblUsuario" text="Nombre de Usuario:" style="-fx-font-weight: bold;"/>
-                    <TextField fx:id="txtUsuario" promptText="Ej: jperez">
-                        <font><Font size="13"/></font>
-                    </TextField>
-                    <Label fx:id="lblUsuarioInfo" text="Debe ser único en el sistema" 
-                           style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-                </VBox>
-                
-                <!-- Campo: Contraseña (solo en modo creación) ⭐ CORREGIDO -->
-                <VBox fx:id="vboxClave" spacing="5">
-                    <Label fx:id="lblClave" text="Contraseña:" style="-fx-font-weight: bold;"/>
-                    <PasswordField fx:id="txtClave" promptText="Mínimo 6 caracteres">
-                        <font><Font size="13"/></font>
-                    </PasswordField>
-                </VBox>
-                
-                <!-- Campo: Rol -->
-                <VBox spacing="5">
-                    <Label fx:id="lblRol" text="Rol del Usuario:" style="-fx-font-weight: bold;"/>
-                    <ComboBox fx:id="cmbRol" promptText="Seleccione un rol" prefWidth="340"/>
-                    <Label fx:id="lblRolInfo" text="ADMINISTRATIVO: acceso total | CAJERO: facturación | SALONERO: solo órdenes" 
-                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-                </VBox>
-                
-                <!-- Campo: Estado -->
-                <VBox spacing="5">
-                    <Label fx:id="lblEstado" text="Estado:" style="-fx-font-weight: bold;"/>
-                    <CheckBox fx:id="chkActivo" text="Activo" selected="true">
-                        <font><Font size="13"/></font>
-                    </CheckBox>
-                    <Label text="Si está desactivado, el usuario no podrá iniciar sesión" 
-                           wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-                </VBox>
-                
-                <Region VBox.vgrow="ALWAYS"/>
-                
-                <!-- Botones del formulario -->
+                <!-- Botones del formulario (SIEMPRE VISIBLES ABAJO) -->
                 <HBox spacing="10">
                     <Button fx:id="btnGuardar" text="💾 Guardar" onAction="#onGuardar" 
                             style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 

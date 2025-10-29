@@ -10,7 +10,7 @@
             fx:controller="cr.ac.una.restunaclient.controller.VentanaVentasController"
             style="-fx-background-color: #F5F5F0;">
 
-    <!-- ========== HEADER SUPERIOR (similar a Ordenes) ========== -->
+    <!-- ================== HEADER SUPERIOR ================== -->
     <top>
         <VBox spacing="10" style="-fx-background-color: white;">
             <padding>
@@ -58,17 +58,23 @@
         </VBox>
     </top>
 
-    <!-- ========== CONTENIDO PRINCIPAL ========== -->
+    <!-- ================== CONTENIDO PRINCIPAL ================== -->
     <center>
-        <HBox spacing="15" BorderPane.alignment="CENTER">
+        <!-- Igual idea que Salones:
+             - spacing entre paneles
+             - panel izquierdo: crece con la ventana
+             - panel derecho: ancho fijo
+             - en panel derecho los botones quedan fijos abajo -->
+        <HBox spacing="20" BorderPane.alignment="CENTER">
             <padding>
-                <Insets top="15" bottom="15" left="30" right="30"/>
+                <Insets top="20" bottom="20" left="30" right="30"/>
             </padding>
 
             <!-- ========== PANEL IZQUIERDO (Orden / Cliente / Productos) ========== -->
             <VBox spacing="15"
                   HBox.hgrow="ALWAYS"
-                  style="-fx-background-color: white; -fx-background-radius: 12;
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding>
                     <Insets top="20" bottom="20" left="20" right="20"/>
@@ -140,7 +146,7 @@
 
                 <Separator/>
 
-                <!-- Tabla de productos -->
+                <!-- Productos -->
                 <VBox spacing="10" VBox.vgrow="ALWAYS">
                     <HBox alignment="CENTER_LEFT" spacing="10">
                         <Label text="Productos en la Orden:"
@@ -188,10 +194,12 @@
                         </placeholder>
                     </TableView>
 
-                    <HBox spacing="10">
+                    <!-- Botones de acción de la tabla -->
+                    <HBox spacing="10" alignment="CENTER">
                         <Button fx:id="btnModificarCantidad"
                                 text="Modificar Cantidad"
                                 onAction="#onModificarCantidad"
+                                prefWidth="160"
                                 style="-fx-background-color: transparent;
                                        -fx-border-color: #FF7A00;
                                        -fx-border-radius: 8;
@@ -206,8 +214,11 @@
                         <Button fx:id="btnEliminarProducto"
                                 text="Eliminar"
                                 onAction="#onEliminarProducto"
-                                style="-fx-background-color: #dc3545; -fx-text-fill: white;
-                                       -fx-background-radius: 8; -fx-cursor: hand;">
+                                prefWidth="120"
+                                style="-fx-background-color: #dc3545;
+                                       -fx-text-fill: white;
+                                       -fx-background-radius: 8;
+                                       -fx-cursor: hand;">
                             <font>
                                 <Font size="12"/>
                             </font>
@@ -216,247 +227,266 @@
                 </VBox>
             </VBox>
 
-            <!-- ========== PANEL DERECHO (Resumen, Pago, Botones) ========== -->
+            <!-- ========== PANEL DERECHO (Resumen / Pago / Acciones finales) ========== -->
+            <!-- Truco para que los botones se vean SIEMPRE:
+                 - ScrollPane con TODO lo que puede crecer
+                 - Botones finales afuera del ScrollPane, al fondo -->
             <VBox spacing="15"
-                  prefWidth="320"
-                  style="-fx-background-color: white; -fx-background-radius: 12;
+                  prefWidth="380"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding>
                     <Insets top="20" bottom="20" left="20" right="20"/>
                 </padding>
 
-                <!-- Resumen -->
-                <Label text="Resumen de Venta"
-                       style="-fx-font-weight: bold; -fx-text-fill: #333;">
-                    <font>
-                        <Font size="16"/>
-                    </font>
-                </Label>
+                <!-- CONTENIDO SCROLLEABLE -->
+                <ScrollPane fitToWidth="true"
+                            VBox.vgrow="ALWAYS"
+                            hbarPolicy="NEVER"
+                            vbarPolicy="AS_NEEDED"
+                            style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
+                    <content>
+                        <VBox spacing="20">
 
-                <Separator/>
+                            <!-- Resumen de Venta -->
+                            <VBox spacing="10">
+                                <Label text="Resumen de Venta"
+                                       style="-fx-font-weight: bold; -fx-text-fill: #333;">
+                                    <font>
+                                        <Font size="16"/>
+                                    </font>
+                                </Label>
 
-                <VBox spacing="10"
-                      style="-fx-background-color: #FFF8F0;
-                             -fx-background-radius: 8;
-                             -fx-padding: 10;">
-                    <!-- Subtotal -->
-                    <HBox alignment="CENTER_LEFT">
-                        <Label text="Subtotal:" style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="13"/>
-                            </font>
-                        </Label>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="lblSubtotal"
-                               text="₡0.00"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="13"/>
-                            </font>
-                        </Label>
-                    </HBox>
+                                <Separator/>
 
-                    <!-- Impuesto de ventas -->
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <CheckBox fx:id="chkImpuestoVentas"
-                                  text="Impuesto de Ventas"
-                                  onAction="#onCalcularTotales"
-                                  selected="true"
-                                  style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </CheckBox>
+                                <VBox spacing="10"
+                                      style="-fx-background-color: #FFF8F0;
+                                             -fx-background-radius: 8;
+                                             -fx-padding: 10;">
+                                    <!-- Subtotal -->
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Subtotal:" style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="13"/>
+                                            </font>
+                                        </Label>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="lblSubtotal"
+                                               text="₡0.00"
+                                               style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="13"/>
+                                            </font>
+                                        </Label>
+                                    </HBox>
 
-                        <Label fx:id="lblPorcentajeIV"
-                               text="(13%)"
-                               style="-fx-text-fill: #666;">
-                            <font>
-                                <Font size="11"/>
-                            </font>
-                        </Label>
+                                    <!-- Impuesto de Ventas -->
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <CheckBox fx:id="chkImpuestoVentas"
+                                                  text="Impuesto de Ventas"
+                                                  onAction="#onCalcularTotales"
+                                                  selected="true"
+                                                  style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </CheckBox>
 
-                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="lblPorcentajeIV"
+                                               text="(13%)"
+                                               style="-fx-text-fill: #666;">
+                                            <font>
+                                                <Font size="11"/>
+                                            </font>
+                                        </Label>
 
-                        <Label fx:id="lblImpuestoVentas"
-                               text="₡0.00"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
-                    </HBox>
+                                        <Region HBox.hgrow="ALWAYS"/>
 
-                    <!-- Servicio -->
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <CheckBox fx:id="chkImpuestoServicio"
-                                  text="Servicio"
-                                  onAction="#onCalcularTotales"
-                                  selected="true"
-                                  style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </CheckBox>
+                                        <Label fx:id="lblImpuestoVentas"
+                                               text="₡0.00"
+                                               style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </Label>
+                                    </HBox>
 
-                        <Label fx:id="lblPorcentajeIS"
-                               text="(10%)"
-                               style="-fx-text-fill: #666;">
-                            <font>
-                                <Font size="11"/>
-                            </font>
-                        </Label>
+                                    <!-- Servicio -->
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <CheckBox fx:id="chkImpuestoServicio"
+                                                  text="Servicio"
+                                                  onAction="#onCalcularTotales"
+                                                  selected="true"
+                                                  style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </CheckBox>
 
-                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="lblPorcentajeIS"
+                                               text="(10%)"
+                                               style="-fx-text-fill: #666;">
+                                            <font>
+                                                <Font size="11"/>
+                                            </font>
+                                        </Label>
 
-                        <Label fx:id="lblImpuestoServicio"
-                               text="₡0.00"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
-                    </HBox>
+                                        <Region HBox.hgrow="ALWAYS"/>
 
-                    <Separator/>
+                                        <Label fx:id="lblImpuestoServicio"
+                                               text="₡0.00"
+                                               style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </Label>
+                                    </HBox>
 
-                    <!-- Descuento -->
-                    <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label text="Desc.:"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
+                                    <Separator/>
 
-                        <TextField fx:id="txtDescuento"
-                                   text="0"
-                                   prefWidth="60"
-                                   alignment="CENTER_RIGHT"
-                                   onKeyReleased="#onCalcularTotales"/>
+                                    <!-- Descuento -->
+                                    <HBox alignment="CENTER_LEFT" spacing="8">
+                                        <Label text="Desc.:"
+                                               style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </Label>
 
-                        <Label text=" %" style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
+                                        <TextField fx:id="txtDescuento"
+                                                   text="0"
+                                                   prefWidth="60"
+                                                   alignment="CENTER_RIGHT"
+                                                   onKeyReleased="#onCalcularTotales"/>
 
-                        <Region HBox.hgrow="ALWAYS"/>
+                                        <!-- dejamos espacio antes del % para no romper FXMLLoader -->
+                                        <Label text=" %"
+                                               style="-fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </Label>
 
-                        <Label fx:id="lblDescuento"
-                               text="-₡0.00"
-                               style="-fx-text-fill: #dc3545;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
-                    </HBox>
+                                        <Region HBox.hgrow="ALWAYS"/>
 
-                    <Label fx:id="lblDescuentoMax"
-                           text="Descuento máximo permitido: 15%"
-                           style="-fx-text-fill: #666;">
-                        <font>
-                            <Font size="10"/>
-                        </font>
-                    </Label>
+                                        <Label fx:id="lblDescuento"
+                                               text="-₡0.00"
+                                               style="-fx-text-fill: #dc3545;">
+                                            <font>
+                                                <Font size="12"/>
+                                            </font>
+                                        </Label>
+                                    </HBox>
 
-                    <Separator/>
+                                    <Label fx:id="lblDescuentoMax"
+                                           text="Descuento máximo permitido: 15%"
+                                           style="-fx-text-fill: #666;">
+                                        <font>
+                                            <Font size="10"/>
+                                        </font>
+                                    </Label>
 
-                    <!-- TOTAL -->
-                    <HBox alignment="CENTER_LEFT">
-                        <Label text="TOTAL:"
-                               style="-fx-font-weight: bold; -fx-text-fill: #333;">
-                            <font>
-                                <Font size="14"/>
-                            </font>
-                        </Label>
+                                    <Separator/>
 
-                        <Region HBox.hgrow="ALWAYS"/>
+                                    <!-- TOTAL -->
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="TOTAL:"
+                                               style="-fx-font-weight: bold; -fx-text-fill: #333;">
+                                            <font>
+                                                <Font size="14"/>
+                                            </font>
+                                        </Label>
 
-                        <Label fx:id="lblTotal"
-                               text="₡0.00"
-                               style="-fx-text-fill: #FF7A00; -fx-font-weight: bold;">
-                            <font>
-                                <Font size="20"/>
-                            </font>
-                        </Label>
-                    </HBox>
-                </VBox>
+                                        <Region HBox.hgrow="ALWAYS"/>
 
-                <Separator/>
+                                        <Label fx:id="lblTotal"
+                                               text="₡0.00"
+                                               style="-fx-text-fill: #FF7A00; -fx-font-weight: bold;">
+                                            <font>
+                                                <Font size="20"/>
+                                            </font>
+                                        </Label>
+                                    </HBox>
+                                </VBox>
+                            </VBox>
 
-                <!-- Métodos de pago -->
-                <VBox spacing="10">
-                    <Label text="Métodos de Pago"
-                           style="-fx-font-weight: bold; -fx-text-fill: #333;">
-                        <font>
-                            <Font size="13"/>
-                        </font>
-                    </Label>
+                            <Separator/>
 
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label prefWidth="80"
-                               text="Efectivo:"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
+                            <!-- Métodos de Pago -->
+                            <VBox spacing="10">
+                                <Label text="Métodos de Pago"
+                                       style="-fx-font-weight: bold; -fx-text-fill: #333;">
+                                    <font>
+                                        <Font size="13"/>
+                                    </font>
+                                </Label>
 
-                        <TextField fx:id="txtEfectivo"
-                                   text="0.00"
-                                   prefWidth="120"
-                                   alignment="CENTER_RIGHT"
-                                   onKeyReleased="#onCalcularVuelto"/>
-                    </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label prefWidth="80"
+                                           text="Efectivo:"
+                                           style="-fx-text-fill: #333;">
+                                        <font>
+                                            <Font size="12"/>
+                                        </font>
+                                    </Label>
 
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label prefWidth="80"
-                               text="Tarjeta:"
-                               style="-fx-text-fill: #333;">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </Label>
+                                    <TextField fx:id="txtEfectivo"
+                                               text="0.00"
+                                               prefWidth="120"
+                                               alignment="CENTER_RIGHT"
+                                               onKeyReleased="#onCalcularVuelto"/>
+                                </HBox>
 
-                        <TextField fx:id="txtTarjeta"
-                                   text="0.00"
-                                   prefWidth="120"
-                                   alignment="CENTER_RIGHT"
-                                   onKeyReleased="#onCalcularVuelto"/>
-                    </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label prefWidth="80"
+                                           text="Tarjeta:"
+                                           style="-fx-text-fill: #333;">
+                                        <font>
+                                            <Font size="12"/>
+                                        </font>
+                                    </Label>
 
-                    <HBox alignment="CENTER_LEFT"
-                          style="-fx-background-color: #F5F5F0;
-                                 -fx-background-radius: 8;
-                                 -fx-padding: 8;">
-                        <Label text="Vuelto:"
-                               style="-fx-font-weight: bold; -fx-text-fill: #333;">
-                            <font>
-                                <Font size="13"/>
-                            </font>
-                        </Label>
+                                    <TextField fx:id="txtTarjeta"
+                                               text="0.00"
+                                               prefWidth="120"
+                                               alignment="CENTER_RIGHT"
+                                               onKeyReleased="#onCalcularVuelto"/>
+                                </HBox>
 
-                        <Region HBox.hgrow="ALWAYS"/>
+                                <HBox alignment="CENTER_LEFT"
+                                      style="-fx-background-color: #F5F5F0;
+                                             -fx-background-radius: 8;
+                                             -fx-padding: 8;">
+                                    <Label text="Vuelto:"
+                                           style="-fx-font-weight: bold; -fx-text-fill: #333;">
+                                        <font>
+                                            <Font size="13"/>
+                                        </font>
+                                    </Label>
 
-                        <Label fx:id="lblVuelto"
-                               text="₡0.00"
-                               style="-fx-font-weight: bold; -fx-text-fill: #2E7D32;">
-                            <font>
-                                <Font size="15"/>
-                            </font>
-                        </Label>
-                    </HBox>
-                </VBox>
+                                    <Region HBox.hgrow="ALWAYS"/>
 
-                <Region VBox.vgrow="ALWAYS"/>
+                                    <Label fx:id="lblVuelto"
+                                           text="₡0.00"
+                                           style="-fx-font-weight: bold; -fx-text-fill: #2E7D32;">
+                                        <font>
+                                            <Font size="15"/>
+                                        </font>
+                                    </Label>
+                                </HBox>
+                            </VBox>
 
-                <!-- Acciones finales -->
-                <VBox spacing="10">
+                        </VBox>
+                    </content>
+                </ScrollPane>
 
+                <!-- ========== BOTONES FINALES (SIEMPRE VISIBLES) ========== -->
+                <VBox spacing="10" alignment="CENTER">
                     <Button fx:id="btnProcesarPago"
                             text="Procesar Pago"
                             prefHeight="42"
+                            prefWidth="200"
                             onAction="#onProcesarPago"
                             style="-fx-background-color: #28a745; -fx-text-fill: white;
                                    -fx-font-weight: bold;
@@ -466,11 +496,11 @@
                         </font>
                     </Button>
 
-                    <HBox spacing="10">
+                    <HBox spacing="10" alignment="CENTER">
                         <Button fx:id="btnImprimir"
                                 text="Imprimir"
                                 onAction="#onImprimir"
-                                HBox.hgrow="ALWAYS"
+                                prefWidth="160"
                                 style="-fx-background-color: transparent;
                                        -fx-border-color: #007bff;
                                        -fx-border-radius: 8;
@@ -485,9 +515,11 @@
                         <Button fx:id="btnEnviarEmail"
                                 text="Enviar Email"
                                 onAction="#onEnviarEmail"
-                                HBox.hgrow="ALWAYS"
-                                style="-fx-background-color: #17a2b8; -fx-text-fill: white;
-                                       -fx-background-radius: 8; -fx-cursor: hand;">
+                                prefWidth="160"
+                                style="-fx-background-color: #17a2b8;
+                                       -fx-text-fill: white;
+                                       -fx-background-radius: 8;
+                                       -fx-cursor: hand;">
                             <font>
                                 <Font size="12"/>
                             </font>
@@ -496,9 +528,12 @@
 
                     <Button fx:id="btnCancelar"
                             text="Cancelar Venta"
+                            prefWidth="200"
                             onAction="#onCancelar"
-                            style="-fx-background-color: #dc3545; -fx-text-fill: white;
-                                   -fx-background-radius: 8; -fx-cursor: hand;">
+                            style="-fx-background-color: #dc3545;
+                                   -fx-text-fill: white;
+                                   -fx-background-radius: 8;
+                                   -fx-cursor: hand;">
                         <font>
                             <Font size="12"/>
                         </font>

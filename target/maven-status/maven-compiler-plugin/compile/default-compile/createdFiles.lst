@@ -28,6 +28,7 @@ cr\ac\una\restunaclient\controller\OrdenesController$11.class
 cr\ac\una\restunaclient\controller\ProductosController$2.class
 cr\ac\una\restunaclient\model\Parametros.class
 cr\ac\una\restunaclient\util\AppContext.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$3.class
 cr\ac\una\restunaclient\controller\OrdenesController$3.class
 cr\ac\una\restunaclient\model\Cliente.class
 cr\ac\una\restunaclient\controller\VistaSalonesController$1.class
@@ -39,6 +40,7 @@ cr\ac\una\restunaclient\controller\ProductosController$4.class
 cr\ac\una\restunaclient\controller\ProductosController$1.class
 cr\ac\una\restunaclient\model\ByteArrayBase64Adapter.class
 cr\ac\una\restunaclient\controller\OrdenesController$12.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$4.class
 cr\ac\una\restunaclient\util\Mensaje.class
 module-info.class
 cr\ac\una\restunaclient\controller\OrdenesController$4.class
@@ -52,9 +54,11 @@ cr\ac\una\restunaclient\controller\RegisterController.class
 cr\ac\una\restunaclient\model\GrupoProducto.class
 cr\ac\una\restunaclient\controller\ClientesController.class
 cr\ac\una\restunaclient\controller\OrdenesController$1.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$ProductoCantidadSelection.class
 cr\ac\una\restunaclient\controller\OrdenesController$5.class
 cr\ac\una\restunaclient\model\Usuario.class
 cr\ac\una\restunaclient\controller\MenuPrincipalController.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$5.class
 cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class

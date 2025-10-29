@@ -124,12 +124,13 @@
 
                     <HBox alignment="CENTER_LEFT" spacing="10">
                         <TextField fx:id="txtCliente"
-                                   promptText="Nombre del cliente (opcional)"
-                                   HBox.hgrow="ALWAYS">
-                            <font>
-                                <Font size="12"/>
-                            </font>
-                        </TextField>
+           promptText="Nombre del cliente (opcional)"
+           onKeyReleased="#onClienteKeyTyped"
+           HBox.hgrow="ALWAYS">
+    <font>
+        <Font size="12"/>
+    </font>
+</TextField>
 
                         <Button fx:id="btnBuscarCliente"
                                 text="Buscar"

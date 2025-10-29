@@ -44,6 +44,7 @@ module-info.class
 cr\ac\una\restunaclient\controller\OrdenesController$4.class
 cr\ac\una\restunaclient\controller\VistaSalonesController.class
 cr\ac\una\restunaclient\controller\UsuariosController.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$2.class
 cr\ac\una\restunaclient\model\CierreCaja.class
 cr\ac\una\restunaclient\controller\OrdenesController$13.class
 cr\ac\una\restunaclient\controller\ClientesController$1.class
@@ -58,6 +59,5 @@ cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class
 cr\ac\una\restunaclient\controller\OrdenesController$TipoOrden.class
-cr\ac\una\restunaclient\controller\VentanaVentasController$ProductoVenta.class
 cr\ac\una\restunaclient\controller\UsuariosController$1.class
 cr\ac\una\restunaclient\controller\OrdenesController$8.class

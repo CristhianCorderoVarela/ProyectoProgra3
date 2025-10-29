@@ -1,9 +1,16 @@
 package cr.ac.una.restunaclient.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.reflect.TypeToken;
+import cr.ac.una.restunaclient.model.DetalleOrden;
+import cr.ac.una.restunaclient.model.Orden;
+import cr.ac.una.restunaclient.model.Producto;
+import cr.ac.una.restunaclient.service.RestClient;
+import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import cr.ac.una.restunaclient.util.Mensaje;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,56 +19,43 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
-import javafx.util.Duration;
 
+import java.math.BigDecimal;
 import java.net.URL;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
-/**
- * Controlador para la ventana de ventas/facturación del sistema RestUNA
- * Maneja la lógica de facturación, cálculo de impuestos, descuentos y procesamiento de pagos
- * 
- * @author Tu Nombre
- * @version 1.0
- */
 public class VentanaVentasController implements Initializable {
 
-    // ==================== FXML Components - Header ====================
+    // HEADER
     @FXML private Label lblTitle;
     @FXML private Label lblUsuario;
     @FXML private Label lblFechaHora;
     @FXML private Button btnVolver;
 
-    // ==================== FXML Components - Orden Info ====================
+    // Datos orden
     @FXML private Label lblOrdenInfo;
     @FXML private Label lblMesaInfo;
     @FXML private Button btnSeleccionarOrden;
 
-    // ==================== FXML Components - Cliente ====================
+    // Cliente
     @FXML private TextField txtCliente;
     @FXML private Button btnBuscarCliente;
 
-    // ==================== FXML Components - Tabla Productos ====================
-    @FXML private TableView<ProductoVenta> tblProductos;
-    @FXML private TableColumn<ProductoVenta, String> colProducto;
-    @FXML private TableColumn<ProductoVenta, Integer> colCantidad;
-    @FXML private TableColumn<ProductoVenta, String> colPrecio;
-    @FXML private TableColumn<ProductoVenta, String> colSubtotal;
-    @FXML private TableColumn<ProductoVenta, Void> colAcciones;
-    
-    @FXML private Button btnAgregarProducto;
-    @FXML private Button btnModificarCantidad;
-    @FXML private Button btnEliminarProducto;
+    // Tabla productos
+    @FXML private TableView<DetalleOrden> tblProductos;
+    @FXML private TableColumn<DetalleOrden, String> colProducto;
+    @FXML private TableColumn<DetalleOrden, Integer> colCantidad;
+    @FXML private TableColumn<DetalleOrden, String> colPrecio;
+    @FXML private TableColumn<DetalleOrden, String> colSubtotal;
+    @FXML private TableColumn<DetalleOrden, String> colAcciones; // en V1 no la usamos activamente
 
-    // ==================== FXML Components - Resumen ====================
+    @FXML private Button btnAgregarProducto;      // V1: deshabilitado (edición solo en Órdenes)
+    @FXML private Button btnModificarCantidad;    // V1: deshabilitado
+    @FXML private Button btnEliminarProducto;     // V1: deshabilitado
+
+    // Totales
     @FXML private Label lblSubtotal;
     @FXML private CheckBox chkImpuestoVentas;
     @FXML private Label lblPorcentajeIV;
@@ -74,593 +68,392 @@ public class VentanaVentasController implements Initializable {
     @FXML private Label lblDescuentoMax;
     @FXML private Label lblTotal;
 
-    // ==================== FXML Components - Pago ====================
+    // Pagos
     @FXML private TextField txtEfectivo;
     @FXML private TextField txtTarjeta;
     @FXML private Label lblVuelto;
+
+    // Botones finales
     @FXML private Button btnProcesarPago;
     @FXML private Button btnImprimir;
     @FXML private Button btnEnviarEmail;
     @FXML private Button btnCancelar;
 
-    // ==================== Variables de instancia ====================
-    private ObservableList<ProductoVenta> productosVenta;
-    private DecimalFormat formatoMoneda;
-    private NumberFormat formatoPorcentaje;
-    
-    // Parámetros del sistema (normalmente se cargarían de la BD)
-    private double porcentajeImpuestoVentas = 13.0;
-    private double porcentajeImpuestoServicio = 10.0;
-    private double porcentajeDescuentoMaximo = 15.0;
-    
-    // Valores calculados
-    private double subtotal = 0.0;
-    private double impuestoVentas = 0.0;
-    private double impuestoServicio = 0.0;
-    private double descuento = 0.0;
-    private double total = 0.0;
-    
-    // Información de la orden actual
-    private Long ordenId;
-    private String mesaNombre;
-    private String salonNombre;
-    private boolean cobraServicio = true;
+    // ====== Gson con adaptadores para java.time ======
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(java.time.LocalDate.class,
+                    (JsonDeserializer<java.time.LocalDate>) (je, t, ctx) ->
+                            java.time.LocalDate.parse(je.getAsString()))
+            .registerTypeAdapter(java.time.LocalDateTime.class,
+                    (JsonDeserializer<java.time.LocalDateTime>) (je, t, ctx) -> {
+                        String s = je.getAsString();
+                        try {
+                            return java.time.LocalDateTime.parse(
+                                    s, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                        } catch (Exception e) {
+                            // fallback si viene solo la fecha
+                            return java.time.LocalDate.parse(
+                                    s, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+                        }
+                    })
+            .create();
 
-    /**
-     * Inicializa el controlador después de que su elemento raíz ha sido procesado
-     */
+    private final ObservableList<DetalleOrden> lineas = FXCollections.observableArrayList();
+    private Orden ordenSeleccionada;
+
+    // Config negocio (puedes llevarlo a AppContext si quieres)
+    private static final BigDecimal IV_PORC = new BigDecimal("0.13");   // 13%
+    private static final BigDecimal SERV_PORC = new BigDecimal("0.10"); // 10%
+    private static final BigDecimal DESCUENTO_MAX = new BigDecimal("15"); // 15%
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Inicializar formatos
-        formatoMoneda = new DecimalFormat("₡#,##0.00");
-        formatoPorcentaje = NumberFormat.getPercentInstance(new Locale("es", "CR"));
-        formatoPorcentaje.setMaximumFractionDigits(2);
-        
-        // Inicializar lista de productos
-        productosVenta = FXCollections.observableArrayList();
-        
-        // Configurar tabla de productos
-        configurarTablaProductos();
-        
-        // Configurar reloj en tiempo real
-        iniciarReloj();
-        
-        // Cargar parámetros del sistema
-        cargarParametros();
-        
-        // Configurar listeners
-        configurarListeners();
-        
-        // Actualizar interfaz inicial
-        actualizarInterfaz();
-    }
+        // Usuario + fecha/hora
+        var user = AppContext.getInstance().getUsuarioLogueado();
+        lblUsuario.setText(user != null ? "Usuario: " + user.getNombre() : "Usuario: —");
+        lblFechaHora.setText(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()));
 
-    /**
-     * Configura las columnas de la tabla de productos
-     */
-    private void configurarTablaProductos() {
-        colProducto.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+        // Tabla
+        colProducto.setCellValueFactory(d ->
+                new SimpleStringProperty(
+                        d.getValue().getProducto() != null ? d.getValue().getProducto().getNombre() : "Producto"
+                )
+        );
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
-        
-        // Formatear precio con símbolo de moneda
-        colPrecio.setCellValueFactory(cellData -> 
-            new SimpleStringProperty(formatoMoneda.format(cellData.getValue().getPrecio()))
-        );
-        
-        // Formatear subtotal con símbolo de moneda
-        colSubtotal.setCellValueFactory(cellData -> 
-            new SimpleStringProperty(formatoMoneda.format(cellData.getValue().getSubtotal()))
-        );
-        
-        // Configurar columna de acciones con botones
-        configurarColumnaAcciones();
-        
-        tblProductos.setItems(productosVenta);
+        colPrecio.setCellValueFactory(d -> new SimpleStringProperty("₡" + fmt(d.getValue().getPrecioUnitario())));
+        colSubtotal.setCellValueFactory(d -> new SimpleStringProperty("₡" + fmt(d.getValue().getSubtotal())));
+        colAcciones.setCellValueFactory(d -> new SimpleStringProperty(""));
+
+        tblProductos.setItems(lineas);
+
+        // En V1 la edición de líneas se hace en “Órdenes”
+        btnAgregarProducto.setDisable(true);
+        btnModificarCantidad.setDisable(true);
+        btnEliminarProducto.setDisable(true);
+
+        // Defaults de caja
+        chkImpuestoVentas.setSelected(true);
+        chkImpuestoServicio.setSelected(true);
+        txtDescuento.setText("0");
+        txtEfectivo.setText("0.00");
+        txtTarjeta.setText("0.00");
+
+        // Cálculos reactivos
+        txtDescuento.setOnKeyReleased(e -> onCalcularTotales(null));
+        txtEfectivo.setOnKeyReleased(e -> onCalcularVuelto(null));
+        txtTarjeta.setOnKeyReleased(e -> onCalcularVuelto(null));
+        chkImpuestoVentas.setOnAction(e -> onCalcularTotales(null));
+        chkImpuestoServicio.setOnAction(e -> onCalcularTotales(null));
+
+        // Estado inicial
+        limpiarPantalla();
     }
 
-    /**
-     * Configura la columna de acciones con botones para cada fila
-     */
-    private void configurarColumnaAcciones() {
-        colAcciones.setCellFactory(param -> new TableCell<>() {
-            private final Button btnEliminar = new Button("🗑️");
-            
-            {
-                btnEliminar.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 5;");
-                btnEliminar.setOnAction(event -> {
-                    ProductoVenta producto = getTableView().getItems().get(getIndex());
-                    eliminarProducto(producto);
-                });
-            }
-            
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(btnEliminar);
-                }
-            }
-        });
+    private void limpiarPantalla() {
+        lblOrdenInfo.setText("Orden: —");
+        lblMesaInfo.setText("Mesa: —");
+        txtCliente.clear();
+        lineas.clear();
+
+        lblSubtotal.setText("₡0.00");
+        lblImpuestoVentas.setText("₡0.00");
+        lblImpuestoServicio.setText("₡0.00");
+        lblDescuento.setText("-₡0.00");
+        lblTotal.setText("₡0.00");
+        lblVuelto.setText("₡0.00");
+        ordenSeleccionada = null;
     }
 
-    /**
-     * Inicia el reloj que actualiza la fecha y hora en tiempo real
-     */
-    private void iniciarReloj() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
-        Timeline clock = new Timeline(new KeyFrame(Duration.ZERO, e -> {
-            LocalDateTime now = LocalDateTime.now();
-            lblFechaHora.setText(now.format(formatter));
-        }), new KeyFrame(Duration.seconds(1)));
-        clock.setCycleCount(Animation.INDEFINITE);
-        clock.play();
+    // ---------- Util ----------
+    private static String fmt(BigDecimal n) {
+        if (n == null) return "0.00";
+        return String.format("%,.2f", n);
     }
-
-    /**
-     * Carga los parámetros del sistema desde la base de datos
-     * En una implementación real, esto haría una llamada al servicio web
-     */
-    private void cargarParametros() {
-        // TODO: Implementar llamada al servicio web para obtener parámetros
-        // Por ahora usamos valores por defecto
-        
-        lblPorcentajeIV.setText("(" + porcentajeImpuestoVentas + "%)");
-        lblPorcentajeIS.setText("(" + porcentajeImpuestoServicio + "%)");
-        lblDescuentoMax.setText("Descuento máximo permitido: " + porcentajeDescuentoMaximo + "%");
+    private static BigDecimal nz(BigDecimal n) {
+        return n == null ? BigDecimal.ZERO : n;
     }
-
-    /**
-     * Configura los listeners para los campos de entrada
-     */
-    private void configurarListeners() {
-        // Validar que solo se ingresen números en campos numéricos
-        txtDescuento.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                txtDescuento.setText(oldValue);
-            }
-        });
-        
-        txtEfectivo.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                txtEfectivo.setText(oldValue);
-            }
-        });
-        
-        txtTarjeta.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                txtTarjeta.setText(oldValue);
-            }
-        });
-    }
-
-    /**
-     * Actualiza la interfaz con la información actual
-     */
-    private void actualizarInterfaz() {
-        // Actualizar información de la orden
-        if (ordenId != null) {
-            lblOrdenInfo.setText("Orden #" + ordenId);
-            if (mesaNombre != null && salonNombre != null) {
-                lblMesaInfo.setText("Mesa: " + mesaNombre + " - " + salonNombre);
-            }
+    private static BigDecimal parseMonto(String txt) {
+        try {
+            String t = txt == null ? "0" : txt.trim().replace("₡","").replace(",","");
+            return new BigDecimal(t);
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
         }
-        
-        // Actualizar estado de impuesto de servicio según la mesa/salón
-        chkImpuestoServicio.setSelected(cobraServicio);
-        
-        // Calcular totales
-        onCalcularTotales(null);
+    }
+    private static BigDecimal parsePct(String txt) {
+        try {
+            String t = txt == null ? "0" : txt.replace("%","").trim();
+            return new BigDecimal(t);
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
     }
 
-    // ==================== Event Handlers - Header ====================
-    
+    // ---------- Acciones UI ----------
     @FXML
-private void onVolver(ActionEvent event) {
-    FlowController.getInstance().goHomeWithFade();
-}
+    private void onVolver(ActionEvent event) {
+        FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú", 1000, 560);
+    }
 
-    // ==================== Event Handlers - Orden ====================
-    
     @FXML
     private void onSeleccionarOrden(ActionEvent event) {
-        // TODO: Abrir diálogo para seleccionar una orden existente
-        mostrarMensaje("Información", "Funcionalidad en desarrollo", 
-            "Esta función permitirá seleccionar órdenes pendientes de facturación", Alert.AlertType.INFORMATION);
+        try {
+            String res = RestClient.get("/ordenes/activas");
+            Map<String, Object> body = RestClient.parseResponse(res);
+            if (!Boolean.TRUE.equals(body.get("success"))) {
+                Mensaje.showWarning("Facturación", "No se pudieron obtener órdenes activas.");
+                return;
+            }
+            String data = gson.toJson(body.get("data"));
+            List<Orden> ordenes = gson.fromJson(data, new TypeToken<List<Orden>>(){}.getType());
+            if (ordenes == null || ordenes.isEmpty()) {
+                Mensaje.showInfo("Facturación", "No hay órdenes abiertas.");
+                return;
+            }
+
+            // Mapeamos display -> Orden
+            LinkedHashMap<String, Orden> map = new LinkedHashMap<>();
+            for (Orden o : ordenes) {
+                map.put(buildDisplay(o), o);
+            }
+
+            List<String> opciones = new ArrayList<>(map.keySet());
+            ChoiceDialog<String> dlg = new ChoiceDialog<>(opciones.get(0), opciones);
+            dlg.setTitle("Seleccionar Orden");
+            dlg.setHeaderText("Elija una orden abierta");
+            dlg.setContentText("Órdenes:");
+
+            Optional<String> opt = dlg.showAndWait();
+            if (opt.isEmpty()) return;
+
+            this.ordenSeleccionada = map.get(opt.get());
+            cargarDetallesDeOrden(this.ordenSeleccionada.getId());
+
+            // Info cabecera
+            lblOrdenInfo.setText("Orden #" + ordenSeleccionada.getId());
+            String mesaTxt = (ordenSeleccionada.getMesa() != null)
+                    ? (ordenSeleccionada.getMesa().getIdentificador() != null
+                    && !ordenSeleccionada.getMesa().getIdentificador().isBlank()
+                    ? ordenSeleccionada.getMesa().getIdentificador()
+                    : String.valueOf(ordenSeleccionada.getMesa().getId()))
+                    : "Barra";
+            lblMesaInfo.setText("Mesa: " + mesaTxt);
+
+            onCalcularTotales(null);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error", "No se pudo cargar la lista de órdenes.");
+        }
     }
 
-    // ==================== Event Handlers - Cliente ====================
-    
+    /** Crea el texto visible en el diálogo para una orden. */
+    private String buildDisplay(Orden o) {
+        String ubic = (o.getMesa() != null
+                ? "Mesa " + ((o.getMesa().getIdentificador() != null && !o.getMesa().getIdentificador().isBlank())
+                ? o.getMesa().getIdentificador()
+                : (o.getMesa().getId() != null ? o.getMesa().getId() : "—"))
+                : "Barra");
+        String fecha = (o.getFechaHora() != null)
+                ? o.getFechaHora().toString().replace('T',' ')
+                : "";
+        return "Orden #" + o.getId() + " · " + ubic + (fecha.isEmpty() ? "" : " · " + fecha);
+    }
+
+    private void cargarDetallesDeOrden(Long ordenId) {
+        try {
+            String res = RestClient.get("/ordenes/" + ordenId + "/detalles");
+            Map<String, Object> body = RestClient.parseResponse(res);
+            if (!Boolean.TRUE.equals(body.get("success"))) {
+                Mensaje.showWarning("Facturación", "No se pudieron cargar los detalles.");
+                return;
+            }
+            String data = gson.toJson(body.get("data"));
+            List<DetalleOrden> detalles = gson.fromJson(data, new TypeToken<List<DetalleOrden>>(){}.getType());
+            lineas.setAll(detalles != null ? detalles : Collections.emptyList());
+            onCalcularTotales(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error", "Error cargando detalles de la orden.");
+        }
+    }
+
     @FXML
     private void onBuscarCliente(ActionEvent event) {
-        // TODO: Abrir diálogo de búsqueda de clientes
-        mostrarMensaje("Información", "Funcionalidad en desarrollo", 
-            "Esta función permitirá buscar clientes registrados", Alert.AlertType.INFORMATION);
+        Mensaje.showInfo("Cliente", "Búsqueda de cliente (opcional). V1: ingresa el nombre manualmente.");
     }
 
-    // ==================== Event Handlers - Productos ====================
-    
     @FXML
     private void onAgregarProducto(ActionEvent event) {
-        // TODO: Abrir diálogo de selección de productos
-        // Por ahora agregamos un producto de ejemplo
-        ProductoVenta ejemplo = new ProductoVenta(
-            1L, "Producto Ejemplo", 1, 5000.0
-        );
-        productosVenta.add(ejemplo);
-        onCalcularTotales(null);
+        Mensaje.showInfo("Productos", "La edición de productos se realiza en la ventana Órdenes (V1).");
     }
 
     @FXML
     private void onModificarCantidad(ActionEvent event) {
-        ProductoVenta seleccionado = tblProductos.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarMensaje("Advertencia", "Seleccione un producto", 
-                "Debe seleccionar un producto de la tabla para modificar su cantidad", Alert.AlertType.WARNING);
-            return;
-        }
-        
-        // Solicitar nueva cantidad
-        TextInputDialog dialog = new TextInputDialog(String.valueOf(seleccionado.getCantidad()));
-        dialog.setTitle("Modificar Cantidad");
-        dialog.setHeaderText("Producto: " + seleccionado.getNombre());
-        dialog.setContentText("Nueva cantidad:");
-        
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(cantidad -> {
-            try {
-                int nuevaCantidad = Integer.parseInt(cantidad);
-                if (nuevaCantidad > 0) {
-                    seleccionado.setCantidad(nuevaCantidad);
-                    tblProductos.refresh();
-                    onCalcularTotales(null);
-                } else {
-                    mostrarMensaje("Error", "Cantidad inválida", 
-                        "La cantidad debe ser mayor a cero", Alert.AlertType.ERROR);
-                }
-            } catch (NumberFormatException e) {
-                mostrarMensaje("Error", "Cantidad inválida", 
-                    "Debe ingresar un número entero válido", Alert.AlertType.ERROR);
-            }
-        });
+        Mensaje.showInfo("Cantidad", "La edición de cantidades se realiza en Órdenes (V1).");
     }
 
     @FXML
     private void onEliminarProducto(ActionEvent event) {
-        ProductoVenta seleccionado = tblProductos.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarMensaje("Advertencia", "Seleccione un producto", 
-                "Debe seleccionar un producto de la tabla para eliminarlo", Alert.AlertType.WARNING);
-            return;
-        }
-        
-        eliminarProducto(seleccionado);
+        Mensaje.showInfo("Eliminar", "La eliminación de productos se realiza en Órdenes (V1).");
     }
 
-    /**
-     * Elimina un producto de la lista
-     */
-    private void eliminarProducto(ProductoVenta producto) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmar eliminación");
-        alert.setHeaderText("¿Eliminar producto?");
-        alert.setContentText("¿Está seguro que desea eliminar: " + producto.getNombre() + "?");
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            productosVenta.remove(producto);
-            onCalcularTotales(null);
-        }
-    }
-
-    // ==================== Event Handlers - Cálculos ====================
-    
     @FXML
     private void onCalcularTotales(ActionEvent event) {
-        // Calcular subtotal
-        subtotal = productosVenta.stream()
-            .mapToDouble(ProductoVenta::getSubtotal)
-            .sum();
-        
-        // Calcular impuesto de ventas
-        impuestoVentas = chkImpuestoVentas.isSelected() 
-            ? subtotal * (porcentajeImpuestoVentas / 100.0) 
-            : 0.0;
-        
-        // Calcular impuesto de servicio
-        impuestoServicio = chkImpuestoServicio.isSelected() 
-            ? subtotal * (porcentajeImpuestoServicio / 100.0) 
-            : 0.0;
-        
-        // Calcular descuento
-        double porcentajeDescuento = 0.0;
-        try {
-            porcentajeDescuento = Double.parseDouble(txtDescuento.getText());
-            if (porcentajeDescuento > porcentajeDescuentoMaximo) {
-                porcentajeDescuento = porcentajeDescuentoMaximo;
-                txtDescuento.setText(String.valueOf(porcentajeDescuentoMaximo));
-                mostrarMensaje("Advertencia", "Descuento excedido", 
-                    "El descuento máximo permitido es " + porcentajeDescuentoMaximo + "%", 
-                    Alert.AlertType.WARNING);
-            }
-        } catch (NumberFormatException e) {
-            porcentajeDescuento = 0.0;
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (DetalleOrden d : lineas) {
+            subtotal = subtotal.add(nz(d.getSubtotal()));
         }
-        
-        descuento = (subtotal + impuestoVentas + impuestoServicio) * (porcentajeDescuento / 100.0);
-        
-        // Calcular total
-        total = subtotal + impuestoVentas + impuestoServicio - descuento;
-        
-        // Actualizar labels
-        lblSubtotal.setText(formatoMoneda.format(subtotal));
-        lblImpuestoVentas.setText(formatoMoneda.format(impuestoVentas));
-        lblImpuestoServicio.setText(formatoMoneda.format(impuestoServicio));
-        lblDescuento.setText("-" + formatoMoneda.format(descuento));
-        lblTotal.setText(formatoMoneda.format(total));
-        
-        // Recalcular vuelto
+
+        // Impuestos
+        BigDecimal iv = BigDecimal.ZERO;
+        if (chkImpuestoVentas.isSelected()) {
+            iv = subtotal.multiply(IV_PORC);
+        }
+
+        BigDecimal serv = BigDecimal.ZERO;
+        if (chkImpuestoServicio.isSelected()) {
+            serv = subtotal.multiply(SERV_PORC);
+        }
+
+        // Descuento (%)
+        BigDecimal descPct = parsePct(txtDescuento.getText());
+        if (descPct.compareTo(DESCUENTO_MAX) > 0) {
+            descPct = DESCUENTO_MAX;
+            txtDescuento.setText(DESCUENTO_MAX.toPlainString());
+        } else if (descPct.compareTo(BigDecimal.ZERO) < 0) {
+            descPct = BigDecimal.ZERO;
+            txtDescuento.setText("0");
+        }
+        BigDecimal descuento = subtotal.add(iv).add(serv).multiply(descPct.movePointLeft(2));
+
+        BigDecimal total = subtotal.add(iv).add(serv).subtract(descuento);
+
+        lblSubtotal.setText("₡" + fmt(subtotal));
+        lblImpuestoVentas.setText("₡" + fmt(iv));
+        lblImpuestoServicio.setText("₡" + fmt(serv));
+        lblDescuento.setText("-₡" + fmt(descuento));
+        lblTotal.setText("₡" + fmt(total));
+
         onCalcularVuelto(null);
     }
 
     @FXML
     private void onCalcularVuelto(ActionEvent event) {
-        try {
-            double efectivo = Double.parseDouble(txtEfectivo.getText());
-            double tarjeta = Double.parseDouble(txtTarjeta.getText());
-            double recibido = efectivo + tarjeta;
-            double vuelto = recibido - total;
-            
-            if (vuelto < 0) {
-                lblVuelto.setText(formatoMoneda.format(0.0));
-                lblVuelto.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
-            } else {
-                lblVuelto.setText(formatoMoneda.format(vuelto));
-                lblVuelto.setStyle("-fx-font-weight: bold; -fx-text-fill: #2E7D32;");
-            }
-        } catch (NumberFormatException e) {
-            lblVuelto.setText(formatoMoneda.format(0.0));
-        }
+        BigDecimal total = parseMonto(lblTotal.getText());
+        BigDecimal efectivo = parseMonto(txtEfectivo.getText());
+        BigDecimal tarjeta = parseMonto(txtTarjeta.getText());
+        BigDecimal pagado = efectivo.add(tarjeta);
+        BigDecimal vuelto = pagado.subtract(total);
+        if (vuelto.compareTo(BigDecimal.ZERO) < 0) vuelto = BigDecimal.ZERO;
+        lblVuelto.setText("₡" + fmt(vuelto));
     }
 
-    // ==================== Event Handlers - Pago ====================
-    
     @FXML
     private void onProcesarPago(ActionEvent event) {
-        // Validaciones
-        if (productosVenta.isEmpty()) {
-            mostrarMensaje("Advertencia", "No hay productos", 
-                "Debe agregar al menos un producto para procesar el pago", Alert.AlertType.WARNING);
+        if (ordenSeleccionada == null) {
+            Mensaje.showWarning("Facturación", "Primero selecciona una orden.");
             return;
         }
-        
+        if (lineas.isEmpty()) {
+            Mensaje.showWarning("Facturación", "La orden no tiene productos.");
+            return;
+        }
+
+        BigDecimal total = parseMonto(lblTotal.getText());
+        BigDecimal efectivo = parseMonto(txtEfectivo.getText());
+        BigDecimal tarjeta = parseMonto(txtTarjeta.getText());
+        BigDecimal pagado = efectivo.add(tarjeta);
+
+        if (pagado.compareTo(total) < 0) {
+            Mensaje.showWarning("Pago insuficiente", "El monto pagado es menor que el total.");
+            return;
+        }
+
         try {
-            double efectivo = Double.parseDouble(txtEfectivo.getText());
-            double tarjeta = Double.parseDouble(txtTarjeta.getText());
-            double recibido = efectivo + tarjeta;
-            
-            if (recibido < total) {
-                mostrarMensaje("Advertencia", "Monto insuficiente", 
-                    "El monto recibido es menor al total a pagar", Alert.AlertType.WARNING);
+            // Construir payload de factura
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("ordenId", ordenSeleccionada.getId());
+            payload.put("clienteNombre", Optional.ofNullable(txtCliente.getText()).orElse("").trim());
+
+            Map<String, Object> resumen = new HashMap<>();
+            resumen.put("subtotal", parseMonto(lblSubtotal.getText()));
+            resumen.put("impuestoVentas", parseMonto(lblImpuestoVentas.getText()));
+            resumen.put("impuestoServicio", parseMonto(lblImpuestoServicio.getText()));
+            // descuento se muestra como "-₡x", lo convertimos a valor positivo
+            BigDecimal desc = parseMonto(lblDescuento.getText().replace("-",""));
+            resumen.put("descuento", desc);
+            resumen.put("total", total);
+            payload.put("resumen", resumen);
+
+            Map<String, Object> pagos = new HashMap<>();
+            pagos.put("efectivo", efectivo);
+            pagos.put("tarjeta", tarjeta);
+            payload.put("pagos", pagos);
+
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (DetalleOrden d : lineas) {
+                Map<String, Object> it = new HashMap<>();
+                Long pid = d.getProductoId() != null ? d.getProductoId()
+                        : (d.getProducto() != null ? d.getProducto().getId() : null);
+                it.put("productoId", pid);
+                it.put("nombre", d.getProducto() != null ? d.getProducto().getNombre() : "Producto");
+                it.put("cantidad", d.getCantidad());
+                it.put("precioUnitario", d.getPrecioUnitario());
+                items.add(it);
+            }
+            payload.put("items", items);
+
+            // 1) Crear factura
+            String resFactura = RestClient.post("/facturas", payload);
+            Map<String, Object> r1 = RestClient.parseResponse(resFactura);
+            if (!Boolean.TRUE.equals(r1.get("success"))) {
+                Mensaje.showError("Error", "No se pudo crear la factura:\n" + r1.get("message"));
                 return;
             }
-            
-            // Confirmar procesamiento
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmar Pago");
-            alert.setHeaderText("¿Procesar el pago?");
-            alert.setContentText("Total: " + formatoMoneda.format(total) + 
-                "\nRecibido: " + formatoMoneda.format(recibido) +
-                "\nVuelto: " + formatoMoneda.format(recibido - total));
-            
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == ButtonType.OK) {
-                // TODO: Implementar guardado de factura en BD mediante servicio web
-                procesarFactura();
-            }
-            
-        } catch (NumberFormatException e) {
-            mostrarMensaje("Error", "Montos inválidos", 
-                "Verifique que los montos de efectivo y tarjeta sean válidos", Alert.AlertType.ERROR);
-        }
-    }
 
-    /**
-     * Procesa la factura y la guarda en la base de datos
-     */
-    private void procesarFactura() {
-        // TODO: Implementar llamada al servicio web para guardar la factura
-        
-        mostrarMensaje("Éxito", "Pago procesado", 
-            "La factura ha sido procesada exitosamente", Alert.AlertType.INFORMATION);
-        
-        // Limpiar formulario
-        limpiarFormulario();
+            // 2) Marcar orden como FACTURADA (opción A)
+            boolean facturada = false;
+            try {
+                String resFact = RestClient.post("/ordenes/" + ordenSeleccionada.getId() + "/facturar", null);
+                Map<String, Object> rA = RestClient.parseResponse(resFact);
+                facturada = Boolean.TRUE.equals(rA.get("success"));
+            } catch (Exception ignored) { }
+
+            // 2b) Fallback opción B (PUT estado)
+            if (!facturada) {
+                Map<String, Object> upd = Map.of("estado", "FACTURADA");
+                try {
+                    String resPut = RestClient.put("/ordenes/" + ordenSeleccionada.getId(), upd);
+                    Map<String, Object> rB = RestClient.parseResponse(resPut);
+                    facturada = Boolean.TRUE.equals(rB.get("success"));
+                } catch (Exception ignored) { }
+            }
+
+            Mensaje.showSuccess("Éxito", facturada
+                    ? "Factura registrada y orden marcada como FACTURADA."
+                    : "Factura registrada. (No se pudo actualizar el estado de la orden.)");
+
+            limpiarPantalla();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error", "Fallo procesando el pago:\n" + e.getMessage());
+        }
     }
 
     @FXML
     private void onImprimir(ActionEvent event) {
-        if (productosVenta.isEmpty()) {
-            mostrarMensaje("Advertencia", "No hay productos", 
-                "Debe agregar productos antes de imprimir", Alert.AlertType.WARNING);
-            return;
-        }
-        
-        // TODO: Implementar generación e impresión de factura con JasperReports
-        mostrarMensaje("Información", "Funcionalidad en desarrollo", 
-            "Esta función generará e imprimirá la factura", Alert.AlertType.INFORMATION);
+        Mensaje.showInfo("Imprimir", "V1: genera e imprime el comprobante luego de procesar el pago.");
     }
 
     @FXML
     private void onEnviarEmail(ActionEvent event) {
-        if (productosVenta.isEmpty()) {
-            mostrarMensaje("Advertencia", "No hay productos", 
-                "Debe agregar productos antes de enviar por email", Alert.AlertType.WARNING);
-            return;
-        }
-        
-        // Solicitar email del cliente
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Enviar Factura por Email");
-        dialog.setHeaderText("Ingrese el correo electrónico del cliente");
-        dialog.setContentText("Email:");
-        
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(email -> {
-            if (validarEmail(email)) {
-                // TODO: Implementar envío de email con factura
-                mostrarMensaje("Información", "Email enviado", 
-                    "La factura ha sido enviada a: " + email, Alert.AlertType.INFORMATION);
-            } else {
-                mostrarMensaje("Error", "Email inválido", 
-                    "El formato del email no es válido", Alert.AlertType.ERROR);
-            }
-        });
+        Mensaje.showInfo("Email", "V1: envío por correo pendiente (requiere servicio en backend).");
     }
 
     @FXML
     private void onCancelar(ActionEvent event) {
-        if (productosVenta.isEmpty()) {
-            cerrarVentana();
-            return;
-        }
-        
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Confirmar Cancelación");
-        alert.setHeaderText("¿Cancelar la venta?");
-        alert.setContentText("Se perderán todos los productos agregados");
-        
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            limpiarFormulario();
-        }
-    }
-
-    // ==================== Métodos auxiliares ====================
-    
-    /**
-     * Limpia el formulario y reinicia los valores
-     */
-    private void limpiarFormulario() {
-        productosVenta.clear();
-        txtCliente.clear();
-        txtDescuento.setText("0");
-        txtEfectivo.setText("0.00");
-        txtTarjeta.setText("0.00");
-        chkImpuestoVentas.setSelected(true);
-        chkImpuestoServicio.setSelected(cobraServicio);
-        ordenId = null;
-        mesaNombre = null;
-        salonNombre = null;
-        
-        lblOrdenInfo.setText("Orden #0001");
-        lblMesaInfo.setText("Mesa: No asignada");
-        
-        onCalcularTotales(null);
-    }
-
-    /**
-     * Cierra la ventana actual
-     */
-    private void cerrarVentana() {
-        Stage stage = (Stage) btnVolver.getScene().getWindow();
-        stage.close();
-    }
-
-    /**
-     * Muestra un mensaje al usuario
-     */
-    private void mostrarMensaje(String titulo, String encabezado, String contenido, Alert.AlertType tipo) {
-        Alert alert = new Alert(tipo);
-        alert.setTitle(titulo);
-        alert.setHeaderText(encabezado);
-        alert.setContentText(contenido);
-        alert.showAndWait();
-    }
-
-    /**
-     * Valida el formato de un email
-     */
-    private boolean validarEmail(String email) {
-        String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-        return email.matches(regex);
-    }
-
-    // ==================== Métodos públicos para configuración ====================
-    
-    /**
-     * Configura la orden a facturar
-     */
-    public void configurarOrden(Long ordenId, String salonNombre, String mesaNombre, boolean cobraServicio) {
-        this.ordenId = ordenId;
-        this.salonNombre = salonNombre;
-        this.mesaNombre = mesaNombre;
-        this.cobraServicio = cobraServicio;
-        actualizarInterfaz();
-    }
-
-    /**
-     * Carga los productos de una orden existente
-     */
-    public void cargarProductosOrden(ObservableList<ProductoVenta> productos) {
-        this.productosVenta.clear();
-        this.productosVenta.addAll(productos);
-        onCalcularTotales(null);
-    }
-
-    // ==================== Clase interna ProductoVenta ====================
-    
-    /**
-     * Clase que representa un producto en la venta
-     */
-    public static class ProductoVenta {
-        private Long id;
-        private String nombre;
-        private int cantidad;
-        private double precio;
-
-        public ProductoVenta(Long id, String nombre, int cantidad, double precio) {
-            this.id = id;
-            this.nombre = nombre;
-            this.cantidad = cantidad;
-            this.precio = precio;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public void setId(Long id) {
-            this.id = id;
-        }
-
-        public String getNombre() {
-            return nombre;
-        }
-
-        public void setNombre(String nombre) {
-            this.nombre = nombre;
-        }
-
-        public int getCantidad() {
-            return cantidad;
-        }
-
-        public void setCantidad(int cantidad) {
-            this.cantidad = cantidad;
-        }
-
-        public double getPrecio() {
-            return precio;
-        }
-
-        public void setPrecio(double precio) {
-            this.precio = precio;
-        }
-
-        public double getSubtotal() {
-            return cantidad * precio;
-        }
+        limpiarPantalla();
     }
 }

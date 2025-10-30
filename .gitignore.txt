@@ -84,3 +84,16 @@ persistence.xml
 config/
 secrets/
 .credentials/
+
+
+# Ignorar archivos compilados de Java
+*.class
+
+# Ignorar carpeta de salida de Maven o Gradle
+/target/
+/build/
+
+# Ignorar archivos temporales del IDE
+.idea/
+.vscode/
+*.iml

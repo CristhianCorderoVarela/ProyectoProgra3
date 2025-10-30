@@ -1,6 +1,10 @@
 package cr.ac.una.restunaclient.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import cr.ac.una.restunaclient.model.Salon;
 import cr.ac.una.restunaclient.model.Usuario;
+import cr.ac.una.restunaclient.service.RestClient;
 import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
 import cr.ac.una.restunaclient.util.I18n;
@@ -15,8 +19,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.net.URL;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Controlador del menú principal
@@ -26,6 +29,7 @@ import java.util.ResourceBundle;
  * - Agregado módulo de Clientes (visible para Admin y Cajero)
  * - Habilitados módulos ya implementados (Grupos, Productos, Parametros, Salones)
  * - Los módulos en desarrollo quedan deshabilitados con mensaje
+ * - ⭐ NUEVO: Validación de barras antes de entrar a "Órdenes de Barra"
  */
 public class MenuPrincipalController implements Initializable {
 
@@ -49,8 +53,8 @@ public class MenuPrincipalController implements Initializable {
     @FXML private Label lblGrupos;
     @FXML private VBox btnProductos;
     @FXML private Label lblProductos;
-    @FXML private VBox btnClientes;        // ⭐ NUEVO
-    @FXML private Label lblClientes;       // ⭐ NUEVO
+    @FXML private VBox btnClientes;
+    @FXML private Label lblClientes;
     @FXML private VBox btnParametros;
     @FXML private Label lblParametros;
 
@@ -78,7 +82,6 @@ public class MenuPrincipalController implements Initializable {
             return;
         }
 
-        // Corrección: paréntesis para que el operador ternario no rompa la concatenación
         lblUsuario.setText(
                 (I18n.isSpanish() ? "Usuario: " : "User: ")
                         + usuarioLogueado.getNombre()
@@ -135,8 +138,8 @@ public class MenuPrincipalController implements Initializable {
         btnProductos.setVisible(false);
         btnProductos.setManaged(false);
 
-        btnClientes.setVisible(false);     // ⭐ NUEVO
-        btnClientes.setManaged(false);     // ⭐ NUEVO
+        btnClientes.setVisible(false);
+        btnClientes.setManaged(false);
 
         btnParametros.setVisible(false);
         btnParametros.setManaged(false);
@@ -155,8 +158,8 @@ public class MenuPrincipalController implements Initializable {
         btnProductos.setVisible(true);
         btnProductos.setManaged(true);
 
-        btnClientes.setVisible(true);      // ⭐ NUEVO
-        btnClientes.setManaged(true);      // ⭐ NUEVO
+        btnClientes.setVisible(true);
+        btnClientes.setManaged(true);
 
         btnParametros.setVisible(true);
         btnParametros.setManaged(true);
@@ -220,7 +223,6 @@ public class MenuPrincipalController implements Initializable {
         FlowController.getInstance().goToView("Productos", "RestUNA - Gestión de Productos", 1000, 560);
     }
 
-    // ⭐ NUEVO MÉTODO
     @FXML
     private void onClientes(MouseEvent event) {
         FlowController.getInstance().goToView("Clientes", "RestUNA - Gestión de Clientes", 1000, 560);
@@ -238,19 +240,76 @@ public class MenuPrincipalController implements Initializable {
         FlowController.getInstance().goToView("VistaSalones", "RestUNA - Salones", 1000, 560);
     }
 
+    /**
+     * ⭐ MODIFICADO: Ahora es "Órdenes de Barra"
+     * Valida que existan barras antes de permitir entrar
+     */
     @FXML
     private void onOrdenes(MouseEvent event) {
-        FlowController.getInstance().goToView("Ordenes", "RestUNA - Gestión de Órdenes", 1000, 560);
+        // Verificar si existen barras disponibles
+        if (!existenBarras()) {
+            Mensaje.showWarning(
+                I18n.isSpanish() ? "Sin Barras Disponibles" : "No Bars Available",
+                I18n.isSpanish() 
+                    ? "No se pueden guardar pedidos de barra ya que no hay barras creadas."
+                    : "Cannot save bar orders because no bars have been created."
+            );
+            return;
+        }
+
+        // Limpiar contexto previo
+        AppContext.getInstance().remove("mesaSeleccionada");
+        AppContext.getInstance().remove("salonSeleccionado");
+        
+        // Marcar que se entra desde "Órdenes de Barra"
+        AppContext.getInstance().set("modoOrden", "BARRA");
+        
+        FlowController.getInstance().goToView("Ordenes", "RestUNA - Órdenes de Barra", 1400, 800);
+    }
+
+    /**
+     * ⭐ NUEVO: Verifica si existen barras en el sistema
+     */
+    private boolean existenBarras() {
+        try {
+            String jsonResponse = RestClient.get("/salones");
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (!Boolean.TRUE.equals(response.get("success"))) {
+                return false;
+            }
+
+            Gson gson = new Gson();
+            String dataJson = gson.toJson(response.get("data"));
+            List<Salon> salones = gson.fromJson(dataJson, new TypeToken<List<Salon>>(){}.getType());
+
+            if (salones == null || salones.isEmpty()) {
+                return false;
+            }
+
+            // Verificar si hay al menos una barra activa
+            for (Salon salon : salones) {
+                if ("BARRA".equals(salon.getTipo()) && "A".equals(salon.getEstado())) {
+                    return true;
+                }
+            }
+
+            return false;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @FXML
-private void onFacturacion(MouseEvent event) {
-    FlowController.getInstance().goToView(
+    private void onFacturacion(MouseEvent event) {
+        FlowController.getInstance().goToView(
         "VentanaVentas",              // el nombre del .fxml registrado en FlowController
         "RestUNA - Facturación",      // título de la ventana
         1200, 700                     // tamaño; tu layout es ancho, algo tipo POS, dale más horizontal
     );
-}
+    }
 
     @FXML
     private void onCierres(MouseEvent event) {
@@ -282,27 +341,19 @@ private void onFacturacion(MouseEvent event) {
                 I18n.get("app.confirmacion"),
                 I18n.isSpanish() ? "¿Está seguro de cerrar sesión?" : "Are you sure you want to logout?")) {
 
-            // 1) limpiar sesión actual
             AppContext.getInstance().logout();
 
             FlowController fc = FlowController.getInstance();
             Stage main = fc.getMainStage();
 
-            // 2) ocultar la ventana principal
             main.hide();
 
-            // 3) volver a pedir login en modal (bloqueante)
             fc.goToViewInModal("Login", "RestUNA - Iniciar sesión", main);
 
-            // 4) si el login fue exitoso otra vez...
             if (AppContext.getInstance().getUsuarioLogueado() != null) {
-
-                // Volver al menú principal en el tamaño base definido en FlowController
                 fc.showMenuPrincipal();
                 main.show();
-
             } else {
-                // si canceló/cerró el login modal, cerramos app
                 main.close();
             }
         }
@@ -330,11 +381,14 @@ private void onFacturacion(MouseEvent event) {
         lblSalones.setText(I18n.get("menu.salones"));
         lblGrupos.setText(I18n.get("menu.grupos"));
         lblProductos.setText(I18n.get("menu.productos"));
-        lblClientes.setText(I18n.get("menu.clientes"));  // ⭐ NUEVO
+        lblClientes.setText(I18n.get("menu.clientes"));
         lblParametros.setText(I18n.get("menu.parametros"));
 
         lblVerSalones.setText(I18n.isSpanish() ? "Ver Salones" : "View Rooms");
-        lblOrdenes.setText(I18n.get("menu.ordenes"));
+        
+        // ⭐ MODIFICADO: Ahora dice "Órdenes de Barra"
+        lblOrdenes.setText(I18n.isSpanish() ? "Órdenes de Barra" : "Bar Orders");
+        
         lblFacturacion.setText(I18n.get("menu.facturacion"));
         lblCierres.setText(I18n.get("menu.cierres"));
         lblReportes.setText(I18n.get("menu.reportes"));

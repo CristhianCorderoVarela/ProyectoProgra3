@@ -1012,66 +1012,58 @@ public class VistaSalonesController implements Initializable {
 
     // ==================== EVENTO CLIC EN MESA (Modo Normal) ====================
     
-    private void onMesaClick(Mesa mesa) {
+     private void onMesaClick(Mesa mesa) {
         // Animación de selección
         StackPane mesaPane = mapaMesasVista.get(mesa.getId());
         if (mesaPane != null) {
             animarSeleccionMesa(mesaPane);
         }
-        
+
         // Mostrar diálogo de opciones
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle(I18n.isSpanish() ? "Mesa " + mesa.getIdentificador() : "Table " + mesa.getIdentificador());
-        alert.setHeaderText(I18n.isSpanish() ? 
-            "Estado: " + (mesa.isLibre() ? "Libre ✓" : "Ocupada ⚠") :
-            "Status: " + (mesa.isLibre() ? "Available ✓" : "Occupied ⚠"));
-        
-        String contenido = I18n.isSpanish() ?
-            "Salón: " + salonActual.getNombre() + "\n" +
-            "Mesa: " + mesa.getIdentificador() + "\n\n" +
-            "¿Qué desea hacer?" :
-            "Room: " + salonActual.getNombre() + "\n" +
-            "Table: " + mesa.getIdentificador() + "\n\n" +
-            "What would you like to do?";
-        
+        alert.setHeaderText(I18n.isSpanish()
+                ? "Estado: " + (mesa.isLibre() ? "Libre ✓" : "Ocupada ⚠")
+                : "Status: " + (mesa.isLibre() ? "Available ✓" : "Occupied ⚠"));
+
+        String contenido = I18n.isSpanish()
+                ? "Salón: " + salonActual.getNombre() + "\n"
+                + "Mesa: " + mesa.getIdentificador() + "\n\n"
+                + "¿Qué desea hacer?"
+                : "Room: " + salonActual.getNombre() + "\n"
+                + "Table: " + mesa.getIdentificador() + "\n\n"
+                + "What would you like to do?";
+
         alert.setContentText(contenido);
-        
+
         ButtonType btnCrearOrden = new ButtonType(
-            I18n.isSpanish() ? "📝 Crear/Ver Orden" : "📝 Create/View Order"
+                I18n.isSpanish() ? "📝 Crear/Ver Orden" : "📝 Create/View Order"
         );
         ButtonType btnCancelar = new ButtonType(
-            I18n.isSpanish() ? "Cancelar" : "Cancel", 
-            ButtonBar.ButtonData.CANCEL_CLOSE
+                I18n.isSpanish() ? "Cancelar" : "Cancel",
+                ButtonBar.ButtonData.CANCEL_CLOSE
         );
-        
+
         alert.getButtonTypes().setAll(btnCrearOrden, btnCancelar);
-        
+
         Optional<ButtonType> result = alert.showAndWait();
-        
+
         if (result.isPresent() && result.get() == btnCrearOrden) {
-            // Guardar contexto para la pantalla de órdenes
             AppContext.getInstance().set("mesaSeleccionada", mesa);
             AppContext.getInstance().set("salonSeleccionado", salonActual);
-            
-            // TODO: Navegar a pantalla de crear orden
-            Mensaje.showInfo("Próximamente", 
-                I18n.isSpanish() ? 
-                "La funcionalidad de crear órdenes está en desarrollo.\n\n" +
-                "Contexto guardado:\n" +
-                "- Salón: " + salonActual.getNombre() + "\n" +
-                "- Mesa: " + mesa.getIdentificador() + "\n" +
-                "- Estado: " + mesa.getEstado() :
-                "Order creation feature is under development.\n\n" +
-                "Context saved:\n" +
-                "- Room: " + salonActual.getNombre() + "\n" +
-                "- Table: " + mesa.getIdentificador() + "\n" +
-                "- Status: " + mesa.getEstado());
-            
-            // FUTURO: Descomentar cuando exista la vista de órdenes
-            // FlowController.getInstance().goToView("CrearOrden", 
-            //     "Orden - Mesa " + mesa.getIdentificador(), 1200, 800);
+            AppContext.getInstance().set("modoOrden", "SALON"); // ⭐ CRÍTICO
+
+            FlowController.getInstance().goToView(
+                    "Ordenes",
+                    I18n.isSpanish()
+                    ? "Orden - Mesa " + mesa.getIdentificador()
+                    : "Order - Table " + mesa.getIdentificador(),
+                    1400,
+                    800
+            );
         }
     }
+    
     
     private void animarSeleccionMesa(StackPane mesaPane) {
         // Animación de "pop" al seleccionar

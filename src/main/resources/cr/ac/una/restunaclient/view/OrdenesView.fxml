@@ -9,15 +9,12 @@
             fx:controller="cr.ac.una.restunaclient.controller.OrdenesController"
             style="-fx-background-color: #F5F5F0;">
 
-    <!-- TOP: Header -->
+    <!-- ==================== TOP: HEADER ==================== -->
     <top>
-        <VBox spacing="10" style="-fx-background-color: white;">
-            <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
-
-            <fx:define>
-                <ToggleGroup fx:id="tgTipoOrden"/>
-            </fx:define>
+        <VBox spacing="12" style="-fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);">
+            <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
             
+            <!-- Primera fila: Título, usuario y botones -->
             <HBox alignment="CENTER_LEFT" spacing="15">
                 <Label fx:id="lblTitle" text="📝 Gestión de Orden">
                     <font><Font name="System Bold" size="22"/></font>
@@ -32,85 +29,78 @@
                 </Button>
             </HBox>
 
-            <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Tipo de Orden:" style="-fx-font-weight: bold;"/>
-
-                <ToggleButton fx:id="tgMesa"
-                              text="Mesa"
-                              toggleGroup="$tgTipoOrden"
-                              selected="true"
-                              style="-fx-background-radius: 8; -fx-cursor: hand;"/>
-
-                <ToggleButton fx:id="tgBarra"
-                              text="Barra"
-                              toggleGroup="$tgTipoOrden"
-                              style="-fx-background-radius: 8; -fx-cursor: hand;"/>
-
-                <Separator orientation="VERTICAL" prefHeight="20"/>
-
-                <Label text="Salón:"/>
-                <ComboBox fx:id="cmbSalonSelect" prefWidth="180" promptText="Seleccione"/>
-
-                <Label text="Mesa:"/>
-                <ComboBox fx:id="cmbMesaSelect" prefWidth="120" promptText="Seleccione"/>
-
-                <Button fx:id="btnElegirMesa"
-                        text="🪑 Elegir Mesa"
-                        onAction="#onElegirMesa"
-                        style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;">
-                    <font><Font size="12"/></font>
-                </Button>
-
-                <Region HBox.hgrow="ALWAYS"/>
-
-                <Label fx:id="lblEstadoOrden" text="Nueva" style="-fx-text-fill: #666;">
-                    <font><Font size="12"/></font>
-                </Label>
-            </HBox>
-            
-            <HBox spacing="20" alignment="CENTER_LEFT">
-                <Label fx:id="lblMesaInfo" text="Mesa: —" style="-fx-font-weight: bold; -fx-text-fill: #FF7A00;">
-                    <font><Font size="14"/></font>
-                </Label>
-                <Separator orientation="VERTICAL" prefHeight="20"/>
-                <Label fx:id="lblSalonInfo" text="Salón: —" style="-fx-text-fill: #666;">
-                    <font><Font size="13"/></font>
-                </Label>
-                <Separator orientation="VERTICAL" prefHeight="20"/>
-                <Label fx:id="lblFechaHora" text="--/--/---- --:--" style="-fx-text-fill: #666;">
-                    <font><Font size="13"/></font>
-                </Label>
-
+            <!-- ⭐ SEGUNDA FILA: Header informativo de ubicación -->
+            <HBox spacing="15" alignment="CENTER_LEFT" 
+                  style="-fx-background-color: #FFF8F0; -fx-padding: 12; -fx-background-radius: 8;">
+                
+                <!-- Ubicación principal -->
+                <VBox spacing="4">
+                    <Label fx:id="lblUbicacionTipo" text="🪑 Mesa: 5" 
+                           style="-fx-font-weight: bold; -fx-text-fill: #FF7A00; -fx-font-size: 16px;"/>
+                    <Label fx:id="lblUbicacionDetalle" text="Salón: Principal" 
+                           style="-fx-text-fill: #666; -fx-font-size: 14px;"/>
+                </VBox>
+                
+                <Separator orientation="VERTICAL" prefHeight="40"/>
+                
+                <!-- Fecha y hora -->
+                <VBox spacing="4" alignment="CENTER_LEFT">
+                    <Label text="📅 Fecha y Hora" style="-fx-font-size: 11px; -fx-text-fill: #999;"/>
+                    <Label fx:id="lblFechaHora" text="27/10/2025 23:06" 
+                           style="-fx-text-fill: #666; -fx-font-size: 13px; -fx-font-weight: bold;"/>
+                </VBox>
+                
                 <Region HBox.hgrow="ALWAYS"/>
                 
+                <!-- Botón cancelar -->
                 <Button fx:id="btnCancelarOrden" text="❌ Cancelar Orden" onAction="#onCancelarOrden" 
                         style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
                     <font><Font size="13"/></font>
                 </Button>
             </HBox>
+            
+            <!-- ⭐ TERCERA FILA: Selector de barra (control de visibilidad desde Java) -->
+            <HBox fx:id="hboxSelectorBarra" spacing="12" alignment="CENTER_LEFT" 
+                  style="-fx-background-color: #E8F5E9; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #4CAF50; -fx-border-width: 2; -fx-border-radius: 8;">
+                
+                <Label text="🍹" style="-fx-font-size: 18px;"/>
+                
+                <Label fx:id="lblSelectorBarra" text="Seleccione Barra:" 
+                       style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #2E7D32;"/>
+                
+                <ComboBox fx:id="cmbBarraSelect" prefWidth="250" promptText="Seleccione una barra"
+                          style="-fx-font-size: 13px;"/>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <Label text="⚠ Seleccione la barra donde tomará el pedido" 
+                       style="-fx-text-fill: #666; -fx-font-size: 12px; -fx-font-style: italic;"/>
+            </HBox>
         </VBox>
     </top>
     
-    <!-- CENTER: Contenido principal -->
+    <!-- ==================== CENTER: CONTENIDO PRINCIPAL ==================== -->
     <center>
         <HBox spacing="15" BorderPane.alignment="CENTER">
             <padding><Insets top="15" bottom="15" left="30" right="30"/></padding>
             
-            <!-- PANEL IZQUIERDO: Selector de productos -->
+            <!-- ==================== PANEL IZQUIERDO: Selector de productos ==================== -->
             <VBox spacing="15" prefWidth="450"
                   style="-fx-background-color: white; -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
-                <Label text="Seleccionar Productos" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                <Label text="🍽️ Seleccionar Productos" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
                 
+                <!-- Búsqueda y filtros -->
                 <HBox spacing="10">
-                    <TextField fx:id="txtBuscarProducto" promptText="Buscar producto..." HBox.hgrow="ALWAYS">
+                    <TextField fx:id="txtBuscarProducto" promptText="🔍 Buscar producto..." HBox.hgrow="ALWAYS">
                         <font><Font size="13"/></font>
                     </TextField>
                     <ComboBox fx:id="cmbGrupos" prefWidth="180" promptText="Todos los grupos"/>
                 </HBox>
                 
+                <!-- Grid de productos -->
                 <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" 
                             style="-fx-background: transparent; -fx-background-color: transparent;">
                     <FlowPane fx:id="flowProductos" hgap="10" vgap="10" 
@@ -118,14 +108,15 @@
                 </ScrollPane>
             </VBox>
             
-            <!-- PANEL CENTRAL: Detalles de la orden -->
+            <!-- ==================== PANEL CENTRAL: Detalles de la orden ==================== -->
             <VBox spacing="15" HBox.hgrow="ALWAYS"
                   style="-fx-background-color: white; -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
-                <Label text="Detalles de la Orden" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                <Label text="🛒 Detalles de la Orden" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
                 
+                <!-- Tabla de productos -->
                 <TableView fx:id="tblDetalles" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colProducto" text="Producto" prefWidth="250"/>
@@ -140,15 +131,18 @@
                 
                 <Separator/>
                 
+                <!-- Observaciones -->
                 <VBox spacing="5">
-                    <Label text="Observaciones:" style="-fx-font-weight: bold;"/>
+                    <Label text="📝 Observaciones:" style="-fx-font-weight: bold;"/>
                     <TextArea fx:id="txtObservaciones" prefHeight="80" wrapText="true"
                               promptText="Observaciones adicionales..."/>
                 </VBox>
                 
                 <Separator/>
                 
-                <HBox spacing="15" alignment="CENTER">
+                <!-- Total y botón guardar -->
+                <HBox spacing="15" alignment="CENTER" 
+                      style="-fx-background-color: #FFF5EC; -fx-padding: 15; -fx-background-radius: 8;">
                     <Label text="TOTAL:" style="-fx-font-weight: bold; -fx-font-size: 18px;"/>
                     <Label fx:id="lblTotal" text="₡0.00"
                            style="-fx-text-fill: #FF7A00; -fx-font-weight: bold; -fx-font-size: 24px;"/>
@@ -161,12 +155,14 @@
                 </HBox>
             </VBox>
 
-            <!-- PANEL DERECHO NUEVO: Lista de Órdenes -->
+            <!-- ==================== PANEL DERECHO: Lista de Órdenes ==================== -->
             <VBox spacing="10" prefWidth="320"
                   style="-fx-background-color: white; -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
-                <Label text="Órdenes en curso" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                
+                <Label text="📋 Órdenes en Curso" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                
                 <ScrollPane fx:id="scrollOrdenes" fitToWidth="true" VBox.vgrow="ALWAYS"
                             style="-fx-background-color: transparent;">
                     <VBox fx:id="vboxOrdenes" spacing="8">

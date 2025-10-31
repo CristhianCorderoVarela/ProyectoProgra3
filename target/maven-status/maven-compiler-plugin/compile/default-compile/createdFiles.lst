@@ -8,6 +8,7 @@ cr\ac\una\restunaclient\model\Producto.class
 cr\ac\una\restunaclient\controller\LoginController.class
 cr\ac\una\restunaclient\model\Orden.class
 cr\ac\una\restunaclient\controller\OrdenesController.class
+cr\ac\una\restunaclient\controller\ReportesController$1.class
 cr\ac\una\restunaclient\controller\VentanaVentasController.class
 cr\ac\una\restunaclient\model\Salon.class
 cr\ac\una\restunaclient\model\Factura.class
@@ -35,6 +36,7 @@ cr\ac\una\restunaclient\controller\SalonesController.class
 cr\ac\una\restunaclient\controller\OrdenesController$7.class
 cr\ac\una\restunaclient\controller\ProductosController$4.class
 cr\ac\una\restunaclient\controller\ProductosController$1.class
+cr\ac\una\restunaclient\service\ReportesService.class
 cr\ac\una\restunaclient\model\ByteArrayBase64Adapter.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$4.class
 cr\ac\una\restunaclient\util\Mensaje.class

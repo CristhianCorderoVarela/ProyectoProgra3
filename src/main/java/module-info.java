@@ -13,6 +13,7 @@ module cr.ac.una.restunaclient {
     // ControlsFX
     requires org.controlsfx.controls;
     requires java.base;
+    requires java.desktop;
     
     // Opens para reflexión de JavaFX
     opens cr.ac.una.restunaclient to javafx.fxml;

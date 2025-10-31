@@ -60,11 +60,6 @@
 
     <!-- ================== CONTENIDO PRINCIPAL ================== -->
     <center>
-        <!-- Igual idea que Salones:
-             - spacing entre paneles
-             - panel izquierdo: crece con la ventana
-             - panel derecho: ancho fijo
-             - en panel derecho los botones quedan fijos abajo -->
         <HBox spacing="20" BorderPane.alignment="CENTER">
             <padding>
                 <Insets top="20" bottom="20" left="30" right="30"/>
@@ -115,7 +110,8 @@
 
                 <!-- Cliente -->
                 <VBox spacing="8">
-                    <Label text="Cliente:"
+                    <Label fx:id="lblCliente"
+                           text="Cliente:"
                            style="-fx-font-weight: bold; -fx-text-fill: #333;">
                         <font>
                             <Font size="13"/>
@@ -124,13 +120,13 @@
 
                     <HBox alignment="CENTER_LEFT" spacing="10">
                         <TextField fx:id="txtCliente"
-           promptText="Nombre del cliente (opcional)"
-           onKeyReleased="#onClienteKeyTyped"
-           HBox.hgrow="ALWAYS">
-    <font>
-        <Font size="12"/>
-    </font>
-</TextField>
+                                   promptText="Nombre del cliente (opcional)"
+                                   onKeyReleased="#onClienteKeyTyped"
+                                   HBox.hgrow="ALWAYS">
+                            <font>
+                                <Font size="12"/>
+                            </font>
+                        </TextField>
 
                         <Button fx:id="btnBuscarCliente"
                                 text="Buscar"
@@ -150,7 +146,8 @@
                 <!-- Productos -->
                 <VBox spacing="10" VBox.vgrow="ALWAYS">
                     <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label text="Productos en la Orden:"
+                        <Label fx:id="lblProductosOrden"
+                               text="Productos en la Orden:"
                                style="-fx-font-weight: bold; -fx-text-fill: #333;">
                             <font>
                                 <Font size="13"/>
@@ -229,9 +226,6 @@
             </VBox>
 
             <!-- ========== PANEL DERECHO (Resumen / Pago / Acciones finales) ========== -->
-            <!-- Truco para que los botones se vean SIEMPRE:
-                 - ScrollPane con TODO lo que puede crecer
-                 - Botones finales afuera del ScrollPane, al fondo -->
             <VBox spacing="15"
                   prefWidth="380"
                   style="-fx-background-color: white;
@@ -252,7 +246,8 @@
 
                             <!-- Resumen de Venta -->
                             <VBox spacing="10">
-                                <Label text="Resumen de Venta"
+                                <Label fx:id="lblResumenVenta"
+                                       text="Resumen de Venta"
                                        style="-fx-font-weight: bold; -fx-text-fill: #333;">
                                     <font>
                                         <Font size="16"/>
@@ -267,7 +262,9 @@
                                              -fx-padding: 10;">
                                     <!-- Subtotal -->
                                     <HBox alignment="CENTER_LEFT">
-                                        <Label text="Subtotal:" style="-fx-text-fill: #333;">
+                                        <Label fx:id="lblSubtotalLabel"
+                                               text="Subtotal:"
+                                               style="-fx-text-fill: #333;">
                                             <font>
                                                 <Font size="13"/>
                                             </font>
@@ -348,7 +345,8 @@
 
                                     <!-- Descuento -->
                                     <HBox alignment="CENTER_LEFT" spacing="8">
-                                        <Label text="Desc.:"
+                                        <Label fx:id="lblDescuentoLabel"
+                                               text="Desc.:"
                                                style="-fx-text-fill: #333;">
                                             <font>
                                                 <Font size="12"/>
@@ -361,7 +359,6 @@
                                                    alignment="CENTER_RIGHT"
                                                    onKeyReleased="#onCalcularTotales"/>
 
-                                        <!-- dejamos espacio antes del % para no romper FXMLLoader -->
                                         <Label text=" %"
                                                style="-fx-text-fill: #333;">
                                             <font>
@@ -392,7 +389,8 @@
 
                                     <!-- TOTAL -->
                                     <HBox alignment="CENTER_LEFT">
-                                        <Label text="TOTAL:"
+                                        <Label fx:id="lblTotalLabel"
+                                               text="TOTAL:"
                                                style="-fx-font-weight: bold; -fx-text-fill: #333;">
                                             <font>
                                                 <Font size="14"/>
@@ -416,7 +414,8 @@
 
                             <!-- Métodos de Pago -->
                             <VBox spacing="10">
-                                <Label text="Métodos de Pago"
+                                <Label fx:id="lblMetodosPago"
+                                       text="Métodos de Pago"
                                        style="-fx-font-weight: bold; -fx-text-fill: #333;">
                                     <font>
                                         <Font size="13"/>
@@ -424,7 +423,8 @@
                                 </Label>
 
                                 <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label prefWidth="80"
+                                    <Label fx:id="lblEfectivoLabel"
+                                           prefWidth="80"
                                            text="Efectivo:"
                                            style="-fx-text-fill: #333;">
                                         <font>
@@ -440,7 +440,8 @@
                                 </HBox>
 
                                 <HBox alignment="CENTER_LEFT" spacing="10">
-                                    <Label prefWidth="80"
+                                    <Label fx:id="lblTarjetaLabel"
+                                           prefWidth="80"
                                            text="Tarjeta:"
                                            style="-fx-text-fill: #333;">
                                         <font>
@@ -459,7 +460,8 @@
                                       style="-fx-background-color: #F5F5F0;
                                              -fx-background-radius: 8;
                                              -fx-padding: 8;">
-                                    <Label text="Vuelto:"
+                                    <Label fx:id="lblVueltoLabel"
+                                           text="Vuelto:"
                                            style="-fx-font-weight: bold; -fx-text-fill: #333;">
                                         <font>
                                             <Font size="13"/>

@@ -10,6 +10,7 @@ import cr.ac.una.restunaclient.model.Producto;
 import cr.ac.una.restunaclient.service.RestClient;
 import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
+import cr.ac.una.restunaclient.util.I18n;
 import cr.ac.una.restunaclient.util.Mensaje;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.SimpleStringProperty;
@@ -30,6 +31,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -49,10 +51,12 @@ public class VentanaVentasController implements Initializable {
     @FXML private Button btnSeleccionarOrden;
 
     // Cliente
+    @FXML private Label lblCliente;
     @FXML private TextField txtCliente;
     @FXML private Button btnBuscarCliente;
 
-    // Tabla productos (detalle de la ORDEN actual)
+    // Tabla productos
+    @FXML private Label lblProductosOrden;
     @FXML private TableView<DetalleOrden> tblProductos;
     @FXML private TableColumn<DetalleOrden, String> colProducto;
     @FXML private TableColumn<DetalleOrden, Integer> colCantidad;
@@ -65,6 +69,8 @@ public class VentanaVentasController implements Initializable {
     @FXML private Button btnEliminarProducto;
 
     // Totales
+    @FXML private Label lblResumenVenta;
+    @FXML private Label lblSubtotalLabel;
     @FXML private Label lblSubtotal;
     @FXML private CheckBox chkImpuestoVentas;
     @FXML private Label lblPorcentajeIV;
@@ -72,14 +78,20 @@ public class VentanaVentasController implements Initializable {
     @FXML private CheckBox chkImpuestoServicio;
     @FXML private Label lblPorcentajeIS;
     @FXML private Label lblImpuestoServicio;
+    @FXML private Label lblDescuentoLabel;
     @FXML private TextField txtDescuento;
     @FXML private Label lblDescuento;
     @FXML private Label lblDescuentoMax;
+    @FXML private Label lblTotalLabel;
     @FXML private Label lblTotal;
 
     // Pagos
+    @FXML private Label lblMetodosPago;
+    @FXML private Label lblEfectivoLabel;
     @FXML private TextField txtEfectivo;
+    @FXML private Label lblTarjetaLabel;
     @FXML private TextField txtTarjeta;
+    @FXML private Label lblVueltoLabel;
     @FXML private Label lblVuelto;
 
     // Botones finales
@@ -88,7 +100,6 @@ public class VentanaVentasController implements Initializable {
     @FXML private Button btnEnviarEmail;
     @FXML private Button btnCancelar;
 
-    // Gson (con adaptadores para java.time.*)
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(java.time.LocalDate.class,
                     (JsonDeserializer<java.time.LocalDate>) (je, t, ctx) ->
@@ -106,22 +117,20 @@ public class VentanaVentasController implements Initializable {
                     })
             .create();
 
-    // Detalle de la orden (líneas que se ven en tblProductos)
     private final ObservableList<DetalleOrden> lineas = FXCollections.observableArrayList();
     private Orden ordenSeleccionada;
 
-    // ===== Cliente seleccionado actual =====
+    // Cliente seleccionado
     private Long   clienteSeleccionadoId     = null;
     private String clienteSeleccionadoNombre = null;
     private String clienteSeleccionadoCorreo = null;
 
-    // ===== Autocomplete clientes =====
+    // Autocomplete clientes
     private final ContextMenu menuClientes = new ContextMenu();
     private List<Map<String,Object>> ultimosClientes = Collections.emptyList();
     private final PauseTransition clienteSearchDelay = new PauseTransition(Duration.millis(250));
 
-    // ===== Catálogo de productos (todos los productos activos del backend) =====
-    // Lo cargamos una sola vez y luego filtramos en memoria.
+    // Catálogo productos
     private final ObservableList<Producto> catalogoProductos = FXCollections.observableArrayList();
 
     // Config negocio
@@ -132,13 +141,13 @@ public class VentanaVentasController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         var user = AppContext.getInstance().getUsuarioLogueado();
-        lblUsuario.setText(user != null ? "Usuario: " + user.getNombre() : "Usuario: —");
+        lblUsuario.setText(user != null ? I18n.get("facturacion.usuario") + user.getNombre() : I18n.get("facturacion.usuario") + "—");
         lblFechaHora.setText(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()));
 
-        // Config tabla de productos (líneas de la orden en facturación)
+        // Config tabla
         colProducto.setCellValueFactory(d ->
                 new SimpleStringProperty(
-                        d.getValue().getProducto() != null ? d.getValue().getProducto().getNombre() : "Producto"
+                        d.getValue().getProducto() != null ? d.getValue().getProducto().getNombre() : I18n.get("facturacion.producto")
                 )
         );
         colCantidad.setCellValueFactory(new PropertyValueFactory<>("cantidad"));
@@ -148,21 +157,25 @@ public class VentanaVentasController implements Initializable {
 
         tblProductos.setItems(lineas);
 
-        // Impuestos / pago defaults
+        tblProductos.getSelectionModel().selectedItemProperty().addListener(
+                (obs, oldSel, newSel) -> updateBotonesEdicion()
+        );
+
+        // Defaults
         chkImpuestoVentas.setSelected(true);
         chkImpuestoServicio.setSelected(true);
         txtDescuento.setText("0");
         txtEfectivo.setText("0.00");
         txtTarjeta.setText("0.00");
 
-        // Recalcular totales / vuelto en vivo
+        // Recalcular en vivo
         txtDescuento.setOnKeyReleased(e -> onCalcularTotales(null));
         txtEfectivo.setOnKeyReleased(e -> onCalcularVuelto(null));
         txtTarjeta.setOnKeyReleased(e -> onCalcularVuelto(null));
         chkImpuestoVentas.setOnAction(e -> onCalcularTotales(null));
         chkImpuestoServicio.setOnAction(e -> onCalcularTotales(null));
 
-        // ==== Autocomplete Cliente ====
+        // Autocomplete cliente
         clienteSearchDelay.setOnFinished(e -> buscarYMostrarSugerencias(txtCliente.getText().trim()));
         txtCliente.focusedProperty().addListener((obs, oldV, newV) -> {
             if (!newV) {
@@ -170,25 +183,22 @@ public class VentanaVentasController implements Initializable {
             }
         });
 
-        limpiarPantalla(); // también setea estados iniciales de botones
+        limpiarPantalla();
+        actualizarTextos();
     }
 
-    // =================================================================================
-    // ESTADO / RESET
-    // =================================================================================
+    // ========== ESTADO / RESET ==========
     private void limpiarPantalla() {
-        lblOrdenInfo.setText("Orden: —");
-        lblMesaInfo.setText("Mesa: —");
+        lblOrdenInfo.setText(I18n.get("facturacion.ordenNoAsignada"));
+        lblMesaInfo.setText(I18n.get("facturacion.mesaNoAsignada"));
 
-        // limpiar cliente
         txtCliente.clear();
-        clienteSeleccionadoId     = null;
+        clienteSeleccionadoId = null;
         clienteSeleccionadoNombre = null;
         clienteSeleccionadoCorreo = null;
         menuClientes.hide();
         ultimosClientes = Collections.emptyList();
 
-        // limpiar líneas y totales
         lineas.clear();
         lblSubtotal.setText("₡0.00");
         lblImpuestoVentas.setText("₡0.00");
@@ -197,31 +207,30 @@ public class VentanaVentasController implements Initializable {
         lblTotal.setText("₡0.00");
         lblVuelto.setText("₡0.00");
 
-        ordenSeleccionada = null;
+        txtDescuento.setText("0");
+        txtEfectivo.setText("0.00");
+        txtTarjeta.setText("0.00");
+        chkImpuestoVentas.setSelected(true);
+        chkImpuestoServicio.setSelected(true);
 
-        // botones de edición de productos
+        ordenSeleccionada = null;
         updateBotonesEdicion();
     }
 
-    /**
-     * Habilita/deshabilita los botones relacionados con productos según tengamos una orden seleccionada.
-     * - Agregar: SÍ se puede si ya hay ordenSeleccionada.
-     * - Modificar/Eliminar: todavía NO implementados (quedan deshabilitados siempre).
-     */
     private void updateBotonesEdicion() {
         boolean hayOrden = (ordenSeleccionada != null);
+        boolean haySeleccion = (tblProductos.getSelectionModel().getSelectedItem() != null);
 
         btnAgregarProducto.setDisable(!hayOrden);
-        btnModificarCantidad.setDisable(true);
-        btnEliminarProducto.setDisable(true);
+        btnModificarCantidad.setDisable(!hayOrden || !haySeleccion);
+        btnEliminarProducto.setDisable(!hayOrden || !haySeleccion);
     }
 
-    // =================================================================================
-    // UTILIDADES NUMÉRICAS
-    // =================================================================================
     private static String fmt(BigDecimal n) {
-        if (n == null) return "0.00";
-        return String.format("%,.2f", n);
+        if (n == null) {
+            return "0.00";
+        }
+        return String.format(java.util.Locale.US, "%,.2f", n);
     }
 
     private static BigDecimal nz(BigDecimal n) {
@@ -230,47 +239,95 @@ public class VentanaVentasController implements Initializable {
 
     private static BigDecimal parseMonto(String txt) {
         try {
-            String t = txt == null ? "0" : txt.trim().replace("₡", "").replace(",", "");
-            return new BigDecimal(t);
-        } catch (Exception e) {
+            if (txt == null || txt.trim().isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            String limpio = txt.trim()
+                    .replace("₡", "")
+                    .replace("€", "")
+                    .replace("$", "")
+                    .replace(" ", "")
+                    .replace("\u00A0", "")
+                    .trim();
+
+            if (limpio.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            int ultimaComa = limpio.lastIndexOf(',');
+            int ultimoPunto = limpio.lastIndexOf('.');
+
+            if (ultimaComa > -1 && ultimoPunto == -1) {
+                if (limpio.indexOf(',') != ultimaComa) {
+                    limpio = limpio.substring(0, ultimaComa).replace(",", "") + "." + limpio.substring(ultimaComa + 1);
+                } else {
+                    limpio = limpio.replace(",", ".");
+                }
+            } else if (ultimoPunto > -1 && ultimaComa == -1) {
+                if (limpio.indexOf('.') != ultimoPunto) {
+                    limpio = limpio.substring(0, ultimoPunto).replace(".", "") + "." + limpio.substring(ultimoPunto + 1);
+                }
+            } else if (ultimaComa > -1 && ultimoPunto > -1) {
+                if (ultimaComa > ultimoPunto) {
+                    limpio = limpio.replace(".", "").replace(",", ".");
+                } else {
+                    limpio = limpio.replace(",", "");
+                }
+            }
+
+            BigDecimal resultado = new BigDecimal(limpio);
+            return resultado.setScale(2, RoundingMode.HALF_UP);
+
+        } catch (NumberFormatException e) {
+            System.err.println("❌ Error parseando monto: '" + txt + "' - " + e.getMessage());
+            e.printStackTrace();
             return BigDecimal.ZERO;
         }
     }
 
     private static BigDecimal parsePct(String txt) {
         try {
-            String t = txt == null ? "0" : txt.replace("%", "").trim();
-            return new BigDecimal(t);
-        } catch (Exception e) {
+            if (txt == null || txt.trim().isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            String limpio = txt.replace("%", "").trim();
+
+            if (limpio.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            BigDecimal resultado = new BigDecimal(limpio);
+            return resultado.setScale(2, RoundingMode.HALF_UP);
+
+        } catch (NumberFormatException e) {
+            System.err.println("❌ Error parseando porcentaje: '" + txt + "' - " + e.getMessage());
             return BigDecimal.ZERO;
         }
     }
 
-    // =================================================================================
-    // NAVEGACIÓN
-    // =================================================================================
+    // ========== NAVEGACIÓN ==========
     @FXML
     private void onVolver(ActionEvent event) {
         FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú", 1000, 560);
     }
 
-    // =================================================================================
-    // ORDENES
-    // =================================================================================
+    // ========== ORDENES ==========
     @FXML
     private void onSeleccionarOrden(ActionEvent event) {
         try {
             String res = RestClient.get("/ordenes/activas");
             Map<String, Object> body = RestClient.parseResponse(res);
             if (!Boolean.TRUE.equals(body.get("success"))) {
-                Mensaje.showWarning("Facturación", "No se pudieron obtener órdenes activas.");
+                Mensaje.showWarning(I18n.get("facturacion.titulo"), I18n.get("facturacion.errorCargarOrdenes"));
                 return;
             }
 
             String data = gson.toJson(body.get("data"));
             List<Orden> ordenes = gson.fromJson(data, new TypeToken<List<Orden>>(){}.getType());
             if (ordenes == null || ordenes.isEmpty()) {
-                Mensaje.showInfo("Facturación", "No hay órdenes abiertas.");
+                Mensaje.showInfo(I18n.get("facturacion.titulo"), I18n.get("facturacion.noOrdenesAbiertas"));
                 return;
             }
 
@@ -281,9 +338,9 @@ public class VentanaVentasController implements Initializable {
 
             List<String> opciones = new ArrayList<>(map.keySet());
             ChoiceDialog<String> dlg = new ChoiceDialog<>(opciones.get(0), opciones);
-            dlg.setTitle("Seleccionar Orden");
-            dlg.setHeaderText("Elija una orden abierta");
-            dlg.setContentText("Órdenes:");
+            dlg.setTitle(I18n.get("facturacion.seleccionarOrden"));
+            dlg.setHeaderText(I18n.get("facturacion.eligaOrden"));
+            dlg.setContentText(I18n.get("facturacion.ordenes"));
 
             Optional<String> opt = dlg.showAndWait();
             if (opt.isEmpty()) return;
@@ -291,42 +348,37 @@ public class VentanaVentasController implements Initializable {
             this.ordenSeleccionada = map.get(opt.get());
             cargarDetallesDeOrden(this.ordenSeleccionada.getId());
 
-            lblOrdenInfo.setText("Orden #" + ordenSeleccionada.getId());
+            lblOrdenInfo.setText(I18n.get("facturacion.ordenNum") + ordenSeleccionada.getId());
             String mesaTxt = (ordenSeleccionada.getMesa() != null)
-                    ? (
-                    ordenSeleccionada.getMesa().getIdentificador() != null
+                    ? (ordenSeleccionada.getMesa().getIdentificador() != null
                             && !ordenSeleccionada.getMesa().getIdentificador().isBlank()
                             ? ordenSeleccionada.getMesa().getIdentificador()
-                            : String.valueOf(ordenSeleccionada.getMesa().getId())
-            )
-                    : "Barra";
-            lblMesaInfo.setText("Mesa: " + mesaTxt);
+                            : String.valueOf(ordenSeleccionada.getMesa().getId()))
+                    : I18n.get("facturacion.barra");
+            lblMesaInfo.setText(I18n.get("facturacion.mesa") + mesaTxt);
 
             onCalcularTotales(null);
-
             updateBotonesEdicion();
 
         } catch (Exception e) {
             e.printStackTrace();
-            Mensaje.showError("Error", "No se pudo cargar la lista de órdenes.");
+            Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorCargarListaOrdenes"));
         }
     }
 
     private String buildDisplay(Orden o) {
         String ubic = (o.getMesa() != null
-                ? "Mesa " + (
-                o.getMesa().getIdentificador() != null
+                ? I18n.get("facturacion.mesa") + (o.getMesa().getIdentificador() != null
                         && !o.getMesa().getIdentificador().isBlank()
                         ? o.getMesa().getIdentificador()
-                        : (o.getMesa().getId() != null ? o.getMesa().getId() : "—")
-        )
-                : "Barra");
+                        : (o.getMesa().getId() != null ? o.getMesa().getId() : "—"))
+                : I18n.get("facturacion.barra"));
 
         String fecha = (o.getFechaHora() != null)
                 ? o.getFechaHora().toString().replace('T', ' ')
                 : "";
 
-        return "Orden #" + o.getId() + " · " + ubic + (fecha.isEmpty() ? "" : " · " + fecha);
+        return I18n.get("facturacion.ordenNum") + o.getId() + " · " + ubic + (fecha.isEmpty() ? "" : " · " + fecha);
     }
 
     private void cargarDetallesDeOrden(Long ordenId) {
@@ -334,7 +386,7 @@ public class VentanaVentasController implements Initializable {
             String res = RestClient.get("/ordenes/" + ordenId + "/detalles");
             Map<String, Object> body = RestClient.parseResponse(res);
             if (!Boolean.TRUE.equals(body.get("success"))) {
-                Mensaje.showWarning("Facturación", "No se pudieron cargar los detalles.");
+                Mensaje.showWarning(I18n.get("facturacion.titulo"), I18n.get("facturacion.errorCargarDetalles"));
                 return;
             }
 
@@ -346,16 +398,13 @@ public class VentanaVentasController implements Initializable {
 
         } catch (Exception e) {
             e.printStackTrace();
-            Mensaje.showError("Error", "Error cargando detalles de la orden.");
+            Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorCargarDetallesOrden"));
         }
     }
 
-    // =================================================================================
-    // CLIENTE (autocomplete + botón Buscar)
-    // =================================================================================
+    // ========== CLIENTE ==========
     @FXML
     private void onClienteKeyTyped(KeyEvent e) {
-        // si el texto ya no coincide con el cliente confirmado, limpiamos selección
         if (clienteSeleccionadoNombre == null ||
                 !txtCliente.getText().trim().equalsIgnoreCase(
                         clienteSeleccionadoNombre == null ? "" : clienteSeleccionadoNombre.trim())) {
@@ -434,7 +483,7 @@ public class VentanaVentasController implements Initializable {
         Object telObj  = c.get("telefono");
 
         String idStr  = (idObj  != null ? idObj.toString()  : "—");
-        String nomStr = (nomObj != null ? nomObj.toString() : "(Sin nombre)");
+        String nomStr = (nomObj != null ? nomObj.toString() : I18n.get("facturacion.sinNombre"));
         String corStr = (corObj != null ? corObj.toString() : "");
         String telStr = (telObj != null ? telObj.toString() : "");
 
@@ -455,7 +504,7 @@ public class VentanaVentasController implements Initializable {
         clienteSeleccionadoCorreo = (corObj != null ? corObj.toString() : null);
 
         txtCliente.setText(clienteSeleccionadoNombre != null ? clienteSeleccionadoNombre : "");
-        Mensaje.showSuccess("Cliente", "Cliente asignado a la venta.");
+        Mensaje.showSuccess(I18n.get("facturacion.cliente"), I18n.get("facturacion.clienteAsignado"));
     }
 
     @FXML
@@ -463,7 +512,7 @@ public class VentanaVentasController implements Initializable {
         try {
             String criterio = txtCliente.getText() != null ? txtCliente.getText().trim() : "";
             if (criterio.isEmpty()) {
-                Mensaje.showInfo("Cliente", "Digite nombre / correo / teléfono en la caja de texto.");
+                Mensaje.showInfo(I18n.get("facturacion.cliente"), I18n.get("facturacion.digiteCriterio"));
                 txtCliente.requestFocus();
                 return;
             }
@@ -471,7 +520,7 @@ public class VentanaVentasController implements Initializable {
             String res = RestClient.get("/clientes/buscar?q=" + criterio);
             Map<String, Object> body = RestClient.parseResponse(res);
             if (!Boolean.TRUE.equals(body.get("success"))) {
-                Mensaje.showWarning("Cliente", "No se pudo consultar clientes.");
+                Mensaje.showWarning(I18n.get("facturacion.cliente"), I18n.get("facturacion.errorConsultarClientes"));
                 return;
             }
 
@@ -482,7 +531,7 @@ public class VentanaVentasController implements Initializable {
             );
 
             if (clientes == null || clientes.isEmpty()) {
-                Mensaje.showInfo("Cliente", "No se encontraron clientes.");
+                Mensaje.showInfo(I18n.get("facturacion.cliente"), I18n.get("facturacion.clientesNoEncontrados"));
                 return;
             }
 
@@ -498,9 +547,9 @@ public class VentanaVentasController implements Initializable {
 
             List<String> opciones = new ArrayList<>(opcionesMap.keySet());
             ChoiceDialog<String> dlg = new ChoiceDialog<>(opciones.get(0), opciones);
-            dlg.setTitle("Seleccionar cliente");
-            dlg.setHeaderText("Clientes encontrados");
-            dlg.setContentText("Seleccione:");
+            dlg.setTitle(I18n.get("facturacion.seleccionarCliente"));
+            dlg.setHeaderText(I18n.get("facturacion.clientesEncontrados"));
+            dlg.setContentText(I18n.get("facturacion.seleccione"));
 
             Optional<String> elegidoOpt = dlg.showAndWait();
             if (elegidoOpt.isEmpty()) return;
@@ -510,47 +559,40 @@ public class VentanaVentasController implements Initializable {
 
         } catch (Exception e) {
             e.printStackTrace();
-            Mensaje.showError("Cliente", "Error buscando/seleccionando cliente:\n" + e.getMessage());
+            Mensaje.showError(I18n.get("facturacion.cliente"), I18n.get("facturacion.errorBuscarCliente") + e.getMessage());
         }
     }
 
-    // =================================================================================
-    // PRODUCTOS: AGREGAR EN FACTURACIÓN (selector con tabla y filtro en vivo)
-    // =================================================================================
+    // ========== PRODUCTOS ==========
     @FXML
     private void onAgregarProducto(ActionEvent event) {
-        // 1. Necesitamos una orden activa
         if (ordenSeleccionada == null) {
-            Mensaje.showWarning("Productos", "Primero seleccione una orden.");
+            Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.seleccioneOrdenPrimero"));
             return;
         }
 
         try {
-            // 2. cargar catálogo una sola vez (lazy load)
             if (catalogoProductos.isEmpty()) {
                 cargarCatalogoProductosDesdeBackend();
             }
 
-            // 3. abrir diálogo de selección con filtro
             ProductoCantidadSelection sel = mostrarDialogoSeleccionProducto();
             if (sel == null || sel.producto == null) {
-                return; // canceló o no seleccionó
+                return;
             }
 
             Long productoId = sel.producto.getId();
             int cantidadNueva = sel.cantidad;
 
             if (cantidadNueva <= 0) {
-                Mensaje.showWarning("Cantidad", "La cantidad debe ser mayor a 0.");
+                Mensaje.showWarning(I18n.get("facturacion.cantidad"), I18n.get("facturacion.cantidadMayorCero"));
                 return;
             }
 
-            // 4. revisamos si ya existe ese producto en la orden actual
             DetalleOrden detalleExistente = buscarDetalleExistenteEnOrden(productoId);
 
             boolean ok;
             if (detalleExistente != null) {
-                // ya existía -> sumamos cantidades
                 int cantidadTotal = detalleExistente.getCantidad() + cantidadNueva;
                 ok = actualizarDetalleEnBackend(
                         ordenSeleccionada.getId(),
@@ -558,7 +600,6 @@ public class VentanaVentasController implements Initializable {
                         cantidadTotal
                 );
             } else {
-                // no existía -> creamos nueva línea
                 ok = agregarDetalleEnBackend(
                         ordenSeleccionada.getId(),
                         productoId,
@@ -567,26 +608,21 @@ public class VentanaVentasController implements Initializable {
             }
 
             if (!ok) {
-                Mensaje.showError("Productos", "No se pudo aplicar el producto a la orden.");
+                Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAplicarProducto"));
                 return;
             }
 
-            // 5. refrescar tabla + totales
             cargarDetallesDeOrden(ordenSeleccionada.getId());
             onCalcularTotales(null);
 
-            Mensaje.showSuccess("Productos", "Producto aplicado correctamente.");
+            Mensaje.showSuccess(I18n.get("facturacion.productos"), I18n.get("facturacion.productoAplicado"));
 
         } catch (Exception e1) {
             e1.printStackTrace();
-            Mensaje.showError("Productos", "Error agregando producto:\n" + e1.getMessage());
+            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAgregarProducto") + e1.getMessage());
         }
     }
 
-    /**
-     * Busca en 'lineas' si ya hay un DetalleOrden para ese productoId.
-     * Devuelve el DetalleOrden si lo encuentra; si no, null.
-     */
     private DetalleOrden buscarDetalleExistenteEnOrden(Long productoId) {
         if (productoId == null) return null;
         for (DetalleOrden det : lineas) {
@@ -600,15 +636,6 @@ public class VentanaVentasController implements Initializable {
         return null;
     }
 
-    /**
-     * Llama al backend para decir:
-     * "En la orden X, el detalle Y ahora tiene cantidad = nuevaCantidad".
-     *
-     * Asumimos endpoint tipo:
-     *   PUT /ordenes/{ordenId}/detalles/{detalleId}
-     * Body:
-     *   { "cantidad": <nuevaCantidad> }
-     */
     private boolean actualizarDetalleEnBackend(Long ordenId, Long detalleId, int nuevaCantidad) {
         try {
             Map<String,Object> payload = new HashMap<>();
@@ -627,21 +654,13 @@ public class VentanaVentasController implements Initializable {
         }
     }
 
-    /**
-     * Llama al backend para obtener TODOS los productos activos
-     * y los guarda en catalogoProductos.
-     *
-     * IMPORTANTE:
-     * Ajustá el endpoint si tu backend expone otro (por ej. "/productos/activos").
-     * Asumimos: GET /productos -> { success:true, data:[ {id, nombre, nombreCorto, precio, ...}, ...] }
-     */
     private void cargarCatalogoProductosDesdeBackend() {
         try {
             String res = RestClient.get("/productos");
             Map<String,Object> body = RestClient.parseResponse(res);
 
             if (!Boolean.TRUE.equals(body.get("success"))) {
-                Mensaje.showWarning("Productos", "No se pudieron obtener los productos.");
+                Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.errorObtenerProductos"));
                 return;
             }
 
@@ -656,28 +675,18 @@ public class VentanaVentasController implements Initializable {
             );
         } catch (Exception e) {
             e.printStackTrace();
-            Mensaje.showError("Productos", "Error cargando catálogo:\n" + e.getMessage());
+            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorCargarCatalogo") + e.getMessage());
         }
     }
 
-    /**
-     * Muestra un Stage modal con:
-     * - TextField para filtrar
-     * - TableView con todos los productos (filtrados en vivo)
-     * - TextField cantidad
-     * - Botón Agregar
-     *
-     * Retorna la selección (producto + cantidad) o null si canceló.
-     */
     private ProductoCantidadSelection mostrarDialogoSeleccionProducto() {
-        // Tabla de productos filtrables
         TableView<Producto> tbl = new TableView<>();
-        TableColumn<Producto, String> colNom = new TableColumn<>("Producto");
-        TableColumn<Producto, String> colPrec = new TableColumn<>("Precio");
+        TableColumn<Producto, String> colNom = new TableColumn<>(I18n.get("facturacion.producto"));
+        TableColumn<Producto, String> colPrec = new TableColumn<>(I18n.get("facturacion.precio"));
 
         colNom.setCellValueFactory(p ->
                 new SimpleStringProperty(
-                        p.getValue().getNombre() != null ? p.getValue().getNombre() : "(sin nombre)"
+                        p.getValue().getNombre() != null ? p.getValue().getNombre() : I18n.get("facturacion.sinNombre")
                 )
         );
         colPrec.setCellValueFactory(p ->
@@ -690,28 +699,24 @@ public class VentanaVentasController implements Initializable {
         colPrec.setPrefWidth(80);
         tbl.getColumns().addAll(colNom, colPrec);
 
-        // Lista filtrada que ve la tabla
         ObservableList<Producto> filtrada = FXCollections.observableArrayList();
         filtrada.setAll(catalogoProductos);
         tbl.setItems(filtrada);
 
-        // Campo de búsqueda
         TextField txtBuscar = new TextField();
-        txtBuscar.setPromptText("Buscar (nombre, corto, id...)");
+        txtBuscar.setPromptText(I18n.get("facturacion.buscarProducto"));
 
-        // Campo cantidad
         TextField txtCantidad = new TextField("1");
         txtCantidad.setPrefWidth(60);
         txtCantidad.setAlignment(Pos.CENTER_RIGHT);
 
-        Label lblCant = new Label("Cant.:");
+        Label lblCant = new Label(I18n.get("facturacion.cantidadAbrev"));
         lblCant.setLabelFor(txtCantidad);
 
-        // Botones aceptar / cancelar
-        Button btnOK = new Button("Agregar");
-        Button btnCancel = new Button("Cancelar");
+        Button btnOK = new Button(I18n.get("facturacion.agregar"));
+        Button btnCancel = new Button(I18n.get("app.cancelar"));
 
-        HBox topBox = new HBox(10, new Label("Filtrar:"), txtBuscar);
+        HBox topBox = new HBox(10, new Label(I18n.get("facturacion.filtrar")), txtBuscar);
         topBox.setAlignment(Pos.CENTER_LEFT);
 
         HBox spacer = new HBox();
@@ -726,7 +731,7 @@ public class VentanaVentasController implements Initializable {
         root.setStyle("-fx-background-color: white; -fx-padding: 15;");
 
         Stage stage = new Stage();
-        stage.setTitle("Seleccionar Producto");
+        stage.setTitle(I18n.get("facturacion.seleccionarProducto"));
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initOwner(btnAgregarProducto.getScene().getWindow());
         stage.setScene(new Scene(root));
@@ -734,7 +739,6 @@ public class VentanaVentasController implements Initializable {
         final ProductoCantidadSelection[] resultHolder = new ProductoCantidadSelection[1];
         resultHolder[0] = null;
 
-        // Filtrado en vivo
         txtBuscar.textProperty().addListener((obs, oldV, newV) -> {
             String filtro = (newV != null) ? newV.trim().toLowerCase() : "";
             filtrada.clear();
@@ -757,7 +761,6 @@ public class VentanaVentasController implements Initializable {
             }
         });
 
-        // Doble click en tabla = intentar aceptar directo
         tbl.setOnMouseClicked(ev -> {
             if (ev.getClickCount() == 2) {
                 Producto seleccionado = tbl.getSelectionModel().getSelectedItem();
@@ -771,22 +774,20 @@ public class VentanaVentasController implements Initializable {
             }
         });
 
-        // Botón cancelar
         btnCancel.setOnAction(ev -> {
             resultHolder[0] = null;
             stage.close();
         });
 
-        // Botón OK
         btnOK.setOnAction(ev -> {
             Producto seleccionado = tbl.getSelectionModel().getSelectedItem();
             if (seleccionado == null) {
-                Mensaje.showWarning("Producto", "Seleccione un producto.");
+                Mensaje.showWarning(I18n.get("facturacion.producto"), I18n.get("facturacion.seleccioneProducto"));
                 return;
             }
             Integer cantVal = parseCantidadSeguro(txtCantidad.getText());
             if (cantVal == null || cantVal <= 0) {
-                Mensaje.showWarning("Cantidad", "Cantidad inválida.");
+                Mensaje.showWarning(I18n.get("facturacion.cantidad"), I18n.get("facturacion.cantidadInvalida"));
                 return;
             }
 
@@ -806,11 +807,6 @@ public class VentanaVentasController implements Initializable {
         }
     }
 
-    /**
-     * Crea o suma línea de detalle en backend:
-     * POST /ordenes/{id}/detalles con
-     * { "ordenId":..., "productoId":..., "cantidad":... }
-     */
     private boolean agregarDetalleEnBackend(Long ordenId, Long productoId, int cantidad) {
         try {
             Map<String,Object> payload = new HashMap<>();
@@ -830,35 +826,113 @@ public class VentanaVentasController implements Initializable {
 
     @FXML
     private void onModificarCantidad(ActionEvent event) {
-        Mensaje.showInfo("Cantidad", "Edición de cantidad se hará aquí después 😇 (por ahora usar Órdenes).");
+        DetalleOrden seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) {
+            Mensaje.showWarning(I18n.get("facturacion.modificar"), I18n.get("facturacion.seleccioneProductoTabla"));
+            return;
+        }
+
+        TextInputDialog dlg = new TextInputDialog(String.valueOf(seleccionado.getCantidad()));
+        dlg.setTitle(I18n.get("facturacion.modificarCantidad"));
+        dlg.setHeaderText(I18n.get("facturacion.producto") + ": " + 
+            (seleccionado.getProducto() != null ? seleccionado.getProducto().getNombre() : ""));
+        dlg.setContentText(I18n.get("facturacion.nuevaCantidad"));
+
+        Optional<String> resultado = dlg.showAndWait();
+        if (resultado.isEmpty()) return;
+
+        try {
+            int nuevaCantidad = Integer.parseInt(resultado.get().trim());
+            if (nuevaCantidad <= 0) {
+                Mensaje.showWarning(I18n.get("facturacion.cantidad"), I18n.get("facturacion.cantidadMayorCero"));
+                return;
+            }
+
+            boolean ok = actualizarDetalleEnBackend(
+                ordenSeleccionada.getId(),
+                seleccionado.getId(),
+                nuevaCantidad
+            );
+
+            if (ok) {
+                cargarDetallesDeOrden(ordenSeleccionada.getId());
+                onCalcularTotales(null);
+                Mensaje.showSuccess(I18n.get("facturacion.modificar"), I18n.get("facturacion.cantidadActualizada"));
+            } else {
+                Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorActualizarCantidad"));
+            }
+
+        } catch (NumberFormatException e) {
+            Mensaje.showWarning(I18n.get("facturacion.cantidad"), I18n.get("facturacion.ingreseNumeroValido"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorModificarCantidad") + e.getMessage());
+        }
     }
 
     @FXML
     private void onEliminarProducto(ActionEvent event) {
-        Mensaje.showInfo("Eliminar", "Eliminar producto se hará aquí después 😇 (por ahora usar Órdenes).");
+        DetalleOrden seleccionado = tblProductos.getSelectionModel().getSelectedItem();
+        if (seleccionado == null) {
+            Mensaje.showWarning(I18n.get("facturacion.eliminar"), I18n.get("facturacion.seleccioneProductoTabla"));
+            return;
+        }
+
+        String nombreProd = seleccionado.getProducto() != null ? 
+            seleccionado.getProducto().getNombre() : I18n.get("facturacion.esteProducto");
+
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmacion.setTitle(I18n.get("facturacion.confirmarEliminacion"));
+        confirmacion.setHeaderText(I18n.get("facturacion.eliminarProductoPregunta") + nombreProd + "?");
+        confirmacion.setContentText(I18n.get("facturacion.accionNoReversible"));
+
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+        if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
+            return;
+        }
+
+        try {
+            String res = RestClient.delete(
+                "/ordenes/" + ordenSeleccionada.getId() + "/detalles/" + seleccionado.getId()
+            );
+
+            Map<String,Object> body = RestClient.parseResponse(res);
+            if (Boolean.TRUE.equals(body.get("success"))) {
+                cargarDetallesDeOrden(ordenSeleccionada.getId());
+                onCalcularTotales(null);
+                Mensaje.showSuccess(I18n.get("facturacion.eliminar"), I18n.get("facturacion.productoEliminado"));
+            } else {
+                Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorEliminarProducto"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorEliminandoProducto") + e.getMessage());
+        }
     }
 
-    // =================================================================================
-    // TOTALES Y VUELTO
-    // =================================================================================
+    // ========== TOTALES Y VUELTO ==========
     @FXML
     private void onCalcularTotales(ActionEvent event) {
         BigDecimal subtotal = BigDecimal.ZERO;
         for (DetalleOrden d : lineas) {
             subtotal = subtotal.add(nz(d.getSubtotal()));
         }
+        System.out.println("🔢 Subtotal calculado: " + subtotal);
 
         BigDecimal iv = BigDecimal.ZERO;
         if (chkImpuestoVentas.isSelected()) {
-            iv = subtotal.multiply(IV_PORC);
+            iv = subtotal.multiply(IV_PORC).setScale(2, RoundingMode.HALF_UP);
         }
 
         BigDecimal serv = BigDecimal.ZERO;
         if (chkImpuestoServicio.isSelected()) {
-            serv = subtotal.multiply(SERV_PORC);
+            serv = subtotal.multiply(SERV_PORC).setScale(2, RoundingMode.HALF_UP);
         }
 
         BigDecimal descPct = parsePct(txtDescuento.getText());
+        System.out.println("🔢 Descuento %: " + descPct);
+
         if (descPct.compareTo(DESCUENTO_MAX) > 0) {
             descPct = DESCUENTO_MAX;
             txtDescuento.setText(DESCUENTO_MAX.toPlainString());
@@ -867,13 +941,19 @@ public class VentanaVentasController implements Initializable {
             txtDescuento.setText("0");
         }
 
-        BigDecimal descuento = subtotal.add(iv).add(serv).multiply(descPct.movePointLeft(2));
-        BigDecimal total = subtotal.add(iv).add(serv).subtract(descuento);
+        BigDecimal baseDescuento = subtotal.add(iv).add(serv);
+        BigDecimal descuentoMonto = baseDescuento
+                .multiply(descPct)
+                .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+        BigDecimal total = baseDescuento.subtract(descuentoMonto);
+
+        System.out.println("🔢 Total calculado: " + total);
 
         lblSubtotal.setText("₡" + fmt(subtotal));
         lblImpuestoVentas.setText("₡" + fmt(iv));
         lblImpuestoServicio.setText("₡" + fmt(serv));
-        lblDescuento.setText("-₡" + fmt(descuento));
+        lblDescuento.setText("-₡" + fmt(descuentoMonto));
         lblTotal.setText("₡" + fmt(total));
 
         onCalcularVuelto(null);
@@ -881,51 +961,94 @@ public class VentanaVentasController implements Initializable {
 
     @FXML
     private void onCalcularVuelto(ActionEvent event) {
-        BigDecimal total    = parseMonto(lblTotal.getText());
-        BigDecimal efectivo = parseMonto(txtEfectivo.getText());
-        BigDecimal tarjeta  = parseMonto(txtTarjeta.getText());
-        BigDecimal pagado   = efectivo.add(tarjeta);
-        BigDecimal vuelto   = pagado.subtract(total);
-        if (vuelto.compareTo(BigDecimal.ZERO) < 0) vuelto = BigDecimal.ZERO;
-        lblVuelto.setText("₡" + fmt(vuelto));
+        String totalText = lblTotal.getText();
+        String efectivoText = txtEfectivo.getText();
+        String tarjetaText = txtTarjeta.getText();
+
+        System.out.println("💰 Calculando vuelto:");
+        System.out.println("   Total (texto): '" + totalText + "'");
+        System.out.println("   Efectivo (texto): '" + efectivoText + "'");
+        System.out.println("   Tarjeta (texto): '" + tarjetaText + "'");
+
+        BigDecimal total = parseMonto(totalText);
+        BigDecimal efectivo = parseMonto(efectivoText);
+        BigDecimal tarjeta = parseMonto(tarjetaText);
+
+        System.out.println("   Total (parseado): " + total);
+        System.out.println("   Efectivo (parseado): " + efectivo);
+        System.out.println("   Tarjeta (parseado): " + tarjeta);
+
+        BigDecimal pagado = efectivo.add(tarjeta);
+
+        System.out.println("   Pagado total: " + pagado);
+
+        BigDecimal vuelto = pagado.subtract(total);
+
+        System.out.println("   Vuelto calculado: " + vuelto);
+
+        if (vuelto.compareTo(BigDecimal.ZERO) < 0) {
+            vuelto = BigDecimal.ZERO;
+        }
+
+        String vueltoFormateado = "₡" + fmt(vuelto);
+        System.out.println("   Vuelto (formateado): '" + vueltoFormateado + "'");
+
+        lblVuelto.setText(vueltoFormateado);
     }
 
-    // =================================================================================
-    // PAGO / FACTURAR
-    // =================================================================================
+    // ========== PAGO / FACTURAR ==========
     @FXML
     private void onProcesarPago(ActionEvent event) {
         if (ordenSeleccionada == null) {
-            Mensaje.showWarning("Facturación", "Primero selecciona una orden.");
+            Mensaje.showWarning(I18n.get("facturacion.titulo"), I18n.get("facturacion.seleccioneOrdenPrimero"));
             return;
         }
         if (lineas.isEmpty()) {
-            Mensaje.showWarning("Facturación", "La orden no tiene productos.");
+            Mensaje.showWarning(I18n.get("facturacion.titulo"), I18n.get("facturacion.ordenSinProductos"));
             return;
         }
 
-        BigDecimal total    = parseMonto(lblTotal.getText());
-        BigDecimal efectivo = parseMonto(txtEfectivo.getText());
-        BigDecimal tarjeta  = parseMonto(txtTarjeta.getText());
-        BigDecimal pagado   = efectivo.add(tarjeta);
+        String totalText = lblTotal.getText();
+        String efectivoText = txtEfectivo.getText();
+        String tarjetaText = txtTarjeta.getText();
+
+        System.out.println("\n💳 PROCESANDO PAGO:");
+        System.out.println("   Total: '" + totalText + "'");
+        System.out.println("   Efectivo: '" + efectivoText + "'");
+        System.out.println("   Tarjeta: '" + tarjetaText + "'");
+
+        BigDecimal total = parseMonto(totalText);
+        BigDecimal efectivo = parseMonto(efectivoText);
+        BigDecimal tarjeta = parseMonto(tarjetaText);
+        BigDecimal pagado = efectivo.add(tarjeta);
+
+        System.out.println("   Total (BD): " + total);
+        System.out.println("   Efectivo (BD): " + efectivo);
+        System.out.println("   Tarjeta (BD): " + tarjeta);
+        System.out.println("   Pagado (BD): " + pagado);
 
         if (pagado.compareTo(total) < 0) {
-            Mensaje.showWarning("Pago insuficiente", "El monto pagado es menor que el total.");
+            BigDecimal faltante = total.subtract(pagado);
+            System.out.println("   ❌ PAGO INSUFICIENTE. Falta: " + faltante);
+            Mensaje.showWarning(I18n.get("facturacion.pagoInsuficiente"),
+                    String.format(I18n.get("facturacion.faltaDetalle"),
+                            fmt(faltante), fmt(total), fmt(pagado)));
             return;
         }
+
+        System.out.println("   ✅ Pago válido, procediendo...");
 
         try {
             Map<String, Object> payload = new HashMap<>();
             payload.put("ordenId", ordenSeleccionada.getId());
 
-            // Cliente
             if (clienteSeleccionadoId != null) {
                 payload.put("clienteId", clienteSeleccionadoId);
             }
             payload.put("clienteNombre",
                     (clienteSeleccionadoNombre != null && !clienteSeleccionadoNombre.isBlank())
-                            ? clienteSeleccionadoNombre
-                            : Optional.ofNullable(txtCliente.getText()).orElse("").trim()
+                    ? clienteSeleccionadoNombre
+                    : Optional.ofNullable(txtCliente.getText()).orElse("").trim()
             );
             if (clienteSeleccionadoCorreo != null && !clienteSeleccionadoCorreo.isBlank()) {
                 payload.put("clienteCorreo", clienteSeleccionadoCorreo);
@@ -935,8 +1058,13 @@ public class VentanaVentasController implements Initializable {
             resumen.put("subtotal", parseMonto(lblSubtotal.getText()));
             resumen.put("impuestoVentas", parseMonto(lblImpuestoVentas.getText()));
             resumen.put("impuestoServicio", parseMonto(lblImpuestoServicio.getText()));
-            BigDecimal desc = parseMonto(lblDescuento.getText().replace("-", ""));
-            resumen.put("descuento", desc);
+
+            BigDecimal descuentoPorcentaje = parsePct(txtDescuento.getText());
+            resumen.put("descuentoPorcentaje", descuentoPorcentaje);
+
+            BigDecimal descuentoMonto = parseMonto(lblDescuento.getText());
+            resumen.put("descuentoMonto", descuentoMonto);
+
             resumen.put("total", total);
             payload.put("resumen", resumen);
 
@@ -951,28 +1079,31 @@ public class VentanaVentasController implements Initializable {
                 Long pid = d.getProductoId() != null ? d.getProductoId()
                         : (d.getProducto() != null ? d.getProducto().getId() : null);
                 it.put("productoId", pid);
-                it.put("nombre", d.getProducto() != null ? d.getProducto().getNombre() : "Producto");
+                it.put("nombre", d.getProducto() != null ? d.getProducto().getNombre() : I18n.get("facturacion.producto"));
                 it.put("cantidad", d.getCantidad());
                 it.put("precioUnitario", d.getPrecioUnitario());
                 items.add(it);
             }
             payload.put("items", items);
 
-            // 1. crear factura
+            System.out.println("📤 Enviando payload al servidor...");
+            System.out.println(new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(payload));
+
             String resFactura = RestClient.post("/facturas", payload);
             Map<String, Object> r1 = RestClient.parseResponse(resFactura);
             if (!Boolean.TRUE.equals(r1.get("success"))) {
-                Mensaje.showError("Error", "No se pudo crear la factura:\n" + r1.get("message"));
+                String errorMsg = r1.get("message") != null ? r1.get("message").toString() : I18n.get("facturacion.errorDesconocido");
+                Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorCrearFactura") + errorMsg);
                 return;
             }
 
-            // 2. marcar orden como FACTURADA
             boolean facturada = false;
             try {
                 String resFact = RestClient.post("/ordenes/" + ordenSeleccionada.getId() + "/facturar", null);
                 Map<String, Object> rA = RestClient.parseResponse(resFact);
                 facturada = Boolean.TRUE.equals(rA.get("success"));
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
 
             if (!facturada) {
                 Map<String, Object> upd = Map.of("estado", "FACTURADA");
@@ -980,47 +1111,44 @@ public class VentanaVentasController implements Initializable {
                     String resPut = RestClient.put("/ordenes/" + ordenSeleccionada.getId(), upd);
                     Map<String, Object> rB = RestClient.parseResponse(resPut);
                     facturada = Boolean.TRUE.equals(rB.get("success"));
-                } catch (Exception ignored) { }
+                } catch (Exception ignored) {
+                }
             }
 
-            Mensaje.showSuccess("Éxito", facturada
-                    ? "Factura registrada y orden marcada como FACTURADA."
-                    : "Factura registrada. (No se pudo actualizar el estado de la orden.)");
+            Mensaje.showSuccess(I18n.get("app.exito"), facturada
+                    ? I18n.get("facturacion.facturaRegistradaExito")
+                    : I18n.get("facturacion.facturaRegistradaParcial"));
 
             limpiarPantalla();
 
         } catch (Exception e) {
             e.printStackTrace();
-            Mensaje.showError("Error", "Fallo procesando el pago:\n" + e.getMessage());
+            Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorProcesarPago") + e.getMessage());
         }
     }
 
     @FXML
     private void onImprimir(ActionEvent event) {
-        Mensaje.showInfo("Imprimir", "V1: genera e imprime el comprobante luego de procesar el pago.");
+        Mensaje.showInfo(I18n.get("facturacion.imprimir"), I18n.get("facturacion.imprimirInfo"));
     }
 
     @FXML
     private void onEnviarEmail(ActionEvent event) {
         Mensaje.showInfo(
-                "Email",
+                I18n.get("facturacion.email"),
                 (clienteSeleccionadoCorreo != null && !clienteSeleccionadoCorreo.isBlank())
-                        ? "Enviar comprobante a: " + clienteSeleccionadoCorreo
-                        : "V1: envío por correo pendiente (requiere servicio en backend)."
+                        ? I18n.get("facturacion.enviarComprobanteA") + clienteSeleccionadoCorreo
+                        : I18n.get("facturacion.emailPendiente")
         );
     }
 
     @FXML
     private void onCancelar(ActionEvent event) {
         limpiarPantalla();
+        Mensaje.showInfo(I18n.get("facturacion.cancelado"), I18n.get("facturacion.ventaCancelada"));
     }
 
-    // =================================================================================
-    // HELPERS
-    // =================================================================================
-    /**
-     * Convierte ids que vienen como 1, "1", 1.0, "1.0" -> Long
-     */
+    // ========== HELPERS ==========
     private Long parseIdToLong(Object idObj) {
         if (idObj == null) return null;
         String s = idObj.toString();
@@ -1040,8 +1168,79 @@ public class VentanaVentasController implements Initializable {
     }
 
     /**
-     * Estructura pequeña para devolver selección desde el popup de productos.
+     * Actualiza todos los textos de la interfaz según el idioma actual
      */
+    private void actualizarTextos() {
+        boolean esEspanol = I18n.isSpanish();
+
+        // Header
+        lblTitle.setText(I18n.get("facturacion.titulo"));
+        btnVolver.setText(I18n.get("facturacion.volver"));
+
+        // Orden
+        btnSeleccionarOrden.setText(I18n.get("facturacion.seleccionarOrden"));
+
+        // Cliente
+        if (lblCliente != null) {
+            lblCliente.setText(I18n.get("facturacion.cliente") + ":");
+        }
+        txtCliente.setPromptText(I18n.get("facturacion.nombreClienteOpcional"));
+        btnBuscarCliente.setText(I18n.get("app.buscar"));
+
+        // Productos
+        if (lblProductosOrden != null) {
+            lblProductosOrden.setText(I18n.get("facturacion.productosOrden"));
+        }
+        btnAgregarProducto.setText(I18n.get("facturacion.agregarProducto"));
+        colProducto.setText(I18n.get("facturacion.producto"));
+        colCantidad.setText(I18n.get("facturacion.cantidadAbrev"));
+        colPrecio.setText(I18n.get("facturacion.precioUnit"));
+        colSubtotal.setText(I18n.get("facturacion.subtotal"));
+
+        btnModificarCantidad.setText(I18n.get("facturacion.modificarCantidad"));
+        btnEliminarProducto.setText(I18n.get("facturacion.eliminar"));
+
+        // Resumen
+        if (lblResumenVenta != null) {
+            lblResumenVenta.setText(I18n.get("facturacion.resumenVenta"));
+        }
+        if (lblSubtotalLabel != null) {
+            lblSubtotalLabel.setText(I18n.get("facturacion.subtotal") + ":");
+        }
+        chkImpuestoVentas.setText(I18n.get("facturacion.impuestoVentas"));
+        chkImpuestoServicio.setText(I18n.get("facturacion.servicio"));
+        if (lblDescuentoLabel != null) {
+            lblDescuentoLabel.setText(I18n.get("facturacion.descuentoAbrev") + ":");
+        }
+        lblDescuentoMax.setText(I18n.get("facturacion.descuentoMaximo") + " 15%");
+        if (lblTotalLabel != null) {
+            lblTotalLabel.setText(I18n.get("facturacion.total").toUpperCase() + ":");
+        }
+
+        // Métodos de pago
+        if (lblMetodosPago != null) {
+            lblMetodosPago.setText(I18n.get("facturacion.metodosPago"));
+        }
+        if (lblEfectivoLabel != null) {
+            lblEfectivoLabel.setText(I18n.get("facturacion.efectivo") + ":");
+        }
+        if (lblTarjetaLabel != null) {
+            lblTarjetaLabel.setText(I18n.get("facturacion.tarjeta") + ":");
+        }
+        if (lblVueltoLabel != null) {
+            lblVueltoLabel.setText(I18n.get("facturacion.vuelto") + ":");
+        }
+
+        // Botones finales
+        btnProcesarPago.setText(I18n.get("facturacion.procesarPago"));
+        btnImprimir.setText(I18n.get("facturacion.imprimir"));
+        btnEnviarEmail.setText(I18n.get("facturacion.enviarEmail"));
+        btnCancelar.setText(I18n.get("facturacion.cancelarVenta"));
+
+        // Placeholder de la tabla
+        tblProductos.setPlaceholder(new Label(I18n.get("facturacion.noProductos")));
+    }
+
     private static class ProductoCantidadSelection {
         final Producto producto;
         final int cantidad;

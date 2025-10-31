@@ -230,4 +230,29 @@ public class RestClient {
         out.put("raw", body);
         return out;
     }
+    // --- NUEVO: GET binario (PDF, etc.) ---
+public static byte[] getBytes(String endpoint, Map<String, String> headers) throws Exception {
+    try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+        HttpGet request = constructGet(BASE_URL + endpoint);
+        // headers custom (ej. Accept: application/pdf)
+        if (headers != null) {
+            headers.forEach(request::addHeader);
+        } else {
+            request.setHeader("Accept", "*/*");
+        }
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            byte[] bytes = EntityUtils.toByteArray(response.getEntity());
+            System.out.println("DEBUG GET[bytes] " + endpoint + " -> " + bytes.length + " bytes");
+            return bytes;
+        }
+    }
+}
+
+// --- (Opcional) helper para fijar headers comunes GET ---
+private static HttpGet constructGet(String url) {
+    HttpGet request = new HttpGet(url);
+    request.setHeader("Content-Type", "application/json; charset=UTF-8");
+    request.setHeader("Accept", "application/json");
+    return request;
+}
 }

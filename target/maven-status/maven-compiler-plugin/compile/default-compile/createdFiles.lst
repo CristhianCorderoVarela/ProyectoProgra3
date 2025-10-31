@@ -57,5 +57,6 @@ cr\ac\una\restunaclient\controller\VentanaVentasController$5.class
 cr\ac\una\restunaclient\controller\MenuPrincipalController$1.class
 cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
+cr\ac\una\restunaclient\controller\ReportesController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class
 cr\ac\una\restunaclient\controller\UsuariosController$1.class

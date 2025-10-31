@@ -119,3 +119,269 @@
 .password-field:empty {
     -fx-prompt-text-fill: #999999;
 }
+
+/* ==========================================
+   ESTILOS ADICIONALES PARA MÓDULO DE REPORTES
+   Agregar estos estilos al archivo styles.css existente
+   ========================================== */
+
+/* Botones de reportes */
+.report-button {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-width: 2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 16px;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.report-button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
+}
+
+/* DatePicker personalizado */
+.date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+.date-picker:focused {
+    -fx-border-color: #FF7A00;
+}
+
+.date-picker .text-field {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.date-picker .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.date-picker .arrow-button .arrow {
+    -fx-background-color: #666666;
+}
+
+/* Popup del DatePicker */
+.date-picker-popup {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 4);
+}
+
+.date-picker-popup .month-year-pane {
+    -fx-background-color: #F9FAFB;
+}
+
+.date-picker-popup .day-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333333;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #FFF5EC;
+    -fx-background-radius: 4px;
+}
+
+.date-picker-popup .day-cell:selected {
+    -fx-background-color: #FF7A00;
+    -fx-text-fill: white;
+    -fx-background-radius: 4px;
+}
+
+.date-picker-popup .today {
+    -fx-background-color: #FFF5EC;
+    -fx-background-radius: 4px;
+}
+
+/* Header container */
+.header-container {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 16px 24px;
+}
+
+.header-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+/* Labels personalizados */
+.label {
+    -fx-text-fill: #333333;
+}
+
+/* VBox para formularios */
+.form-container {
+    -fx-background-color: white;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 24px;
+}
+
+/* Estilos para StackPane de iconos */
+.icon-container {
+    -fx-background-radius: 8px;
+    -fx-pref-width: 40px;
+    -fx-pref-height: 40px;
+}
+
+/* Colores para los diferentes reportes */
+.icon-facturas        { -fx-background-color: #DBEAFE; }  /* azul más visible */
+.icon-productos       { -fx-background-color: #FFE4D5; }  /* naranja claro */
+.icon-cierres         { -fx-background-color: #BBF7D0; }  /* verde claro */
+.icon-ventas-periodo  { -fx-background-color: #DDD6FE; }  /* morado claro */
+.icon-ventas-salonero { -fx-background-color: #99F6E4; }  /* verde-azulado */
+.icon-clientes        { -fx-background-color: #FBCFE8; }  /* rosado */
+.icon-descuentos      { -fx-background-color: #C7D2FE; }  /* índigo claro */
+
+/* Botón primario personalizado por color */
+.btn-facturas {
+    -fx-background-color: #3B82F6;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-productos {
+    -fx-background-color: #FF7A00;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-cierres {
+    -fx-background-color: #22C55E;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-ventas-periodo {
+    -fx-background-color: #A855F7;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-ventas-salonero {
+    -fx-background-color: #14B8A6;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-clientes {
+    -fx-background-color: #EC4899;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-descuentos {
+    -fx-background-color: #6366F1;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+/* Botones secundarios (PDF e Imprimir) */
+.btn-pdf {
+    -fx-background-color: #DC2626;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+.btn-imprimir {
+    -fx-background-color: #6B7280;
+    -fx-text-fill: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: 600;
+}
+
+/* Hover effects para botones de acción */
+.btn-facturas:hover,
+.btn-productos:hover,
+.btn-cierres:hover,
+.btn-ventas-periodo:hover,
+.btn-ventas-salonero:hover,
+.btn-clientes:hover,
+.btn-descuentos:hover,
+.btn-pdf:hover,
+.btn-imprimir:hover {
+    -fx-opacity: 0.9;
+}
+
+/* Pressed effects */
+.btn-facturas:pressed,
+.btn-productos:pressed,
+.btn-cierres:pressed,
+.btn-ventas-periodo:pressed,
+.btn-ventas-salonero:pressed,
+.btn-clientes:pressed,
+.btn-descuentos:pressed,
+.btn-pdf:pressed,
+.btn-imprimir:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* Alert/Info boxes */
+.info-box {
+    -fx-background-color: #F0FDF4;
+    -fx-border-color: #BBF7D0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 12px;
+}
+
+.info-box .label {
+    -fx-text-fill: #166534;
+    -fx-font-size: 12px;
+}
+
+/* Estilo para los títulos de sección */
+.section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #666666;
+}
+
+/* Required field indicator */
+.required-indicator {
+    -fx-text-fill: #DC2626;
+}
+
+/* Responsive spacing */
+.content-container {
+    -fx-padding: 32px 24px;
+    -fx-background-color: #F9FAFB;
+}

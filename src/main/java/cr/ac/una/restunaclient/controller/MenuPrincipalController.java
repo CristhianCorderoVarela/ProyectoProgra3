@@ -319,8 +319,11 @@ public class MenuPrincipalController implements Initializable {
 
     @FXML
     private void onReportes(MouseEvent event) {
-        // TODO: Reportes con JasperReports
-        Mensaje.showInfo("Próximamente", "Módulo de Reportes en desarrollo");
+        FlowController.getInstance().goToView(
+        "Reportes",              // el nombre del .fxml registrado en FlowController
+        "RestUNA - Reportes",      // título de la ventana
+        1200, 700                     // tamaño; tu layout es ancho, algo tipo POS, dale más horizontal
+    );
     }
 
     // ==================== HEADER ====================

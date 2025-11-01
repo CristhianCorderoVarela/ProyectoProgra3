@@ -70,6 +70,7 @@ public class ProductosController implements Initializable {
     private ObservableList<Producto> listaProductos;
     private FilteredList<Producto> listaFiltrada;
     private ObservableList<GrupoProducto> listaGrupos;
+    private java.util.Map<Long, GrupoProducto> gruposById = new java.util.HashMap<>();
     private Producto productoSeleccionado;
     private boolean modoEdicion = false;
 
@@ -90,6 +91,10 @@ public class ProductosController implements Initializable {
         actualizarTextos();
     }
 
+    
+    
+    
+    
     // ==================== CONFIGURACIÓN INICIAL ====================
     
     /**
@@ -104,14 +109,24 @@ public class ProductosController implements Initializable {
             new SimpleStringProperty(data.getValue().getNombreCorto())
         );
         
-        colGrupo.setCellValueFactory(data -> 
-            new SimpleStringProperty(data.getValue().getGrupo() != null ? 
-                data.getValue().getGrupo().getNombre() : "Sin grupo")
-        );
+        colGrupo.setCellValueFactory(data -> {
+    Producto p = data.getValue();
+    String nombreGrupo;
+    if (p.getGrupo() != null) {
+        nombreGrupo = p.getGrupo().getNombre();
+    } else if (p.getGrupoId() != null && gruposById.get(p.getGrupoId()) != null) {
+        nombreGrupo = gruposById.get(p.getGrupoId()).getNombre();
+    } else {
+        nombreGrupo = "Sin grupo";
+    }
+    return new SimpleStringProperty(nombreGrupo);
+});
         
-        colPrecio.setCellValueFactory(data -> 
-            new SimpleStringProperty("₡" + String.format("%.2f", data.getValue().getPrecio()))
-        );
+        colPrecio.setCellValueFactory(data -> {
+    BigDecimal pr = data.getValue().getPrecio();
+    String txt = "₡" + String.format("%.2f", pr == null ? BigDecimal.ZERO : pr);
+    return new SimpleStringProperty(txt);
+});
         
         colMenuRapido.setCellValueFactory(data -> 
             new SimpleStringProperty(data.getValue().isMenuRapido() ? "✓ Sí" : "✗ No")
@@ -151,7 +166,16 @@ public class ProductosController implements Initializable {
                 List<GrupoProducto> grupos = gson.fromJson(dataJson, 
                     new TypeToken<List<GrupoProducto>>(){}.getType());
                 
+                
+                
+                
                 listaGrupos = FXCollections.observableArrayList(grupos);
+                
+                // indexar por id (para resolver grupoId -> GrupoProducto)
+gruposById.clear();
+for (GrupoProducto g : listaGrupos) {
+    if (g.getId() != null) gruposById.put(g.getId(), g);
+}
                 
                 // Configurar ComboBox del formulario
                 cmbGrupo.setItems(listaGrupos);
@@ -238,13 +262,15 @@ public class ProductosController implements Initializable {
             }
             
             // Filtro por grupo
-            GrupoProducto grupoFiltro = cmbFiltroGrupo.getSelectionModel().getSelectedItem();
-            boolean cumpleGrupo = true;
-            
-            if (grupoFiltro != null && grupoFiltro.getId() != -1L) {
-                cumpleGrupo = producto.getGrupo() != null && 
-                             producto.getGrupo().getId().equals(grupoFiltro.getId());
-            }
+GrupoProducto grupoFiltro = cmbFiltroGrupo.getSelectionModel().getSelectedItem();
+boolean cumpleGrupo = true;
+if (grupoFiltro != null && grupoFiltro.getId() != -1L) {
+    Long idFiltro = grupoFiltro.getId();
+    Long idDelProducto = (producto.getGrupo() != null) 
+            ? producto.getGrupo().getId() 
+            : producto.getGrupoId();
+    cumpleGrupo = idDelProducto != null && idDelProducto.equals(idFiltro);
+}
             
             return cumpleBusqueda && cumpleGrupo;
         });
@@ -265,6 +291,14 @@ public class ProductosController implements Initializable {
                 String dataJson = gson.toJson(response.get("data"));
                 List<Producto> productos = gson.fromJson(dataJson, 
                     new TypeToken<List<Producto>>(){}.getType());
+                
+                // Resolver grupo a partir de grupoId para que la tabla/filtros funcionen
+for (Producto p : productos) {
+if (p.getGrupo() == null && p.getGrupoId() != null) {
+GrupoProducto g = gruposById.get(p.getGrupoId());
+if (g != null) p.setGrupo(g);
+}
+}
                 
                 listaProductos = FXCollections.observableArrayList(productos);
                 listaFiltrada = new FilteredList<>(listaProductos, p -> true);
@@ -367,9 +401,11 @@ private void onVolver(ActionEvent event) {
             
             // Asignar grupo
             GrupoProducto grupoSeleccionado = cmbGrupo.getSelectionModel().getSelectedItem();
-            if (grupoSeleccionado != null) {
-                producto.setGrupo(grupoSeleccionado);
-            }
+if (grupoSeleccionado != null) {
+    producto.setGrupoId(grupoSeleccionado.getId());
+    // Evitar enviar el objeto grupo porque el backend lo ignora por @JsonbTransient
+    producto.setGrupo(null);
+}
             
             // Llamar al backend
             String jsonResponse;
@@ -476,14 +512,20 @@ private void onVolver(ActionEvent event) {
         chkActivo.setSelected(producto.isActivo());
         
         // Seleccionar el grupo en el ComboBox
-        if (producto.getGrupo() != null) {
-            for (GrupoProducto g : cmbGrupo.getItems()) {
-                if (g.getId().equals(producto.getGrupo().getId())) {
-                    cmbGrupo.getSelectionModel().select(g);
-                    break;
-                }
-            }
+Long idGrupo = null;
+if (producto.getGrupo() != null) {
+    idGrupo = producto.getGrupo().getId();
+} else if (producto.getGrupoId() != null) {
+    idGrupo = producto.getGrupoId();
+}
+if (idGrupo != null) {
+    for (GrupoProducto g : cmbGrupo.getItems()) {
+        if (idGrupo.equals(g.getId())) {
+            cmbGrupo.getSelectionModel().select(g);
+            break;
         }
+    }
+}
     }
 
     /**

@@ -236,7 +236,7 @@ public static byte[] getBytes(String endpoint, Map<String, String> headers) thro
         HttpGet request = constructGet(BASE_URL + endpoint);
         // headers custom (ej. Accept: application/pdf)
         if (headers != null) {
-            headers.forEach(request::addHeader);
+            headers.forEach(request::setHeader);
         } else {
             request.setHeader("Accept", "*/*");
         }

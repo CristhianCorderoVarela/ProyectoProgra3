@@ -288,6 +288,10 @@ public class ReportesService {
         if (json.trim().startsWith("[")) return G.fromJson(json, List.class);
         return Collections.emptyList();
     }
+    
+    
+    
+
 
     private static String preview(String s){ return (s==null)? "null" : (s.length()<=200? s : s.substring(0,200)+"..."); }
     private static void log(String m){ System.out.println("[ReportesService] " + m); }

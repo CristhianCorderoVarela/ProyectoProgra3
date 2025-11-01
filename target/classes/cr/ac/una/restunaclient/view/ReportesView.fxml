@@ -19,7 +19,7 @@
     <top>
         <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0; -fx-padding: 16px 24px;">
             <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
-                <StackPane style="-fx-background-color: linear-gradient(to bottom right, #FF7A00, #FF6B00);                                   -fx-background-radius: 8px; -fx-pref-width: 48px; -fx-pref-height: 48px;">
+                <StackPane style="-fx-background-color: linear-gradient(to bottom right, #FF7A00, #FF6B00); -fx-background-radius: 8px; -fx-pref-width: 48px; -fx-pref-height: 48px;">
                     <Label style="-fx-font-size: 24px;" text="🍽" />
                 </StackPane>
                 <VBox spacing="2">
@@ -53,7 +53,7 @@
                         <Label style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #666666; -fx-padding: 0 0 8 0;" text="TIPO DE REPORTE" />
 
                         <!-- Facturas -->
-                        <Button fx:id="btnFacturas" maxWidth="Infinity" onAction="#selectFacturas" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px;                                        -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <Button fx:id="btnFacturas" maxWidth="Infinity" onAction="#selectFacturas" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
                                     <StackPane style="-fx-background-color: #275BF5; -fx-background-radius: 8px; -fx-pref-width: 44px; -fx-pref-height: 44px;">
@@ -68,7 +68,7 @@
                         </Button>
 
                         <!-- Productos Top -->
-                        <Button fx:id="btnProductos" maxWidth="Infinity" onAction="#selectProductos" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px;                                        -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <Button fx:id="btnProductos" maxWidth="Infinity" onAction="#selectProductos" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
                                     <StackPane style="-fx-background-color: #ff7a00; -fx-background-radius: 8px; -fx-pref-width: 40px; -fx-pref-height: 40px;">
@@ -83,7 +83,7 @@
                         </Button>
 
                         <!-- Cierre de Caja -->
-                        <Button fx:id="btnCierres" maxWidth="Infinity" onAction="#selectCierres" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px;                                        -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <Button fx:id="btnCierres" maxWidth="Infinity" onAction="#selectCierres" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
                                     <StackPane style="-fx-background-color: #22cc5c; -fx-background-radius: 8px; -fx-pref-width: 40px; -fx-pref-height: 40px;">
@@ -128,18 +128,26 @@
                                 <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Final *" />
                                 <DatePicker fx:id="facturasDateFin" maxWidth="Infinity" promptText="Seleccione fecha" />
                             </VBox>
-                     <rowConstraints>
-                        <RowConstraints />
-                     </rowConstraints>
+                            <rowConstraints>
+                                <RowConstraints />
+                            </rowConstraints>
                         </GridPane>
                         <VBox spacing="8">
                             <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Estado" />
                             <ComboBox fx:id="facturasComboEstado" maxWidth="Infinity" promptText="Todas" />
                         </VBox>
                         <HBox spacing="12">
-                            <Button maxWidth="Infinity" onAction="#handleGenerarFacturas" style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="👁 Generar Reporte" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#handlePDFFacturas" style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="📄 PDF" />
-                            <Button onAction="#handleImprimirFacturas" style="-fx-background-color: #6B7280; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="🖨 Imprimir" />
+                            <!-- ✔ Verificar (más pequeño) -->
+                            <Button maxWidth="Infinity"
+                                    onAction="#handleGenerarFacturas"
+                                    style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
+                            <!-- 📄 PDF (más grande) -->
+                            <Button onAction="#handlePDFFacturas"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
+                                    text="📄 PDF" />
                         </HBox>
                     </VBox>
 
@@ -162,18 +170,26 @@
                                 <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Final *" />
                                 <DatePicker fx:id="productosDateFin" maxWidth="Infinity" promptText="Seleccione fecha" />
                             </VBox>
-                     <rowConstraints>
-                        <RowConstraints />
-                     </rowConstraints>
+                            <rowConstraints>
+                                <RowConstraints />
+                            </rowConstraints>
                         </GridPane>
                         <VBox spacing="8">
                             <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Cantidad a Mostrar" />
                             <ComboBox fx:id="productosComboTop" maxWidth="Infinity" promptText="Top 10 / 20 / 50 / Todos" />
                         </VBox>
                         <HBox spacing="12">
-                            <Button maxWidth="Infinity" onAction="#handleGenerarProductos" style="-fx-background-color: #FF7A00; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="👁 Generar Reporte" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#handlePDFProductos" style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="📄 PDF" />
-                            <Button onAction="#handleImprimirProductos" style="-fx-background-color: #6B7280; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="🖨 Imprimir" />
+                            <!-- ✔ Verificar (más pequeño) -->
+                            <Button maxWidth="Infinity"
+                                    onAction="#handleGenerarProductos"
+                                    style="-fx-background-color: #FF7A00; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
+                            <!-- 📄 PDF (más grande) -->
+                            <Button onAction="#handlePDFProductos"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
+                                    text="📄 PDF" />
                         </HBox>
                     </VBox>
 
@@ -183,7 +199,7 @@
                             <Label style="-fx-font-size: 18px;" text="💰" />
                             <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Cierre de Caja" />
                         </HBox>
-                        <HBox spacing="8" style="-fx-background-color: #F0FDF4; -fx-border-color: #BBF7D0; -fx-border-width: 1px;                                                   -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 12px;">
+                        <HBox spacing="8" style="-fx-background-color: #F0FDF4; -fx-border-color: #BBF7D0; -fx-border-width: 1px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 12px;">
                             <Label style="-fx-font-size: 16px; -fx-text-fill: #22C55E;" text="ℹ" />
                             <Label style="-fx-font-size: 12px; -fx-text-fill: #166534;" text="Seleccione el cajero y la fecha del cierre ya realizado" wrapText="true" />
                         </HBox>
@@ -196,9 +212,17 @@
                             <DatePicker fx:id="cierresDateFecha" maxWidth="Infinity" promptText="Seleccione fecha" />
                         </VBox>
                         <HBox spacing="12">
-                            <Button maxWidth="Infinity" onAction="#handleGenerarCierres" style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="👁 Generar Reporte" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#handlePDFCierres" style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="📄 PDF" />
-                            <Button onAction="#handleImprimirCierres" style="-fx-background-color: #6B7280; -fx-text-fill: white; -fx-background-radius: 8px; -fx-padding: 12px 16px; -fx-cursor: hand; -fx-font-weight: 600;" text="🖨 Imprimir" />
+                            <!-- ✔ Verificar (más pequeño) -->
+                            <Button maxWidth="Infinity"
+                                    onAction="#handleGenerarCierres"
+                                    style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
+                            <!-- 📄 PDF (más grande) -->
+                            <Button onAction="#handlePDFCierres"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
+                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
+                                    text="📄 PDF" />
                         </HBox>
                     </VBox>
 

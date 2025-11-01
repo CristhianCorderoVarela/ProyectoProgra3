@@ -14,6 +14,9 @@ module cr.ac.una.restunaclient {
     requires org.controlsfx.controls;
     requires java.base;
     requires java.desktop;
+    requires org.apache.pdfbox;
+    requires org.apache.fontbox;
+          
     
     // Opens para reflexión de JavaFX
     opens cr.ac.una.restunaclient to javafx.fxml;

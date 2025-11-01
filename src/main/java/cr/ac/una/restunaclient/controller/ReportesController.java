@@ -3,6 +3,10 @@ package cr.ac.una.restunaclient.controller;
 import cr.ac.una.restunaclient.service.ReportesService;
 import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
+import cr.ac.una.restunaclient.util.Mensaje;
+import cr.ac.una.restunaclient.util.PdfPrinter; // <— nuevo
+
+
 
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
@@ -60,6 +64,8 @@ public class ReportesController {
         cargarUsuarioHeader();
         configurarFechasPorDefecto();
         inicializarCombos();
+        asegurarCajeroPorDefecto();
+        
 
         // Estado inicial
         setVisibleManaged(placeholder, true);
@@ -115,6 +121,22 @@ public class ReportesController {
         if (productosDateFin != null)    productosDateFin.setValue(hoy);
         if (cierresDateFecha != null)    cierresDateFecha.setValue(hoy);
     }
+    
+    private String cajeroSeleccionadoONull() {
+    String cajero = getValue(cierresComboCajero);
+    if (cajero != null && !cajero.isBlank()) return cajero;
+
+    // intenta tomar el login del usuario actual
+    Object u = AppContext.getInstance().get("Usuario");
+    String login = safeExtract(u, "getUsuario", "usuario");
+    return (login == null || login.isBlank()) ? null : login;
+}
+
+    
+    
+    
+   
+
 
     private void inicializarCombos() {
         if (facturasComboEstado != null) {
@@ -181,15 +203,22 @@ public class ReportesController {
         );
     }
 
-    @FXML private void handleImprimirFacturas() {
-        if (!validarRango(facturasDateInicio, facturasDateFin)) return;
-        String estadoBD = mapEstadoFactura(getValue(facturasComboEstado));
-        runAsync(
-            () -> reportesService.facturasPdf(facturasDateInicio.getValue(), facturasDateFin.getValue(), null, estadoBD),
-            this::imprimirPdf,
-            "Preparando impresión (Facturas)…"
-        );
-    }
+    @FXML
+private void handleImprimirFacturas() {
+    if (!validarRango(facturasDateInicio, facturasDateFin)) return;
+    String estadoBD = mapEstadoFactura(getValue(facturasComboEstado));
+
+    runAsync(
+        () -> reportesService.facturasPdf(
+                facturasDateInicio.getValue(),
+                facturasDateFin.getValue(),
+                null,
+                estadoBD
+        ),
+        this::imprimirConVistaPrevia,
+        "Preparando impresión (Facturas)…"
+    );
+}
 
     private String mapEstadoFactura(String ui) {
         if (ui == null || ui.isBlank() || ui.equalsIgnoreCase("Todas")) return null;
@@ -236,45 +265,68 @@ public class ReportesController {
 
     // ---------------------- CIERRES ----------------------
 
-    @FXML private void handleGenerarCierres() {
-        if (isBlank(getValue(cierresComboCajero)) || cierresDateFecha.getValue() == null) {
-            warn("Validación", "Por favor seleccione cajero y fecha.");
-            return;
-        }
-        runAsync(
-            () -> reportesService.cierres(cierresDateFecha.getValue(), getValue(cierresComboCajero)),
-            data -> {
-                renderTable(tableCierres, data, List.of("id","estado","fechaApertura","fechaCierre","usuario","usuarioLogin","efectivoSistema","tarjetaSistema","difEfectivo","difTarjeta"));
-                info("Cierre de Caja", "Registros: " + size(data));
-            },
-            "Consultando cierres…"
-        );
+   @FXML
+private void handleGenerarCierres() {
+    if (cierresDateFecha.getValue() == null) {
+        warn("Validación", "Por favor seleccione la fecha.");
+        return;
     }
+    String cajero = cajeroSeleccionadoONull(); // ← usa fallback (combo o login actual)
+    runAsync(
+        () -> reportesService.cierres(cierresDateFecha.getValue(), cajero),
+        data -> {
+            renderTable(tableCierres, data, List.of(
+                "id","estado","fechaApertura","fechaCierre","usuario","usuarioLogin",
+                "efectivoSistema","tarjetaSistema","difEfectivo","difTarjeta"
+            ));
+            info("Cierre de Caja", "Registros: " + size(data));
+        },
+        "Consultando cierres…"
+    );
+}
 
-    @FXML private void handlePDFCierres() {
-        if (isBlank(getValue(cierresComboCajero)) || cierresDateFecha.getValue() == null) {
-            warn("Validación", "Por favor seleccione cajero y fecha.");
-            return;
-        }
-        runAsync(
-            () -> reportesService.cierrePdf(cierresDateFecha.getValue(), getValue(cierresComboCajero)),
-            this::abrirPdf,
-            "Generando PDF (Cierre)…"
-        );
+@FXML
+private void handlePDFCierres() {
+    if (cierresDateFecha.getValue() == null) {
+        warn("Validación", "Por favor seleccione la fecha.");
+        return;
     }
+    String cajero = cajeroSeleccionadoONull();
+    runAsync(
+        () -> reportesService.cierrePdf(cierresDateFecha.getValue(), cajero),
+        this::abrirPdf,
+        "Generando PDF (Cierre)…"
+    );
+}
 
-    @FXML private void handleImprimirCierres() {
-        if (isBlank(getValue(cierresComboCajero)) || cierresDateFecha.getValue() == null) {
-            warn("Validación", "Por favor seleccione cajero y fecha.");
-            return;
-        }
-        runAsync(
-            () -> reportesService.cierrePdf(cierresDateFecha.getValue(), getValue(cierresComboCajero)),
-            this::imprimirPdf,
-            "Preparando impresión (Cierre)…"
-        );
+@FXML
+private void handleImprimirCierres() {
+    if (cierresDateFecha.getValue() == null) {
+        warn("Validación", "Por favor seleccione la fecha.");
+        return;
     }
+    String cajero = cajeroSeleccionadoONull();
+    runAsync(
+        () -> reportesService.cierrePdf(cierresDateFecha.getValue(), cajero),
+        this::imprimirPdf,
+        "Preparando impresión (Cierre)…"
+    );
+}
 
+
+private void asegurarCajeroPorDefecto() {
+    if (cierresComboCajero == null) return;
+    Object u = AppContext.getInstance().get("Usuario");
+    String login = safeExtract(u, "getUsuario", "usuario");
+    if (login == null || login.isBlank()) return;
+
+    if (cierresComboCajero.getItems().isEmpty()) {
+        cierresComboCajero.getItems().add(login);
+    }
+    if (cierresComboCajero.getValue() == null || cierresComboCajero.getValue().isBlank()) {
+        cierresComboCajero.setValue(login);
+    }
+}
     // ---------------------- Utilidades comunes ----------------------
 
     private boolean validarRango(DatePicker ini, DatePicker fin) {
@@ -349,19 +401,34 @@ public class ReportesController {
     }
 
     private void imprimirPdf(File f) {
-        try {
-            if (f == null || !f.exists()) { warn("Imprimir", "No se encontró el archivo a imprimir."); return; }
-            if (java.awt.Desktop.isDesktopSupported()
-                    && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
-                java.awt.Desktop.getDesktop().print(f);
-            } else {
-                java.awt.Desktop.getDesktop().open(f);
-            }
-        } catch (Exception ex) {
-            err("Imprimir", "No fue posible enviar a impresión.\n" + ex.getMessage()
-                    + "\nArchivo: " + (f==null? "(desconocido)" : f.getAbsolutePath()));
+    try {
+        if (f == null || !f.exists()) {
+            warn("Imprimir", "No se encontró el archivo a imprimir."); 
+            return;
         }
+        // Usa nuestra clase que imprime con PDFBox
+        PdfPrinter.print(f);
+        info("Impresión", "Enviado a la impresora predeterminada.");
+    } catch (Exception ex) {
+        err("Imprimir", "No fue posible enviar a impresión.\n" + ex.getMessage()
+                + "\nArchivo: " + f.getAbsolutePath());
     }
+}
+    
+   private void imprimirConVistaPrevia(File f) {
+    try {
+        if (f == null || !f.exists()) {
+            throw new IllegalArgumentException("No se encontró el archivo PDF.");
+        }
+
+        // Abrir directamente con el visor predeterminado del sistema (Chrome, Edge, Adobe, etc.)
+        java.awt.Desktop.getDesktop().open(f);
+
+    } catch (Exception ex) {
+        Mensaje.showError("Vista previa de impresión",
+                "No fue posible abrir el PDF para imprimir.\n" + ex.getMessage());
+    }
+}
 
     // ---------------------- Render dinámico de tablas (opcional) ----------------------
 

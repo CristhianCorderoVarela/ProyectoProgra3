@@ -1,5 +1,6 @@
 cr\ac\una\restunaclient\controller\OrdenesController$2.class
 cr\ac\una\restunaclient\util\LocalDateAdapter.class
+cr\ac\una\restunaclient\util\PdfPrinter.class
 cr\ac\una\restunaclient\controller\ProductosController$6.class
 cr\ac\una\restunaclient\model\Mesa$SalonReference.class
 cr\ac\una\restunaclient\service\RestClient.class

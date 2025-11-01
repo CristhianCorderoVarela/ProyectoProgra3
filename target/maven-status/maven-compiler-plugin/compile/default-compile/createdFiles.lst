@@ -5,6 +5,7 @@ cr\ac\una\restunaclient\controller\ProductosController$6.class
 cr\ac\una\restunaclient\model\Mesa$SalonReference.class
 cr\ac\una\restunaclient\service\RestClient.class
 cr\ac\una\restunaclient\controller\VistaSalonesController$3.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$2.class
 cr\ac\una\restunaclient\model\Producto.class
 cr\ac\una\restunaclient\controller\LoginController.class
 cr\ac\una\restunaclient\model\Orden.class
@@ -13,10 +14,12 @@ cr\ac\una\restunaclient\controller\ReportesController$1.class
 cr\ac\una\restunaclient\controller\VentanaVentasController.class
 cr\ac\una\restunaclient\model\Salon.class
 cr\ac\una\restunaclient\model\Factura.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$5.class
 cr\ac\una\restunaclient\controller\ProductosController$3.class
 cr\ac\una\restunaclient\model\Mesa.class
 cr\ac\una\restunaclient\controller\GruposProductoController.class
 cr\ac\una\restunaclient\util\FlowController.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$3.class
 cr\ac\una\restunaclient\controller\GruposProductoController$1.class
 cr\ac\una\restunaclient\controller\OrdenesController$6.class
 cr\ac\una\restunaclient\controller\SalonesController$1.class
@@ -27,11 +30,13 @@ cr\ac\una\restunaclient\App.class
 cr\ac\una\restunaclient\controller\ProductosController$2.class
 cr\ac\una\restunaclient\model\Parametros.class
 cr\ac\una\restunaclient\util\AppContext.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$6.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$3.class
 cr\ac\una\restunaclient\controller\OrdenesController$3.class
 cr\ac\una\restunaclient\model\Cliente.class
 cr\ac\una\restunaclient\controller\VistaSalonesController$1.class
 cr\ac\una\restunaclient\controller\ParametrosController.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$4.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$1.class
 cr\ac\una\restunaclient\controller\SalonesController.class
 cr\ac\una\restunaclient\controller\OrdenesController$7.class
@@ -53,7 +58,10 @@ cr\ac\una\restunaclient\model\GrupoProducto.class
 cr\ac\una\restunaclient\controller\ClientesController.class
 cr\ac\una\restunaclient\controller\OrdenesController$1.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$ProductoCantidadSelection.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$7.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController.class
 cr\ac\una\restunaclient\controller\OrdenesController$5.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$1.class
 cr\ac\una\restunaclient\model\Usuario.class
 cr\ac\una\restunaclient\controller\MenuPrincipalController.class
 cr\ac\una\restunaclient\controller\VentanaVentasController$5.class
@@ -62,4 +70,5 @@ cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
 cr\ac\una\restunaclient\controller\ReportesController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class
+cr\ac\una\restunaclient\controller\QuickPickProductosController$Resultado.class
 cr\ac\una\restunaclient\controller\UsuariosController$1.class

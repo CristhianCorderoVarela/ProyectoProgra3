@@ -36,6 +36,7 @@ import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import javafx.scene.Parent;
 
 public class VentanaVentasController implements Initializable {
 
@@ -565,63 +566,57 @@ public class VentanaVentasController implements Initializable {
 
     // ========== PRODUCTOS ==========
     @FXML
-    private void onAgregarProducto(ActionEvent event) {
-        if (ordenSeleccionada == null) {
-            Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.seleccioneOrdenPrimero"));
+private void onAgregarProducto(ActionEvent event) {
+    if (ordenSeleccionada == null) {
+        Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.seleccioneOrdenPrimero"));
+        return;
+    }
+
+    try {
+        // Cargar FXML como modal
+        javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/cr/ac/una/restunaclient/view/QuickPickProductosView.fxml")
+        );
+        Parent root = loader.load();
+
+        Stage stage = new Stage();
+        stage.setTitle(I18n.isSpanish() ? "Agregar producto (rápido)" : "Quick add product");
+        stage.initOwner(btnAgregarProducto.getScene().getWindow());
+        stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+        stage.setScene(new javafx.scene.Scene(root, 900, 600));
+        stage.showAndWait();
+
+        // Recuperar resultado
+        var opt = cr.ac.una.restunaclient.controller.QuickPickProductosController.getResultFromStage(stage);
+        if (opt.isEmpty()) return;
+
+        var sel = opt.get(); // producto + cantidad
+        Long productoId = sel.producto().getId();
+        int cantidadNueva = sel.cantidad();
+
+        DetalleOrden detalleExistente = buscarDetalleExistenteEnOrden(productoId);
+        boolean ok;
+        if (detalleExistente != null) {
+            int cantTotal = detalleExistente.getCantidad() + cantidadNueva;
+            ok = actualizarDetalleEnBackend(ordenSeleccionada.getId(), detalleExistente.getId(), cantTotal);
+        } else {
+            ok = agregarDetalleEnBackend(ordenSeleccionada.getId(), productoId, cantidadNueva);
+        }
+
+        if (!ok) {
+            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAplicarProducto"));
             return;
         }
 
-        try {
-            if (catalogoProductos.isEmpty()) {
-                cargarCatalogoProductosDesdeBackend();
-            }
+        cargarDetallesDeOrden(ordenSeleccionada.getId());
+        onCalcularTotales(null);
+        Mensaje.showSuccess(I18n.get("facturacion.productos"), I18n.get("facturacion.productoAplicado"));
 
-            ProductoCantidadSelection sel = mostrarDialogoSeleccionProducto();
-            if (sel == null || sel.producto == null) {
-                return;
-            }
-
-            Long productoId = sel.producto.getId();
-            int cantidadNueva = sel.cantidad;
-
-            if (cantidadNueva <= 0) {
-                Mensaje.showWarning(I18n.get("facturacion.cantidad"), I18n.get("facturacion.cantidadMayorCero"));
-                return;
-            }
-
-            DetalleOrden detalleExistente = buscarDetalleExistenteEnOrden(productoId);
-
-            boolean ok;
-            if (detalleExistente != null) {
-                int cantidadTotal = detalleExistente.getCantidad() + cantidadNueva;
-                ok = actualizarDetalleEnBackend(
-                        ordenSeleccionada.getId(),
-                        detalleExistente.getId(),
-                        cantidadTotal
-                );
-            } else {
-                ok = agregarDetalleEnBackend(
-                        ordenSeleccionada.getId(),
-                        productoId,
-                        cantidadNueva
-                );
-            }
-
-            if (!ok) {
-                Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAplicarProducto"));
-                return;
-            }
-
-            cargarDetallesDeOrden(ordenSeleccionada.getId());
-            onCalcularTotales(null);
-
-            Mensaje.showSuccess(I18n.get("facturacion.productos"), I18n.get("facturacion.productoAplicado"));
-
-        } catch (Exception e1) {
-            e1.printStackTrace();
-            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAgregarProducto") + e1.getMessage());
-        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorCargarCatalogo") + ex.getMessage());
     }
+}
 
     private DetalleOrden buscarDetalleExistenteEnOrden(Long productoId) {
         if (productoId == null) return null;

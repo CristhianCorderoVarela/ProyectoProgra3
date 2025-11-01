@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/23.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="cr.ac.una.restunaclient.controller.QuickPickProductosController"
+            stylesheets="@styles.css"
+            style="-fx-background-color: #FFFFFF;">
+
+    <!-- HEADER -->
+    <top>
+        <HBox spacing="16" alignment="CENTER_LEFT"
+              style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;"
+              BorderPane.alignment="CENTER">
+            <padding><Insets top="12" right="20" bottom="12" left="20"/></padding>
+            <Label text="🧾" style="-fx-font-size: 20px;"/>
+            <Label fx:id="lblTitulo" text="Menú rápido de productos"
+                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <TextField fx:id="txtBuscar" promptText="Buscar por nombre o código"
+                       style="-fx-background-radius: 8; -fx-padding: 8; -fx-pref-width: 300;"/>
+        </HBox>
+    </top>
+
+    <center>
+    <HBox spacing="16">
+        <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+
+        <!-- PANE IZQUIERDO: GRUPOS -->
+        <VBox spacing="8" prefWidth="300" minWidth="280" maxWidth="360"
+              style="-fx-background-color: #FFFFFF; -fx-border-color: #E0E0E0; -fx-border-radius: 8; -fx-background-radius: 8;">
+            <padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+
+            <Label text="Grupos (ordenados por ventas)" wrapText="true"
+                   maxWidth="Infinity"
+                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #444444;"/>
+
+            <ListView fx:id="listGrupos" prefHeight="480">
+                <placeholder>
+                    <Label text="Sin grupos"/>
+                </placeholder>
+            </ListView>
+        </VBox>
+
+        <!-- PANE DERECHO: PRODUCTOS EN TILE (TACTIL) -->
+        <VBox spacing="8" HBox.hgrow="ALWAYS">
+            <Label fx:id="lblGrupoActual" text="Seleccione un grupo"
+                   style="-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #333333;"/>
+
+            <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                        style="-fx-background-color: transparent; -fx-background: transparent;"
+                        VBox.vgrow="ALWAYS">
+                <content>
+                    <TilePane fx:id="tileProductos"
+                              prefColumns="4" hgap="16" vgap="16"
+                              style="-fx-background-color: transparent;">
+                        <!-- Los botones de producto se inyectan dinámicamente -->
+                    </TilePane>
+                </content>
+            </ScrollPane>
+        </VBox>
+    </HBox>
+</center>
+
+    <!-- FOOTER: CANTIDAD + ACCIONES -->
+    <bottom>
+        <HBox spacing="12" alignment="CENTER_RIGHT"
+              style="-fx-background-color: #FFFFFF; -fx-border-color: #E0E0E0; -fx-border-width: 1 0 0 0;">
+            <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+
+            <Label text="Cantidad" style="-fx-font-size: 12px; -fx-font-weight: 600;"/>
+            <Spinner fx:id="spCantidad" editable="true" prefWidth="90"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="btnCancelar" text="Cancelar"
+                    onAction="#onCancelar"
+                    style="-fx-background-color: #F5F5F5; -fx-text-fill: #333; -fx-background-radius: 8; -fx-padding: 10 16;"/>
+            <Button fx:id="btnAgregar" text="Agregar a la orden"
+                    onAction="#onAgregar"
+                    style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10 16; -fx-font-weight: 700;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

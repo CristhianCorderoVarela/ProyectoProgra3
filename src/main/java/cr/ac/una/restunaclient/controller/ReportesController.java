@@ -5,6 +5,7 @@ import cr.ac.una.restunaclient.util.AppContext;
 import cr.ac.una.restunaclient.util.FlowController;
 import cr.ac.una.restunaclient.util.Mensaje;
 import cr.ac.una.restunaclient.util.PdfPrinter; // <— nuevo
+import cr.ac.una.restunaclient.util.I18n;
 
 
 
@@ -22,6 +23,32 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class ReportesController {
+    
+    
+    // Header / etiquetas
+@FXML private Button btnVolver;
+
+// Títulos y menú
+@FXML private Label lblModuloTitulo, lblModuloSubtitulo, lblTipoReporte;
+@FXML private Label lblCardFacturasTitulo, lblCardFacturasSub;
+@FXML private Label lblCardProductosTitulo, lblCardProductosSub;
+@FXML private Label lblCardCierresTitulo,  lblCardCierresSub;
+
+// Placeholder
+@FXML private Label lblPlaceholderTitulo, lblPlaceholderSub;
+
+// Títulos de formularios
+@FXML private Label lblFacturasTitulo, lblProductosTitulo, lblCierresTitulo;
+
+// Labels de formularios
+@FXML private Label lblFacturasFechaIni, lblFacturasFechaFin, lblFacturasEstado;
+@FXML private Label lblProductosFechaIni, lblProductosFechaFin, lblProductosCantidad;
+@FXML private Label lblCierresBanner, lblCierresCajero, lblCierresFecha;
+
+// Botones de formularios
+@FXML private Button btnVerificarFacturas, btnPdfFacturas;
+@FXML private Button btnVerificarProductos, btnPdfProductos;
+@FXML private Button btnVerificarCierres,  btnPdfCierres;
 
     // Header
     @FXML private Label lblUsuario;
@@ -61,6 +88,7 @@ public class ReportesController {
 
     @FXML
     public void initialize() {
+        actualizarTextos();
         cargarUsuarioHeader();
         configurarFechasPorDefecto();
         inicializarCombos();
@@ -112,6 +140,70 @@ public class ReportesController {
         return null;
     }
 
+    
+    private void actualizarTextos() {
+    // Header
+    if (btnVolver != null) btnVolver.setText(I18n.get("reportes.header.volver"));
+    if (lblUsuario != null) lblUsuario.setText(I18n.get("reportes.usuario") + " " + (lblUsuario.getText()==null?"":lblUsuario.getText()));
+    if (lblRol != null)     lblRol.setText(I18n.get("reportes.rol") + " " + (lblRol.getText()==null?"":lblRol.getText()));
+
+    // Título/subtítulo y etiqueta de menú
+    if (lblModuloTitulo != null)    lblModuloTitulo.setText(I18n.get("reportes.titulo"));
+    if (lblModuloSubtitulo != null) lblModuloSubtitulo.setText(I18n.get("reportes.subtitulo"));
+    if (lblTipoReporte != null)     lblTipoReporte.setText(I18n.get("reportes.tipo"));
+
+    // Cards del menú
+    if (lblCardFacturasTitulo != null) lblCardFacturasTitulo.setText(I18n.get("reportes.card.facturas.titulo"));
+    if (lblCardFacturasSub != null)    lblCardFacturasSub.setText(I18n.get("reportes.card.facturas.sub"));
+    if (lblCardProductosTitulo != null) lblCardProductosTitulo.setText(I18n.get("reportes.card.productos.titulo"));
+    if (lblCardProductosSub != null)    lblCardProductosSub.setText(I18n.get("reportes.card.productos.sub"));
+    if (lblCardCierresTitulo != null)   lblCardCierresTitulo.setText(I18n.get("reportes.card.cierres.titulo"));
+    if (lblCardCierresSub != null)      lblCardCierresSub.setText(I18n.get("reportes.card.cierres.sub"));
+
+    // Placeholder central
+    if (lblPlaceholderTitulo != null) lblPlaceholderTitulo.setText(I18n.get("reportes.placeholder.titulo"));
+    if (lblPlaceholderSub != null)    lblPlaceholderSub.setText(I18n.get("reportes.placeholder.subtitulo"));
+
+    // Form: Facturas
+    if (lblFacturasTitulo != null)   lblFacturasTitulo.setText(I18n.get("reportes.card.facturas.titulo"));
+    if (lblFacturasFechaIni != null) lblFacturasFechaIni.setText(I18n.get("reportes.form.fechaInicio"));
+    if (lblFacturasFechaFin != null) lblFacturasFechaFin.setText(I18n.get("reportes.form.fechaFin"));
+    if (lblFacturasEstado != null)   lblFacturasEstado.setText(I18n.get("reportes.form.estado"));
+
+    if (facturasDateInicio != null)  facturasDateInicio.setPromptText(I18n.get("reportes.form.fechaInicio"));
+    if (facturasDateFin != null)     facturasDateFin.setPromptText(I18n.get("reportes.form.fechaFin"));
+    if (facturasComboEstado != null) facturasComboEstado.setPromptText(I18n.get("reportes.form.estado.todas"));
+
+    if (btnVerificarFacturas != null) btnVerificarFacturas.setText(I18n.get("reportes.btn.verificar"));
+    if (btnPdfFacturas != null)       btnPdfFacturas.setText(I18n.get("reportes.btn.pdf"));
+
+    // Form: Productos
+    if (lblProductosTitulo != null)   lblProductosTitulo.setText(I18n.get("reportes.card.productos.titulo"));
+    if (lblProductosFechaIni != null) lblProductosFechaIni.setText(I18n.get("reportes.form.fechaInicio"));
+    if (lblProductosFechaFin != null) lblProductosFechaFin.setText(I18n.get("reportes.form.fechaFin"));
+    if (lblProductosCantidad != null) lblProductosCantidad.setText(I18n.get("reportes.form.cantidad"));
+
+    if (productosDateInicio != null)  productosDateInicio.setPromptText(I18n.get("reportes.form.fechaInicio"));
+    if (productosDateFin != null)     productosDateFin.setPromptText(I18n.get("reportes.form.fechaFin"));
+    if (productosComboTop != null)    productosComboTop.setPromptText(I18n.get("reportes.form.top.prompt"));
+
+    if (btnVerificarProductos != null) btnVerificarProductos.setText(I18n.get("reportes.btn.verificar"));
+    if (btnPdfProductos != null)       btnPdfProductos.setText(I18n.get("reportes.btn.pdf"));
+
+    // Form: Cierres
+    if (lblCierresTitulo != null)  lblCierresTitulo.setText(I18n.get("reportes.card.cierres.titulo"));
+    if (lblCierresBanner != null)  lblCierresBanner.setText(I18n.get("reportes.banner.info"));
+    if (lblCierresCajero != null)  lblCierresCajero.setText(I18n.get("reportes.form.cajero"));
+    if (lblCierresFecha != null)   lblCierresFecha.setText(I18n.get("reportes.form.fecha"));
+
+    if (cierresDateFecha != null)  cierresDateFecha.setPromptText(I18n.get("reportes.form.fecha"));
+    if (btnVerificarCierres != null) btnVerificarCierres.setText(I18n.get("reportes.btn.verificar"));
+    if (btnPdfCierres != null)       btnPdfCierres.setText(I18n.get("reportes.btn.pdf"));
+
+    // Re-llenar combos según idioma
+    inicializarCombos(); // usa el idioma actual
+}
+    
     private void configurarFechasPorDefecto() {
         LocalDate hoy = LocalDate.now();
         LocalDate inicioMes = hoy.withDayOfMonth(1);
@@ -134,23 +226,30 @@ public class ReportesController {
 
     
     
-    
-   
-
-
+  
     private void inicializarCombos() {
-        if (facturasComboEstado != null) {
-            facturasComboEstado.setItems(FXCollections.observableArrayList("Todas", "Activas", "Canceladas"));
-            facturasComboEstado.setValue("Todas");
-        }
-        if (productosComboTop != null) {
-            productosComboTop.setItems(FXCollections.observableArrayList("Top 10", "Top 20", "Top 50", "Todos"));
-            productosComboTop.setValue("Top 10");
-        }
-        if (cierresComboCajero != null) {
-            cierresComboCajero.setItems(FXCollections.observableArrayList());
-        }
+       
+    boolean es = I18n.isSpanish();
+if (facturasComboEstado != null) {
+       var estados = es
+            ? FXCollections.observableArrayList("Todas", "Activas", "Canceladas")
+            : FXCollections.observableArrayList("All", "Active", "Cancelled");
+       facturasComboEstado.setItems(estados);
+        facturasComboEstado.setValue(estados.get(0));
     }
+    if (productosComboTop != null) {
+        var tops = es
+            ? FXCollections.observableArrayList("Top 10", "Top 20", "Top 50", "Todos")
+            : FXCollections.observableArrayList("Top 10", "Top 20", "Top 50", "All");
+       productosComboTop.setItems(tops);
+        productosComboTop.setValue(tops.get(0));
+    }
+     if (cierresComboCajero != null) {
+         if (cierresComboCajero.getItems() == null) {
+             cierresComboCajero.setItems(FXCollections.observableArrayList());
+         }
+     }
+}
 
     private void setVisibleManaged(Node n, boolean on) {
         if (n == null) return;
@@ -221,11 +320,14 @@ private void handleImprimirFacturas() {
 }
 
     private String mapEstadoFactura(String ui) {
-        if (ui == null || ui.isBlank() || ui.equalsIgnoreCase("Todas")) return null;
-        if (ui.equalsIgnoreCase("Activas")) return "A";
-        if (ui.equalsIgnoreCase("Canceladas")) return "C";
-        return null;
-    }
+    if (ui == null) return null;
+    String s = ui.toLowerCase(Locale.ROOT).trim();
+    // ES / EN
+    if (s.equals("todas") || s.equals("all")) return null;
+    if (s.equals("activas") || s.equals("active")) return "A";
+    if (s.equals("canceladas") || s.equals("cancelled")) return "C";
+    return null;
+}
 
     // ---------------------- PRODUCTOS TOP ----------------------
 

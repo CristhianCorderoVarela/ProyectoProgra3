@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.DatePicker?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane styleClass="root" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cr.ac.una.restunaclient.controller.ReportesController">
+<BorderPane styleClass="root" stylesheets="@styles.css"
+            xmlns="http://javafx.com/javafx/23.0.1"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="cr.ac.una.restunaclient.controller.ReportesController">
 
     <!-- Header -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="16" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0; -fx-padding: 16px 24px;">
+        <HBox alignment="CENTER_LEFT" spacing="16"
+              style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0; -fx-padding: 16px 24px;">
             <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS">
-                <StackPane style="-fx-background-color: linear-gradient(to bottom right, #FF7A00, #FF6B00); -fx-background-radius: 8px; -fx-pref-width: 48px; -fx-pref-height: 48px;">
+                <StackPane style="-fx-background-color: linear-gradient(to bottom right, #FF7A00, #FF6B00);
+                                  -fx-background-radius: 8px; -fx-pref-width: 48px; -fx-pref-height: 48px;">
                     <Label style="-fx-font-size: 24px;" text="🍽" />
                 </StackPane>
                 <VBox spacing="2">
@@ -30,10 +25,14 @@
 
             <HBox alignment="CENTER_RIGHT" spacing="16">
                 <VBox alignment="CENTER_RIGHT" spacing="2">
-                    <Label fx:id="lblUsuario" style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="" />
-                    <Label fx:id="lblRol" style="-fx-font-size: 11px; -fx-text-fill: #999999;" text="" />
+                    <Label fx:id="lblUsuario"
+                           style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                    <Label fx:id="lblRol"
+                           style="-fx-font-size: 11px; -fx-text-fill: #999999;" />
                 </VBox>
-                <Button onAction="#handleVolver" style="-fx-background-color: #F5F5F5; -fx-text-fill: #333333; -fx-background-radius: 8px; -fx-padding: 8px 16px; -fx-cursor: hand;" text="← Volver" />
+                <Button fx:id="btnVolver" onAction="#handleVolver"
+                        style="-fx-background-color: #F5F5F5; -fx-text-fill: #333333;
+                               -fx-background-radius: 8px; -fx-padding: 8px 16px; -fx-cursor: hand;" />
             </HBox>
         </HBox>
     </top>
@@ -42,56 +41,85 @@
         <VBox spacing="24" style="-fx-padding: 32px 24px; -fx-background-color: #F9FAFB;">
             <!-- Título -->
             <VBox spacing="4">
-                <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Módulo de Reportes" />
-                <Label style="-fx-font-size: 14px; -fx-text-fill: #666666;" text="Seleccione el tipo de reporte y configure los filtros" />
+                <Label fx:id="lblModuloTitulo"
+                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #333333;" />
+                <Label fx:id="lblModuloSubtitulo"
+                       style="-fx-font-size: 14px; -fx-text-fill: #666666;" />
             </VBox>
 
             <HBox spacing="24" VBox.vgrow="ALWAYS">
-                <!-- Menú de reportes -->
-                <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent; -fx-background: transparent;">
+                <!-- Menú lateral -->
+                <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER"
+                            style="-fx-background-color: transparent; -fx-background: transparent;">
                     <VBox spacing="12" style="-fx-pref-width: 380px;">
-                        <Label style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #666666; -fx-padding: 0 0 8 0;" text="TIPO DE REPORTE" />
+                        <Label fx:id="lblTipoReporte"
+                               style="-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #666666;
+                                      -fx-padding: 0 0 8 0;" />
 
                         <!-- Facturas -->
-                        <Button fx:id="btnFacturas" maxWidth="Infinity" onAction="#selectFacturas" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <Button fx:id="btnFacturas" maxWidth="Infinity" onAction="#selectFacturas"
+                                style="-fx-background-color: white; -fx-border-color: #E0E0E0;
+                                       -fx-border-width: 2px; -fx-border-radius: 8px;
+                                       -fx-background-radius: 8px; -fx-padding: 16px;
+                                       -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <StackPane style="-fx-background-color: #275BF5; -fx-background-radius: 8px; -fx-pref-width: 44px; -fx-pref-height: 44px;">
+                                    <StackPane style="-fx-background-color: #275BF5;
+                                                      -fx-background-radius: 8px;
+                                                      -fx-pref-width: 44px; -fx-pref-height: 44px;">
                                         <Label style="-fx-font-size: 22px;" text="📄" />
                                     </StackPane>
                                     <VBox spacing="2" HBox.hgrow="ALWAYS">
-                                        <Label style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Listado de Facturas" />
-                                        <Label style="-fx-font-size: 11px; -fx-text-fill: #999999;" text="Por rango de fechas" />
+                                        <Label fx:id="lblCardFacturasTitulo"
+                                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                        <Label fx:id="lblCardFacturasSub"
+                                               style="-fx-font-size: 11px; -fx-text-fill: #999999;" />
                                     </VBox>
                                 </HBox>
                             </graphic>
                         </Button>
 
-                        <!-- Productos Top -->
-                        <Button fx:id="btnProductos" maxWidth="Infinity" onAction="#selectProductos" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <!-- Productos -->
+                        <Button fx:id="btnProductos" maxWidth="Infinity" onAction="#selectProductos"
+                                style="-fx-background-color: white; -fx-border-color: #E0E0E0;
+                                       -fx-border-width: 2px; -fx-border-radius: 8px;
+                                       -fx-background-radius: 8px; -fx-padding: 16px;
+                                       -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <StackPane style="-fx-background-color: #ff7a00; -fx-background-radius: 8px; -fx-pref-width: 40px; -fx-pref-height: 40px;">
+                                    <StackPane style="-fx-background-color: #ff7a00;
+                                                      -fx-background-radius: 8px;
+                                                      -fx-pref-width: 40px; -fx-pref-height: 40px;">
                                         <Label style="-fx-font-size: 18px;" text="📊" />
                                     </StackPane>
                                     <VBox spacing="2" HBox.hgrow="ALWAYS">
-                                        <Label style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Productos más vendidos" />
-                                        <Label style="-fx-font-size: 11px; -fx-text-fill: #999999;" text="Top por rango de fechas" />
+                                        <Label fx:id="lblCardProductosTitulo"
+                                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                        <Label fx:id="lblCardProductosSub"
+                                               style="-fx-font-size: 11px; -fx-text-fill: #999999;" />
                                     </VBox>
                                 </HBox>
                             </graphic>
                         </Button>
 
-                        <!-- Cierre de Caja -->
-                        <Button fx:id="btnCierres" maxWidth="Infinity" onAction="#selectCierres" style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-width: 2px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 16px; -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
+                        <!-- Cierres -->
+                        <Button fx:id="btnCierres" maxWidth="Infinity" onAction="#selectCierres"
+                                style="-fx-background-color: white; -fx-border-color: #E0E0E0;
+                                       -fx-border-width: 2px; -fx-border-radius: 8px;
+                                       -fx-background-radius: 8px; -fx-padding: 16px;
+                                       -fx-cursor: hand; -fx-alignment: CENTER_LEFT;">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <StackPane style="-fx-background-color: #22cc5c; -fx-background-radius: 8px; -fx-pref-width: 40px; -fx-pref-height: 40px;">
+                                    <StackPane style="-fx-background-color: #22cc5c;
+                                                      -fx-background-radius: 8px;
+                                                      -fx-pref-width: 40px; -fx-pref-height: 40px;">
                                         <Label style="-fx-font-size: 18px;" text="💰" />
                                     </StackPane>
                                     <VBox spacing="2" HBox.hgrow="ALWAYS">
-                                        <Label style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Cierre de caja" />
-                                        <Label style="-fx-font-size: 11px; -fx-text-fill: #999999;" text="Por cajero y fecha" />
+                                        <Label fx:id="lblCardCierresTitulo"
+                                               style="-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                        <Label fx:id="lblCardCierresSub"
+                                               style="-fx-font-size: 11px; -fx-text-fill: #999999;" />
                                     </VBox>
                                 </HBox>
                             </graphic>
@@ -100,20 +128,25 @@
                 </ScrollPane>
 
                 <!-- Contenido -->
-                <StackPane style="-fx-background-color: white; -fx-border-color: #E0E0E0; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 24px; -fx-min-height: 400px;" HBox.hgrow="ALWAYS">
+                <StackPane style="-fx-background-color: white; -fx-border-color: #E0E0E0;
+                                  -fx-border-radius: 8px; -fx-background-radius: 8px;
+                                  -fx-padding: 24px; -fx-min-height: 400px;" HBox.hgrow="ALWAYS">
 
                     <!-- Placeholder -->
                     <VBox fx:id="placeholder" alignment="CENTER" spacing="16" StackPane.alignment="CENTER">
                         <Label style="-fx-font-size: 64px;" text="📈" />
-                        <Label style="-fx-font-size: 16px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Seleccione un Reporte" />
-                        <Label style="-fx-font-size: 13px; -fx-text-fill: #999999;" text="Elija el tipo de reporte de la lista para configurar los filtros" />
+                        <Label fx:id="lblPlaceholderTitulo"
+                               style="-fx-font-size: 16px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                        <Label fx:id="lblPlaceholderSub"
+                               style="-fx-font-size: 13px; -fx-text-fill: #999999;" />
                     </VBox>
 
                     <!-- Form: Facturas -->
                     <VBox fx:id="formFacturas" managed="false" spacing="16" visible="false">
                         <HBox alignment="CENTER_LEFT" spacing="8">
                             <Label style="-fx-font-size: 18px;" text="📄" />
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Listado de Facturas" />
+                            <Label fx:id="lblFacturasTitulo"
+                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" />
                         </HBox>
                         <GridPane hgap="16" vgap="8">
                             <columnConstraints>
@@ -121,41 +154,42 @@
                                 <ColumnConstraints percentWidth="50" />
                             </columnConstraints>
                             <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Inicial *" />
-                                <DatePicker fx:id="facturasDateInicio" maxWidth="Infinity" promptText="Seleccione fecha" />
+                                <Label fx:id="lblFacturasFechaIni"
+                                       style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                <DatePicker fx:id="facturasDateInicio" maxWidth="Infinity" />
                             </VBox>
                             <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Final *" />
-                                <DatePicker fx:id="facturasDateFin" maxWidth="Infinity" promptText="Seleccione fecha" />
+                                <Label fx:id="lblFacturasFechaFin"
+                                       style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                <DatePicker fx:id="facturasDateFin" maxWidth="Infinity" />
                             </VBox>
-                            <rowConstraints>
-                                <RowConstraints />
-                            </rowConstraints>
+                            <rowConstraints><RowConstraints /></rowConstraints>
                         </GridPane>
                         <VBox spacing="8">
-                            <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Estado" />
-                            <ComboBox fx:id="facturasComboEstado" maxWidth="Infinity" promptText="Todas" />
+                            <Label fx:id="lblFacturasEstado"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                            <ComboBox fx:id="facturasComboEstado" maxWidth="Infinity" />
                         </VBox>
                         <HBox spacing="12">
-                            <!-- ✔ Verificar (más pequeño) -->
-                            <Button maxWidth="Infinity"
+                            <Button fx:id="btnVerificarFacturas" maxWidth="Infinity"
                                     onAction="#handleGenerarFacturas"
-                                    style="-fx-background-color: #3B82F6; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
-                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
-                            <!-- 📄 PDF (más grande) -->
-                            <Button onAction="#handlePDFFacturas"
-                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
-                                    text="📄 PDF" />
+                                    style="-fx-background-color: #3B82F6; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 8px 12px;
+                                           -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnPdfFacturas" onAction="#handlePDFFacturas"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 14px 22px;
+                                           -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;" />
                         </HBox>
                     </VBox>
 
-                    <!-- Form: Productos Top -->
+                    <!-- Form: Productos -->
                     <VBox fx:id="formProductos" managed="false" spacing="16" visible="false">
                         <HBox alignment="CENTER_LEFT" spacing="8">
                             <Label style="-fx-font-size: 18px;" text="📊" />
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Productos más vendidos" />
+                            <Label fx:id="lblProductosTitulo"
+                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" />
                         </HBox>
                         <GridPane hgap="16" vgap="8">
                             <columnConstraints>
@@ -163,66 +197,72 @@
                                 <ColumnConstraints percentWidth="50" />
                             </columnConstraints>
                             <VBox spacing="8" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Inicial *" />
-                                <DatePicker fx:id="productosDateInicio" maxWidth="Infinity" promptText="Seleccione fecha" />
+                                <Label fx:id="lblProductosFechaIni"
+                                       style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                <DatePicker fx:id="productosDateInicio" maxWidth="Infinity" />
                             </VBox>
                             <VBox spacing="8" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                                <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha Final *" />
-                                <DatePicker fx:id="productosDateFin" maxWidth="Infinity" promptText="Seleccione fecha" />
+                                <Label fx:id="lblProductosFechaFin"
+                                       style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                                <DatePicker fx:id="productosDateFin" maxWidth="Infinity" />
                             </VBox>
-                            <rowConstraints>
-                                <RowConstraints />
-                            </rowConstraints>
+                            <rowConstraints><RowConstraints /></rowConstraints>
                         </GridPane>
                         <VBox spacing="8">
-                            <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Cantidad a Mostrar" />
-                            <ComboBox fx:id="productosComboTop" maxWidth="Infinity" promptText="Top 10 / 20 / 50 / Todos" />
+                            <Label fx:id="lblProductosCantidad"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                            <ComboBox fx:id="productosComboTop" maxWidth="Infinity" />
                         </VBox>
                         <HBox spacing="12">
-                            <!-- ✔ Verificar (más pequeño) -->
-                            <Button maxWidth="Infinity"
+                            <Button fx:id="btnVerificarProductos" maxWidth="Infinity"
                                     onAction="#handleGenerarProductos"
-                                    style="-fx-background-color: #FF7A00; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
-                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
-                            <!-- 📄 PDF (más grande) -->
-                            <Button onAction="#handlePDFProductos"
-                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
-                                    text="📄 PDF" />
+                                    style="-fx-background-color: #FF7A00; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 8px 12px;
+                                           -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnPdfProductos" onAction="#handlePDFProductos"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 14px 22px;
+                                           -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;" />
                         </HBox>
                     </VBox>
 
-                    <!-- Form: Cierre de Caja -->
+                    <!-- Form: Cierres -->
                     <VBox fx:id="formCierres" managed="false" spacing="16" visible="false">
                         <HBox alignment="CENTER_LEFT" spacing="8">
                             <Label style="-fx-font-size: 18px;" text="💰" />
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" text="Cierre de Caja" />
+                            <Label fx:id="lblCierresTitulo"
+                                   style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #333333;" />
                         </HBox>
-                        <HBox spacing="8" style="-fx-background-color: #F0FDF4; -fx-border-color: #BBF7D0; -fx-border-width: 1px; -fx-border-radius: 8px; -fx-background-radius: 8px; -fx-padding: 12px;">
+                        <HBox spacing="8"
+                              style="-fx-background-color: #F0FDF4; -fx-border-color: #BBF7D0;
+                                     -fx-border-width: 1px; -fx-border-radius: 8px;
+                                     -fx-background-radius: 8px; -fx-padding: 12px;">
                             <Label style="-fx-font-size: 16px; -fx-text-fill: #22C55E;" text="ℹ" />
-                            <Label style="-fx-font-size: 12px; -fx-text-fill: #166534;" text="Seleccione el cajero y la fecha del cierre ya realizado" wrapText="true" />
+                            <Label fx:id="lblCierresBanner"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #166534;" wrapText="true" />
                         </HBox>
                         <VBox spacing="8">
-                            <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Cajero *" />
-                            <ComboBox fx:id="cierresComboCajero" maxWidth="Infinity" promptText="Seleccione un cajero" />
+                            <Label fx:id="lblCierresCajero"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                            <ComboBox fx:id="cierresComboCajero" maxWidth="Infinity" />
                         </VBox>
                         <VBox spacing="8">
-                            <Label style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" text="Fecha *" />
-                            <DatePicker fx:id="cierresDateFecha" maxWidth="Infinity" promptText="Seleccione fecha" />
+                            <Label fx:id="lblCierresFecha"
+                                   style="-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #333333;" />
+                            <DatePicker fx:id="cierresDateFecha" maxWidth="Infinity" />
                         </VBox>
                         <HBox spacing="12">
-                            <!-- ✔ Verificar (más pequeño) -->
-                            <Button maxWidth="Infinity"
+                            <Button fx:id="btnVerificarCierres" maxWidth="Infinity"
                                     onAction="#handleGenerarCierres"
-                                    style="-fx-background-color: #22C55E; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 8px 12px; -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
-                                    text="✔ Verificar" HBox.hgrow="ALWAYS" />
-                            <!-- 📄 PDF (más grande) -->
-                            <Button onAction="#handlePDFCierres"
-                                    style="-fx-background-color: #DC2626; -fx-text-fill: white; -fx-background-radius: 8px;
-                                           -fx-padding: 14px 22px; -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;"
-                                    text="📄 PDF" />
+                                    style="-fx-background-color: #22C55E; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 8px 12px;
+                                           -fx-cursor: hand; -fx-font-weight: 600; -fx-font-size: 12px;"
+                                    HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnPdfCierres" onAction="#handlePDFCierres"
+                                    style="-fx-background-color: #DC2626; -fx-text-fill: white;
+                                           -fx-background-radius: 8px; -fx-padding: 14px 22px;
+                                           -fx-cursor: hand; -fx-font-weight: 700; -fx-font-size: 14px;" />
                         </HBox>
                     </VBox>
 

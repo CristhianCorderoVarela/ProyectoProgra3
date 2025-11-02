@@ -1,6 +1,13 @@
 package cr.ac.una.restunaclient.controller;
 
+import cr.ac.una.restunaclient.model.CierreCaja;
 import cr.ac.una.restunaclient.util.FlowController;
+import cr.ac.una.restunaclient.util.AppContext;
+import cr.ac.una.restunaclient.service.RestClient;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -8,63 +15,58 @@ import javafx.scene.layout.VBox;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.event.ActionEvent;
+    // imports nuevos
+import java.util.concurrent.ConcurrentHashMap;
+
 import java.net.URL;
-import java.util.ResourceBundle;
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.text.DecimalFormat;
-import javafx.event.ActionEvent;
+import java.math.BigDecimal;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.List;
 
-/**
- * Controlador para la gestión de Cierres de Caja
- * Cumple con el requisito 17 del proyecto
- * 
- * @author Tu Nombre
- */
 public class CierresCajaController implements Initializable {
-    
-    // ==================== COMPONENTES FXML ====================
-    
-    // Header
+
+    // ============ FXML ============
     @FXML private Label lblTitle;
     @FXML private Button btnVolver;
-    
-    // Panel Izquierdo - Estado Actual
+
     @FXML private Label lblEstadoCaja;
     @FXML private Label lblCajero;
     @FXML private Label lblFechaApertura;
     @FXML private Label lblEfectivoSistema;
     @FXML private Label lblTarjetaSistema;
     @FXML private Label lblTotalSistema;
-    
-    // Panel Izquierdo - Filtros
+
     @FXML private DatePicker dpFechaInicio;
     @FXML private DatePicker dpFechaFin;
-    @FXML private ComboBox<String> cmbFiltroCajero;
+    @FXML private ComboBox<String> cmbFiltroCajero; // lo dejaremos solo con “Todos” (real)
     @FXML private Button btnBuscar;
-    
-    // Panel Izquierdo - Tabla
+
     @FXML private TableView<CierreCaja> tblCierres;
     @FXML private TableColumn<CierreCaja, String> colFechaApertura;
     @FXML private TableColumn<CierreCaja, String> colFechaCierre;
-    @FXML private TableColumn<CierreCaja, String> colCajero;
+    @FXML private TableColumn<CierreCaja, String> colCajero; // mostraremos usuarioId (real)
     @FXML private TableColumn<CierreCaja, String> colEfectivoSistema;
     @FXML private TableColumn<CierreCaja, String> colTarjetaSistema;
     @FXML private TableColumn<CierreCaja, String> colEfectivoDeclarado;
     @FXML private TableColumn<CierreCaja, String> colTarjetaDeclarado;
     @FXML private TableColumn<CierreCaja, String> colDiferenciaTotal;
     @FXML private TableColumn<CierreCaja, String> colEstado;
-    
-    // Panel Izquierdo - Botones
+
     @FXML private Button btnVerDetalle;
     @FXML private Button btnGenerarReporte;
     @FXML private Button btnRefrescar;
-    
-    // Panel Derecho - Formulario
+
     @FXML private Label lblFormTitle;
     @FXML private Label lblInfoCajero;
     @FXML private Label lblInfoApertura;
-    @FXML private Label lblInfoFacturas;
+    @FXML private Label lblInfoFacturas; // lo ocultamos si no hay conteo real
     @FXML private Label lblSistemaEfectivo;
     @FXML private Label lblSistemaTarjeta;
     @FXML private Label lblSistemaTotal;
@@ -78,408 +80,449 @@ public class CierresCajaController implements Initializable {
     @FXML private Label lblDiferenciaTotal;
     @FXML private Button btnCalcular;
     @FXML private Button btnCerrarCaja;
-    
-    // ==================== VARIABLES DE INSTANCIA ====================
-    
-    private ObservableList<CierreCaja> listaCierres;
+    @FXML private Button btnAbrirCaja;
+
+    // ============ Estado ============
+    private final ObservableList<CierreCaja> listaCierres = FXCollections.observableArrayList();
     private CierreCaja cierreActual;
-    private DecimalFormat formatoMoneda = new DecimalFormat("#,##0.00");
-    private DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a");
-    
-    // ==================== INICIALIZACIÓN ====================
-    
+    private final DecimalFormat formatoMoneda = new DecimalFormat("#,##0.00");
+    private final DateTimeFormatter formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm a");
+    private final Gson gson = RestClient.getGson();
+
+    private Long getUsuarioId() {
+        // Caso típico en tu app: AppContext guarda el usuario logueado
+        Object u = AppContext.getInstance().get("UsuarioId");
+        if (u instanceof Long) return (Long) u;
+        if (u instanceof Integer) return ((Integer) u).longValue();
+        // Si tu AppContext guarda el DTO completo, ajusto aquí a como lo tengas:
+        // p.ej. UsuarioDto dto = (UsuarioDto) AppContext.getInstance().get("Usuario");
+        // return dto.getId();
+        return null;
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         configurarTabla();
         configurarValidaciones();
-        cargarDatosIniciales();
-        cargarCierreActual();
+        configurarUiInicial();
+        cargarDatosIniciales();   // solo llena combo con "Todos"
+        refrescarTodo();          // carga real (caja actual + historial)
     }
-    
-    /**
-     * Configura las columnas de la tabla de cierres
-     */
+
     private void configurarTabla() {
-        colFechaApertura.setCellValueFactory(cellData -> 
-            new SimpleStringProperty(cellData.getValue().getFechaApertura().format(formatoFecha)));
-        
-        colFechaCierre.setCellValueFactory(cellData -> {
-            LocalDateTime fechaCierre = cellData.getValue().getFechaCierre();
-            return new SimpleStringProperty(fechaCierre != null ? fechaCierre.format(formatoFecha) : "-");
+        colFechaApertura.setCellValueFactory(cd ->
+            new SimpleStringProperty(safeDate(cd.getValue().getFechaApertura()))
+        );
+        colFechaCierre.setCellValueFactory(cd ->
+            new SimpleStringProperty(safeDate(cd.getValue().getFechaCierre()))
+        );
+        // Mostramos usuarioId (dato real). Si luego quieres el nombre, expongo endpoint de usuarios.
+        // En configurarTabla() – reemplaza el setCellValueFactory de colCajero:
+colCajero.setCellValueFactory(cd ->
+    new SimpleStringProperty(getNombreUsuario(cd.getValue().getUsuarioId()))
+);
+
+
+
+        colEfectivoSistema.setCellValueFactory(cd ->
+            new SimpleStringProperty("₡" + safeMoney(cd.getValue().getEfectivoSistema()))
+        );
+        colTarjetaSistema.setCellValueFactory(cd ->
+            new SimpleStringProperty("₡" + safeMoney(cd.getValue().getTarjetaSistema()))
+        );
+        colEfectivoDeclarado.setCellValueFactory(cd ->
+            new SimpleStringProperty("₡" + safeMoney(cd.getValue().getEfectivoDeclarado()))
+        );
+        colTarjetaDeclarado.setCellValueFactory(cd ->
+            new SimpleStringProperty("₡" + safeMoney(cd.getValue().getTarjetaDeclarado()))
+        );
+
+        colDiferenciaTotal.setCellValueFactory(cd -> {
+            BigDecimal difEf = nz(cd.getValue().getDiferenciaEfectivo());
+            BigDecimal difTj = nz(cd.getValue().getDiferenciaTarjeta());
+            BigDecimal total = difEf.add(difTj);
+            String s = "₡" + formatoMoneda.format(total.abs());
+            return new SimpleStringProperty(total.signum() > 0 ? "+" + s : total.signum() < 0 ? "-" + s : s);
         });
-        
-        colCajero.setCellValueFactory(cellData -> 
-            new SimpleStringProperty(cellData.getValue().getNombreCajero()));
-        
-        colEfectivoSistema.setCellValueFactory(cellData -> 
-            new SimpleStringProperty("₡" + formatoMoneda.format(cellData.getValue().getEfectivoSistema())));
-        
-        colTarjetaSistema.setCellValueFactory(cellData -> 
-            new SimpleStringProperty("₡" + formatoMoneda.format(cellData.getValue().getTarjetaSistema())));
-        
-        colEfectivoDeclarado.setCellValueFactory(cellData -> 
-            new SimpleStringProperty("₡" + formatoMoneda.format(cellData.getValue().getEfectivoDeclarado())));
-        
-        colTarjetaDeclarado.setCellValueFactory(cellData -> 
-            new SimpleStringProperty("₡" + formatoMoneda.format(cellData.getValue().getTarjetaDeclarado())));
-        
-        colDiferenciaTotal.setCellValueFactory(cellData -> {
-            double diferencia = cellData.getValue().getDiferenciaEfectivo() + 
-                              cellData.getValue().getDiferenciaTarjeta();
-            String texto = "₡" + formatoMoneda.format(Math.abs(diferencia));
-            return new SimpleStringProperty(diferencia >= 0 ? "+" + texto : "-" + texto);
-        });
-        
-        // Colorear la columna de diferencia según el valor
-        colDiferenciaTotal.setCellFactory(column -> new TableCell<CierreCaja, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+
+        // colores (dinámicos, no “adornos”)
+        colDiferenciaTotal.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item);
-                    if (item.startsWith("+")) {
-                        setStyle("-fx-text-fill: #007bff; -fx-font-weight: bold;"); // Sobrante (azul)
-                    } else if (item.startsWith("-")) {
-                        setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;"); // Faltante (rojo)
-                    } else {
-                        setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;"); // Cuadrado (verde)
-                    }
-                }
+                if (empty || item == null) { setText(null); setStyle(""); return; }
+                setText(item);
+                if (item.startsWith("+")) setStyle("-fx-text-fill:#007bff;-fx-font-weight:bold;");
+                else if (item.startsWith("-")) setStyle("-fx-text-fill:#dc3545;-fx-font-weight:bold;");
+                else setStyle("-fx-text-fill:#28a745;-fx-font-weight:bold;");
             }
         });
-        
-        colEstado.setCellValueFactory(cellData -> 
-            new SimpleStringProperty(cellData.getValue().getEstado()));
-        
-        // Colorear la columna de estado
-        colEstado.setCellFactory(column -> new TableCell<CierreCaja, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
+
+        colEstado.setCellValueFactory(cd -> new SimpleStringProperty(nzStr(cd.getValue().getEstado())));
+        colEstado.setCellFactory(c -> new TableCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item);
-                    if (item.equals("ABIERTO")) {
-                        setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
-                    } else {
-                        setStyle("-fx-text-fill: #6c757d; -fx-font-weight: bold;");
-                    }
-                }
+                if (empty || item == null) { setText(null); setStyle(""); return; }
+                setText(item);
+                setStyle(item.equals("ABIERTO")
+                        ? "-fx-text-fill:#28a745;-fx-font-weight:bold;"
+                        : "-fx-text-fill:#6c757d;-fx-font-weight:bold;");
             }
         });
-        
-        listaCierres = FXCollections.observableArrayList();
+
         tblCierres.setItems(listaCierres);
     }
     
-    /**
-     * Configura las validaciones de los campos numéricos
-     */
+    
+
+
+private final Map<Long, String> cacheNombres = new ConcurrentHashMap<>();
+
+private String getNombreUsuario(Long id) {
+    if (id == null) return "—";
+    return cacheNombres.computeIfAbsent(id, k -> {
+        try {
+            String json = RestClient.get("/usuarios/" + k);   // GET { data: {...} }
+            Map<String,Object> resp = gson.fromJson(json, new TypeToken<Map<String,Object>>(){}.getType());
+            if (Boolean.TRUE.equals(resp.get("success")) && resp.get("data") != null) {
+                Map<?,?> data = (Map<?,?>) resp.get("data");
+                Object nom = data.get("nombre");
+                return nom == null ? "ID " + k : nom.toString();
+            }
+        } catch (Exception ignore) {}
+        return "ID " + k; // fallback inocuo
+    });
+}
+
     private void configurarValidaciones() {
-        // Validar que solo se ingresen números y punto decimal
-        txtEfectivoDeclarado.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*(\\.\\d*)?")) {
-                txtEfectivoDeclarado.setText(oldValue);
-            }
+        txtEfectivoDeclarado.textProperty().addListener((obs, ov, nv) -> {
+            if (!nv.matches("\\d*(\\.\\d{0,2})?")) txtEfectivoDeclarado.setText(ov);
         });
-        
-        txtTarjetaDeclarado.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*(\\.\\d*)?")) {
-                txtTarjetaDeclarado.setText(oldValue);
-            }
+        txtTarjetaDeclarado.textProperty().addListener((obs, ov, nv) -> {
+            if (!nv.matches("\\d*(\\.\\d{0,2})?")) txtTarjetaDeclarado.setText(ov);
         });
     }
     
-    /**
-     * Carga los datos iniciales del sistema
-     */
+    
+    // helper para mostrar/ocultar
+private void setAbrirCajaVisible(boolean show) {
+    btnAbrirCaja.setVisible(show);
+    btnAbrirCaja.setManaged(show);
+}
+
+    private void configurarUiInicial() {
+        // Todo vacío/neutral (sin adornos)
+        lblEstadoCaja.setText("Estado: —");
+        lblCajero.setText("Usuario: —");
+        lblFechaApertura.setText("Apertura: —");
+        lblEfectivoSistema.setText("Efectivo: —");
+        lblTarjetaSistema.setText("Tarjeta: —");
+        lblTotalSistema.setText("Total: —");
+        setAbrirCajaVisible(false);
+
+        lblInfoCajero.setText("Usuario: —");
+        lblInfoApertura.setText("Apertura: —");
+        lblInfoFacturas.setVisible(false);
+        lblInfoFacturas.setManaged(false);
+
+        vboxDiferencias.setVisible(false);
+        vboxDiferencias.setManaged(false);
+        btnCerrarCaja.setDisable(true);
+        btnCalcular.setDisable(true);
+        txtEfectivoDeclarado.setDisable(true);
+        txtTarjetaDeclarado.setDisable(true);
+    }
+
     private void cargarDatosIniciales() {
-        // TODO: Cargar cajeros desde el servicio web
-        cmbFiltroCajero.setItems(FXCollections.observableArrayList(
-            "Todos los cajeros", "CRIS", "MARIA", "JUAN"
-        ));
+        // Solo “Todos”, porque no tenemos endpoint de cajeros en lo que me pasaste
+        cmbFiltroCajero.setItems(FXCollections.observableArrayList("Todos"));
         cmbFiltroCajero.getSelectionModel().selectFirst();
+    }
+
+    private void refrescarTodo() {
+        cargarCierreActualConTotales();
+        cargarHistorialUsuario();
+    }
+
+    /** Carga caja abierta con totales reales */
+    private void cargarCierreActualConTotales() {
         
-        // Cargar historial de cierres
-        cargarHistorialCierres();
+        
+        cierreActual = null;
+actualizarEstadoActual(null);
+actualizarFormularioCierre(null);
+setAbrirCajaVisible(true);  // <- mostrar botón
+        Long usuarioId = getUsuarioId();
+        if (usuarioId == null) {
+            mostrarAlerta("Sesión", "No se encontró el usuario en sesión.", Alert.AlertType.ERROR);
+            return;
+        }
+        try {
+            String url = "/cierres/usuario/" + usuarioId + "/abierto/totales";
+            String json = RestClient.get(url);
+            Map<String, Object> resp = gson.fromJson(json, new TypeToken<Map<String, Object>>(){}.getType());
+            Object data = resp.get("data");
+
+            if (Boolean.TRUE.equals(resp.get("success")) && data != null) {
+                CierreCaja cc = gson.fromJson(gson.toJson(data), CierreCaja.class);
+                cierreActual = cc;
+                actualizarEstadoActual(cc);
+                actualizarFormularioCierre(cc);
+            } else {
+                cierreActual = null;
+                actualizarEstadoActual(null);
+                actualizarFormularioCierre(null);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            mostrarAlerta("Error", "No se pudo cargar la caja actual.\n" + ex.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    /** Historial solo del usuario (real) */
+    private void cargarHistorialUsuario() {
+        Long usuarioId = getUsuarioId();
+        if (usuarioId == null) return;
+        try {
+            String json = RestClient.get("/cierres/usuario/" + usuarioId);
+            Map<String, Object> resp = gson.fromJson(json, new TypeToken<Map<String, Object>>(){}.getType());
+            if (Boolean.TRUE.equals(resp.get("success"))) {
+                List<CierreCaja> lista = gson.fromJson(
+                        gson.toJson(resp.get("data")),
+                        new TypeToken<List<CierreCaja>>(){}.getType());
+                listaCierres.setAll(lista);
+            } else {
+                listaCierres.clear();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            listaCierres.clear();
+            mostrarAlerta("Error", "No se pudo cargar el historial.\n" + ex.getMessage(), Alert.AlertType.ERROR);
+        }
     }
     
-    /**
-     * Carga el cierre actual del cajero autenticado
-     */
-    private void cargarCierreActual() {
-        // TODO: Obtener del servicio web el cierre actual del usuario autenticado
-        // Por ahora, datos de ejemplo
-        cierreActual = new CierreCaja();
-        cierreActual.setId(1L);
-        cierreActual.setNombreCajero("CRIS");
-        cierreActual.setFechaApertura(LocalDateTime.now().minusHours(4));
-        cierreActual.setEfectivoSistema(125500.00);
-        cierreActual.setTarjetaSistema(89300.00);
-        cierreActual.setEstado("ABIERTO");
-        cierreActual.setNumeroFacturas(45);
-        
-        actualizarEstadoActual();
-        actualizarFormularioCierre();
-    }
     
-    /**
-     * Actualiza la sección de estado actual de caja
-     */
-    private void actualizarEstadoActual() {
-        if (cierreActual != null && cierreActual.getEstado().equals("ABIERTO")) {
+    
+    @FXML
+private void onAbrirCaja() {
+    Long usuarioId = getUsuarioId();
+    if (usuarioId == null) {
+        mostrarAlerta("Sesión", "No se encontró el usuario en sesión.", Alert.AlertType.ERROR);
+        return;
+    }
+    try {
+        Map<String,Object> body = Map.of("usuarioId", usuarioId);
+        String json = RestClient.post("/cierres/abrir", body);
+        Map<String,Object> resp = gson.fromJson(json, new TypeToken<Map<String,Object>>(){}.getType());
+        if (Boolean.TRUE.equals(resp.get("success"))) {
+            mostrarAlerta("OK", "Caja abierta exitosamente.", Alert.AlertType.INFORMATION);
+            refrescarTodo();
+        } else {
+            mostrarAlerta("Error", String.valueOf(resp.get("message")), Alert.AlertType.ERROR);
+        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        mostrarAlerta("Error", "No se pudo abrir la caja.\n" + ex.getMessage(), Alert.AlertType.ERROR);
+    }
+}
+
+    private void actualizarEstadoActual(CierreCaja cc) {
+        if (cc != null && "ABIERTO".equals(cc.getEstado())) {
+            setAbrirCajaVisible(false);
             lblEstadoCaja.setText("Estado: ABIERTO");
-            lblEstadoCaja.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #28a745;");
-            lblCajero.setText("Cajero: " + cierreActual.getNombreCajero());
-            lblFechaApertura.setText("Apertura: " + cierreActual.getFechaApertura().format(formatoFecha));
-            lblEfectivoSistema.setText("Efectivo: ₡" + formatoMoneda.format(cierreActual.getEfectivoSistema()));
-            lblTarjetaSistema.setText("Tarjeta: ₡" + formatoMoneda.format(cierreActual.getTarjetaSistema()));
-            double total = cierreActual.getEfectivoSistema() + cierreActual.getTarjetaSistema();
+            // En actualizarEstadoActual():
+lblCajero.setText("Usuario: " + getNombreUsuario(cc.getUsuarioId()));
+
+
+            lblFechaApertura.setText("Apertura: " + safeDate(cc.getFechaApertura()));
+            lblEfectivoSistema.setText("Efectivo: ₡" + safeMoney(cc.getEfectivoSistema()));
+            lblTarjetaSistema.setText("Tarjeta: ₡" + safeMoney(cc.getTarjetaSistema()));
+            BigDecimal total = nz(cc.getEfectivoSistema()).add(nz(cc.getTarjetaSistema()));
             lblTotalSistema.setText("Total: ₡" + formatoMoneda.format(total));
         } else {
-            lblEstadoCaja.setText("Estado: CERRADO");
-            lblEstadoCaja.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #6c757d;");
-            lblCajero.setText("Cajero: -");
-            lblFechaApertura.setText("Apertura: -");
-            lblEfectivoSistema.setText("Efectivo: ₡0.00");
-            lblTarjetaSistema.setText("Tarjeta: ₡0.00");
-            lblTotalSistema.setText("Total: ₡0.00");
+            lblEstadoCaja.setText("Estado: CERRADO/—");
+            lblCajero.setText("Usuario: —");
+            lblFechaApertura.setText("Apertura: —");
+            lblEfectivoSistema.setText("Efectivo: —");
+            lblTarjetaSistema.setText("Tarjeta: —");
+            lblTotalSistema.setText("Total: —");
         }
     }
-    
-    /**
-     * Actualiza el formulario de cierre con los datos actuales
-     */
-    private void actualizarFormularioCierre() {
-        if (cierreActual != null && cierreActual.getEstado().equals("ABIERTO")) {
-            lblInfoCajero.setText("Cajero: " + cierreActual.getNombreCajero());
-            lblInfoApertura.setText("Apertura: " + cierreActual.getFechaApertura().format(formatoFecha));
-            lblInfoFacturas.setText("Facturas realizadas: " + cierreActual.getNumeroFacturas());
-            lblSistemaEfectivo.setText("₡" + formatoMoneda.format(cierreActual.getEfectivoSistema()));
-            lblSistemaTarjeta.setText("₡" + formatoMoneda.format(cierreActual.getTarjetaSistema()));
-            double total = cierreActual.getEfectivoSistema() + cierreActual.getTarjetaSistema();
-            lblSistemaTotal.setText("₡" + formatoMoneda.format(total));
-            
-            // Habilitar formulario
-            txtEfectivoDeclarado.setDisable(false);
-            txtTarjetaDeclarado.setDisable(false);
-            btnCalcular.setDisable(false);
+
+    private void actualizarFormularioCierre(CierreCaja cc) {
+        boolean abierto = cc != null && "ABIERTO".equals(cc.getEstado());
+        // En actualizarFormularioCierre():
+lblInfoCajero.setText("Usuario: " + (abierto ? getNombreUsuario(cc.getUsuarioId()) : "—"));
+        lblInfoApertura.setText("Apertura: " + (abierto ? safeDate(cc.getFechaApertura()) : "—"));
+
+        // si quieres mostrar conteo real de facturas, podemos expandir el WS; por ahora oculto si no viene
+        lblInfoFacturas.setVisible(false);
+        lblInfoFacturas.setManaged(false);
+
+        lblSistemaEfectivo.setText("₡" + (abierto ? safeMoney(cc.getEfectivoSistema()) : "0.00"));
+        lblSistemaTarjeta.setText("₡" + (abierto ? safeMoney(cc.getTarjetaSistema()) : "0.00"));
+        BigDecimal total = abierto
+                ? nz(cc.getEfectivoSistema()).add(nz(cc.getTarjetaSistema()))
+                : BigDecimal.ZERO;
+        lblSistemaTotal.setText("₡" + formatoMoneda.format(total));
+
+        txtEfectivoDeclarado.setDisable(!abierto);
+        txtTarjetaDeclarado.setDisable(!abierto);
+        btnCalcular.setDisable(!abierto);
+        btnCerrarCaja.setDisable(true); // se habilita después de Calcular
+
+        vboxDiferencias.setVisible(false);
+        vboxDiferencias.setManaged(false);
+    }
+
+    // ========= Eventos =========
+
+    @FXML
+    private void onVolver(ActionEvent e) {
+        FlowController.getInstance().goHomeWithFade();
+    }
+
+    @FXML
+private void onBuscar() {
+    Long usuarioId = getUsuarioId();
+    if (usuarioId == null) return;
+
+    try {
+        String url = "/cierres/usuario/" + usuarioId; // fallback
+
+        // Si vienen fechas, construimos rango (ISO-8601)
+        var ini = dpFechaInicio.getValue();
+        var fin = dpFechaFin.getValue();
+
+        if (ini != null || fin != null) {
+            StringBuilder sb = new StringBuilder("/cierres/usuario/")
+                    .append(usuarioId).append("/rango?");
+            if (ini != null) {
+                // 00:00:00 del día inicio
+                sb.append("inicio=").append(ini.atStartOfDay().toString()).append("&");
+            }
+            if (fin != null) {
+                // fin del día -> +1 día a las 00:00 y usamos '< fin'
+                sb.append("fin=").append(fin.plusDays(1).atStartOfDay().toString()).append("&");
+            }
+            url = sb.toString();
+            if (url.endsWith("&") || url.endsWith("?")) url = url.substring(0, url.length()-1);
+        }
+
+        String json = RestClient.get(url);
+        Map<String,Object> resp = gson.fromJson(json, new TypeToken<Map<String,Object>>(){}.getType());
+        if (Boolean.TRUE.equals(resp.get("success"))) {
+            List<CierreCaja> lista = gson.fromJson(
+                    gson.toJson(resp.get("data")),
+                    new TypeToken<List<CierreCaja>>(){}.getType());
+            listaCierres.setAll(lista);
         } else {
-            lblInfoCajero.setText("Cajero: -");
-            lblInfoApertura.setText("Apertura: -");
-            lblInfoFacturas.setText("Facturas realizadas: 0");
-            lblSistemaEfectivo.setText("₡0.00");
-            lblSistemaTarjeta.setText("₡0.00");
-            lblSistemaTotal.setText("₡0.00");
-            
-            // Deshabilitar formulario
-            txtEfectivoDeclarado.setDisable(true);
-            txtTarjetaDeclarado.setDisable(true);
-            btnCalcular.setDisable(true);
-            btnCerrarCaja.setDisable(true);
+            listaCierres.clear();
+            mostrarAlerta("Sin resultados", String.valueOf(resp.get("message")), Alert.AlertType.INFORMATION);
         }
-    }
-    
-    /**
-     * Carga el historial de cierres desde el servicio web
-     */
-    private void cargarHistorialCierres() {
-        // TODO: Obtener del servicio web
-        // Por ahora, datos de ejemplo
+    } catch (Exception ex) {
+        ex.printStackTrace();
         listaCierres.clear();
-        
-        CierreCaja cierre1 = new CierreCaja();
-        cierre1.setId(1L);
-        cierre1.setNombreCajero("CRIS");
-        cierre1.setFechaApertura(LocalDateTime.now().minusDays(1).withHour(8).withMinute(0));
-        cierre1.setFechaCierre(LocalDateTime.now().minusDays(1).withHour(18).withMinute(30));
-        cierre1.setEfectivoSistema(145000.00);
-        cierre1.setTarjetaSistema(98500.00);
-        cierre1.setEfectivoDeclarado(145200.00);
-        cierre1.setTarjetaDeclarado(98500.00);
-        cierre1.setDiferenciaEfectivo(200.00);
-        cierre1.setDiferenciaTarjeta(0.00);
-        cierre1.setEstado("CERRADO");
-        
-        CierreCaja cierre2 = new CierreCaja();
-        cierre2.setId(2L);
-        cierre2.setNombreCajero("MARIA");
-        cierre2.setFechaApertura(LocalDateTime.now().minusDays(1).withHour(18).withMinute(30));
-        cierre2.setFechaCierre(LocalDateTime.now().minusDays(1).withHour(23).withMinute(0));
-        cierre2.setEfectivoSistema(89000.00);
-        cierre2.setTarjetaSistema(67800.00);
-        cierre2.setEfectivoDeclarado(88500.00);
-        cierre2.setTarjetaDeclarado(67800.00);
-        cierre2.setDiferenciaEfectivo(-500.00);
-        cierre2.setDiferenciaTarjeta(0.00);
-        cierre2.setEstado("CERRADO");
-        
-        listaCierres.addAll(cierre1, cierre2);
+        mostrarAlerta("Error", "No se pudo aplicar el filtro.\n" + ex.getMessage(), Alert.AlertType.ERROR);
     }
-    
-    // ==================== EVENTOS ====================
-    
-    @FXML
-private void onVolver(ActionEvent event) {
-    FlowController.getInstance().goHomeWithFade();
 }
-    
-    @FXML
-    private void onBuscar() {
-        // TODO: Filtrar cierres según los criterios seleccionados
-        System.out.println("Buscar cierres con filtros");
-        cargarHistorialCierres();
-    }
-    
+
     @FXML
     private void onVerDetalle() {
-        CierreCaja seleccionado = tblCierres.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarAlerta("Selección requerida", "Por favor seleccione un cierre para ver el detalle.", Alert.AlertType.WARNING);
+        CierreCaja sel = tblCierres.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            mostrarAlerta("Selección requerida", "Seleccione un cierre.", Alert.AlertType.WARNING);
             return;
         }
-        
-        // TODO: Abrir ventana con detalle completo del cierre
-        System.out.println("Ver detalle del cierre ID: " + seleccionado.getId());
+        mostrarAlerta("Detalle", "Vista de detalle en construcción.", Alert.AlertType.INFORMATION);
     }
-    
+
     @FXML
     private void onGenerarReporte() {
-        CierreCaja seleccionado = tblCierres.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            mostrarAlerta("Selección requerida", "Por favor seleccione un cierre para generar el reporte.", Alert.AlertType.WARNING);
+        CierreCaja sel = tblCierres.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            mostrarAlerta("Selección requerida", "Seleccione un cierre.", Alert.AlertType.WARNING);
             return;
         }
-        
-        // TODO: Generar reporte en Jasper Reports
-        System.out.println("Generar reporte del cierre ID: " + seleccionado.getId());
-        mostrarAlerta("Reporte Generado", "El reporte del cierre ha sido generado exitosamente.", Alert.AlertType.INFORMATION);
+        mostrarAlerta("Reporte", "Generando reporte del cierre #" + sel.getId() + "...", Alert.AlertType.INFORMATION);
     }
-    
+
     @FXML
     private void onRefrescar() {
-        cargarCierreActual();
-        cargarHistorialCierres();
-        mostrarAlerta("Datos Actualizados", "Los datos han sido actualizados correctamente.", Alert.AlertType.INFORMATION);
+        refrescarTodo();
+        mostrarAlerta("OK", "Datos actualizados.", Alert.AlertType.INFORMATION);
     }
-    
+
     @FXML
     private void onCalcular() {
-        if (!validarCampos()) {
-            return;
-        }
-        
-        double efectivoDeclarado = Double.parseDouble(txtEfectivoDeclarado.getText());
-        double tarjetaDeclarado = Double.parseDouble(txtTarjetaDeclarado.getText());
-        
-        double diferenciaEfectivo = efectivoDeclarado - cierreActual.getEfectivoSistema();
-        double diferenciaTarjeta = tarjetaDeclarado - cierreActual.getTarjetaSistema();
-        double diferenciaTotal = diferenciaEfectivo + diferenciaTarjeta;
-        
-        // Actualizar labels de diferencias
-        lblDiferenciaEfectivo.setText(formatearDiferencia(diferenciaEfectivo));
-        lblDiferenciaTarjeta.setText(formatearDiferencia(diferenciaTarjeta));
-        lblDiferenciaTotal.setText(formatearDiferencia(diferenciaTotal));
-        
-        // Colorear según el resultado
-        aplicarColorDiferencia(lblDiferenciaEfectivo, diferenciaEfectivo);
-        aplicarColorDiferencia(lblDiferenciaTarjeta, diferenciaTarjeta);
-        aplicarColorDiferencia(lblDiferenciaTotal, diferenciaTotal);
-        
-        // Mostrar sección de diferencias
+        if (!validarCampos() || cierreActual == null) return;
+
+        BigDecimal efDecl = new BigDecimal(txtEfectivoDeclarado.getText());
+        BigDecimal tjDecl = new BigDecimal(txtTarjetaDeclarado.getText());
+
+        BigDecimal difEf = efDecl.subtract(nz(cierreActual.getEfectivoSistema()));
+        BigDecimal difTj = tjDecl.subtract(nz(cierreActual.getTarjetaSistema()));
+        BigDecimal difTt = difEf.add(difTj);
+
+        lblDiferenciaEfectivo.setText(signMoney(difEf));
+        lblDiferenciaTarjeta.setText(signMoney(difTj));
+        lblDiferenciaTotal.setText(signMoney(difTt));
+
+        aplicarColor(lblDiferenciaEfectivo, difEf);
+        aplicarColor(lblDiferenciaTarjeta, difTj);
+        aplicarColor(lblDiferenciaTotal, difTt);
+
         vboxDiferencias.setVisible(true);
         vboxDiferencias.setManaged(true);
-        
-        // Habilitar botón de cerrar caja
         btnCerrarCaja.setDisable(false);
     }
-    
+
     @FXML
     private void onCerrarCaja() {
-        if (!validarCampos()) {
-            return;
-        }
-        
-        // Confirmar cierre
-        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmacion.setTitle("Confirmar Cierre de Caja");
-        confirmacion.setHeaderText("¿Está seguro de cerrar la caja?");
-        confirmacion.setContentText("Esta acción no se puede deshacer. Se generará un reporte con todos los movimientos.");
-        
-        if (confirmacion.showAndWait().get() == ButtonType.OK) {
-            // TODO: Enviar al servicio web para cerrar la caja
-            cierreActual.setFechaCierre(LocalDateTime.now());
-            cierreActual.setEfectivoDeclarado(Double.parseDouble(txtEfectivoDeclarado.getText()));
-            cierreActual.setTarjetaDeclarado(Double.parseDouble(txtTarjetaDeclarado.getText()));
-            cierreActual.setDiferenciaEfectivo(cierreActual.getEfectivoDeclarado() - cierreActual.getEfectivoSistema());
-            cierreActual.setDiferenciaTarjeta(cierreActual.getTarjetaDeclarado() - cierreActual.getTarjetaSistema());
-            cierreActual.setEstado("CERRADO");
-            
-            System.out.println("Cierre de caja realizado exitosamente");
-            
-            // TODO: Generar e imprimir reporte de cierre
-            
-            // Limpiar formulario
-            limpiarFormulario();
-            
-            // Actualizar vistas
-            cargarCierreActual();
-            cargarHistorialCierres();
-            
-            mostrarAlerta("Cierre Exitoso", "La caja ha sido cerrada exitosamente. El reporte ha sido generado.", Alert.AlertType.INFORMATION);
+        if (!validarCampos() || cierreActual == null) return;
+
+        Alert c = new Alert(Alert.AlertType.CONFIRMATION);
+        c.setTitle("Confirmar Cierre");
+        c.setHeaderText("¿Cerrar la caja?");
+        c.setContentText("Se registrará el cierre con los montos declarados.");
+        if (c.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+
+        try {
+            Map<String, Object> body = Map.of(
+                "efectivoDeclarado", new BigDecimal(txtEfectivoDeclarado.getText()),
+                "tarjetaDeclarado",  new BigDecimal(txtTarjetaDeclarado.getText())
+            );
+            String json = RestClient.post("/cierres/" + cierreActual.getId() + "/cerrar", body);
+            Map<String, Object> resp = gson.fromJson(json, new TypeToken<Map<String, Object>>(){}.getType());
+
+            if (Boolean.TRUE.equals(resp.get("success"))) {
+                mostrarAlerta("Éxito", "Caja cerrada correctamente.", Alert.AlertType.INFORMATION);
+                limpiarFormulario();
+                refrescarTodo();
+            } else {
+                mostrarAlerta("Error", String.valueOf(resp.get("message")), Alert.AlertType.ERROR);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            mostrarAlerta("Error", "No se pudo cerrar la caja.\n" + ex.getMessage(), Alert.AlertType.ERROR);
         }
     }
-    
-    // ==================== MÉTODOS AUXILIARES ====================
-    
-    /**
-     * Valida que los campos del formulario estén completos
-     */
+
+    // ========= Auxiliares =========
+
     private boolean validarCampos() {
-        if (txtEfectivoDeclarado.getText().isEmpty()) {
-            mostrarAlerta("Campo requerido", "Por favor ingrese el monto de efectivo declarado.", Alert.AlertType.WARNING);
+        if (txtEfectivoDeclarado.getText().isBlank()) {
+            mostrarAlerta("Campo requerido", "Ingrese Efectivo declarado.", Alert.AlertType.WARNING);
             txtEfectivoDeclarado.requestFocus();
             return false;
         }
-        
-        if (txtTarjetaDeclarado.getText().isEmpty()) {
-            mostrarAlerta("Campo requerido", "Por favor ingrese el monto de tarjeta declarado.", Alert.AlertType.WARNING);
+        if (txtTarjetaDeclarado.getText().isBlank()) {
+            mostrarAlerta("Campo requerido", "Ingrese Tarjeta declarada.", Alert.AlertType.WARNING);
             txtTarjetaDeclarado.requestFocus();
             return false;
         }
-        
         return true;
     }
-    
-    /**
-     * Formatea una diferencia monetaria con signo
-     */
-    private String formatearDiferencia(double diferencia) {
-        String signo = diferencia > 0 ? "+" : diferencia < 0 ? "-" : "";
-        return signo + "₡" + formatoMoneda.format(Math.abs(diferencia));
-    }
-    
-    /**
-     * Aplica color a un label según la diferencia
-     */
-    private void aplicarColorDiferencia(Label label, double diferencia) {
-        if (diferencia > 0) {
-            label.setStyle("-fx-text-fill: #007bff; -fx-font-weight: bold;"); // Sobrante (azul)
-        } else if (diferencia < 0) {
-            label.setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;"); // Faltante (rojo)
-        } else {
-            label.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;"); // Cuadrado (verde)
-        }
-    }
-    
-    /**
-     * Limpia el formulario de cierre
-     */
+
     private void limpiarFormulario() {
         txtEfectivoDeclarado.clear();
         txtTarjetaDeclarado.clear();
@@ -487,73 +530,32 @@ private void onVolver(ActionEvent event) {
         vboxDiferencias.setManaged(false);
         btnCerrarCaja.setDisable(true);
     }
-    
-    /**
-     * Muestra una alerta al usuario
-     */
-    private void mostrarAlerta(String titulo, String mensaje, Alert.AlertType tipo) {
-        Alert alerta = new Alert(tipo);
-        alerta.setTitle(titulo);
-        alerta.setHeaderText(null);
-        alerta.setContentText(mensaje);
-        alerta.showAndWait();
+
+    private void mostrarAlerta(String t, String m, Alert.AlertType tipo) {
+        Alert a = new Alert(tipo);
+        a.setTitle(t);
+        a.setHeaderText(null);
+        a.setContentText(m);
+        a.showAndWait();
     }
-    
-    // ==================== CLASE INTERNA ====================
-    
-    /**
-     * Clase que representa un cierre de caja
-     * Mapea la tabla cierre_caja de la base de datos
-     */
-    public static class CierreCaja {
-        private Long id;
-        private String nombreCajero;
-        private LocalDateTime fechaApertura;
-        private LocalDateTime fechaCierre;
-        private double efectivoDeclarado;
-        private double tarjetaDeclarado;
-        private double efectivoSistema;
-        private double tarjetaSistema;
-        private double diferenciaEfectivo;
-        private double diferenciaTarjeta;
-        private String estado;
-        private int numeroFacturas;
-        
-        // Getters y Setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
-        
-        public String getNombreCajero() { return nombreCajero; }
-        public void setNombreCajero(String nombreCajero) { this.nombreCajero = nombreCajero; }
-        
-        public LocalDateTime getFechaApertura() { return fechaApertura; }
-        public void setFechaApertura(LocalDateTime fechaApertura) { this.fechaApertura = fechaApertura; }
-        
-        public LocalDateTime getFechaCierre() { return fechaCierre; }
-        public void setFechaCierre(LocalDateTime fechaCierre) { this.fechaCierre = fechaCierre; }
-        
-        public double getEfectivoDeclarado() { return efectivoDeclarado; }
-        public void setEfectivoDeclarado(double efectivoDeclarado) { this.efectivoDeclarado = efectivoDeclarado; }
-        
-        public double getTarjetaDeclarado() { return tarjetaDeclarado; }
-        public void setTarjetaDeclarado(double tarjetaDeclarado) { this.tarjetaDeclarado = tarjetaDeclarado; }
-        
-        public double getEfectivoSistema() { return efectivoSistema; }
-        public void setEfectivoSistema(double efectivoSistema) { this.efectivoSistema = efectivoSistema; }
-        
-        public double getTarjetaSistema() { return tarjetaSistema; }
-        public void setTarjetaSistema(double tarjetaSistema) { this.tarjetaSistema = tarjetaSistema; }
-        
-        public double getDiferenciaEfectivo() { return diferenciaEfectivo; }
-        public void setDiferenciaEfectivo(double diferenciaEfectivo) { this.diferenciaEfectivo = diferenciaEfectivo; }
-        
-        public double getDiferenciaTarjeta() { return diferenciaTarjeta; }
-        public void setDiferenciaTarjeta(double diferenciaTarjeta) { this.diferenciaTarjeta = diferenciaTarjeta; }
-        
-        public String getEstado() { return estado; }
-        public void setEstado(String estado) { this.estado = estado; }
-        
-        public int getNumeroFacturas() { return numeroFacturas; }
-        public void setNumeroFacturas(int numeroFacturas) { this.numeroFacturas = numeroFacturas; }
+
+    private String safeDate(LocalDateTime dt) {
+        return dt == null ? "—" : dt.format(formatoFecha);
+    }
+    private String safeMoney(BigDecimal bd) {
+        return formatoMoneda.format(nz(bd));
+    }
+    private String signMoney(BigDecimal bd) {
+        BigDecimal v = nz(bd);
+        String s = "₡" + formatoMoneda.format(v.abs());
+        return v.signum() > 0 ? "+" + s : v.signum() < 0 ? "-" + s : s;
+    }
+    private BigDecimal nz(BigDecimal bd) { return bd == null ? BigDecimal.ZERO : bd; }
+    private String nzStr(String s){ return s == null || s.isBlank() ? "—" : s; }
+
+    private void aplicarColor(Label l, BigDecimal v) {
+        if (v.signum() > 0) l.setStyle("-fx-text-fill:#007bff;-fx-font-weight:bold;");
+        else if (v.signum() < 0) l.setStyle("-fx-text-fill:#dc3545;-fx-font-weight:bold;");
+        else l.setStyle("-fx-text-fill:#28a745;-fx-font-weight:bold;");
     }
 }

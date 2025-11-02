@@ -248,6 +248,16 @@ public static byte[] getBytes(String endpoint, Map<String, String> headers) thro
     }
 }
 
+// en RestClient
+public static Gson getGson() {
+    return gson;
+}
+
+// (opcional pero útil si usas TypeToken)
+public static <T> T fromJson(String json, java.lang.reflect.Type type) {
+    return gson.fromJson(json, type);
+}
+
 // --- (Opcional) helper para fijar headers comunes GET ---
 private static HttpGet constructGet(String url) {
     HttpGet request = new HttpGet(url);

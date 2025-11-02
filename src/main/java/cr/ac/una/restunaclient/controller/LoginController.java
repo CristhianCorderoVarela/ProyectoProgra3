@@ -95,8 +95,28 @@ private void onLogin(ActionEvent event) {
                 usuario = RestClient.fromJson(dataJson, Usuario.class);
             }
             if (usuario != null) {
-                AppContext.getInstance().setUsuarioLogueado(usuario);
-            }
+    AppContext ctx = AppContext.getInstance();
+
+    // Mantén el método existente, por si lo usas en otras partes
+    ctx.setUsuarioLogueado(usuario);
+
+    // 👇 Claves que CierresCajaController espera encontrar
+    ctx.set("Usuario", usuario);
+
+    // Soporte seguro si el id no es Long (por si viniera como Integer)
+    Long id;
+    try {
+        id = usuario.getId() != null ? Long.valueOf(String.valueOf(usuario.getId())) : null;
+    } catch (Exception ex) {
+        id = null;
+    }
+    ctx.set("UsuarioId", id);
+
+    // (Opcional) otras que suelen ser útiles en la UI
+    ctx.set("UsuarioNombre", usuario.getNombre());
+    ctx.set("UsuarioUsuario", usuario.getUsuario()); // username
+    ctx.set("UsuarioRol", usuario.getRol());
+}
 
             String nombreMostrar = (usuario != null && usuario.getNombre() != null)
                     ? usuario.getNombre()

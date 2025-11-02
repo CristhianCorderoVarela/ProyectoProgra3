@@ -5,10 +5,10 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="cr.ac.una.restunaclient.controller.CierresCajaController"
             style="-fx-background-color: #F5F5F0;">
-    
+
     <!-- TOP: Header -->
     <top>
         <VBox spacing="10" style="-fx-background-color: white;">
@@ -18,49 +18,48 @@
                     <font><Font name="System Bold" size="24"/></font>
                 </Label>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver" 
+                <Button fx:id="btnVolver" text="← Volver" onAction="#onVolver"
                         style="-fx-background-color: #6c757d; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;">
                     <font><Font size="14"/></font>
                 </Button>
             </HBox>
         </VBox>
     </top>
-    
+
     <!-- CENTER: Contenido principal -->
     <center>
         <HBox spacing="20" BorderPane.alignment="CENTER">
             <padding><Insets top="20" bottom="20" left="30" right="30"/></padding>
-            
-            <!-- PANEL IZQUIERDO: Estado actual y tabla de historial -->
-            <VBox spacing="15"
-                  HBox.hgrow="ALWAYS"
-                  style="-fx-background-color: white;
-                         -fx-background-radius: 12;
+
+            <!-- PANEL IZQUIERDO -->
+            <VBox spacing="15" HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: white; -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
-                
+
                 <!-- Estado Actual de Caja -->
                 <VBox spacing="10" style="-fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 15;">
                     <Label text="Estado Actual de Caja" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
                     <Separator/>
-                    
+
                     <HBox spacing="20">
                         <VBox spacing="5" HBox.hgrow="ALWAYS">
-                            <Label fx:id="lblEstadoCaja" text="Estado: ABIERTO" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #28a745;"/>
-                            <Label fx:id="lblCajero" text="Cajero: CRIS" style="-fx-font-size: 13px;"/>
-                            <Label fx:id="lblFechaApertura" text="Apertura: 01/12/2024 08:00 AM" style="-fx-font-size: 13px;"/>
+                            <!-- PLACEHOLDERS neutros -->
+                            <Label fx:id="lblEstadoCaja" text="Estado: —" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                            <Label fx:id="lblCajero" text="Usuario: —" style="-fx-font-size: 13px;"/>
+                            <Label fx:id="lblFechaApertura" text="Apertura: —" style="-fx-font-size: 13px;"/>
                         </VBox>
-                        
+
                         <VBox spacing="5" HBox.hgrow="ALWAYS">
                             <Label text="Montos del Sistema:" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
-                            <Label fx:id="lblEfectivoSistema" text="Efectivo: ₡125,500.00" style="-fx-font-size: 13px;"/>
-                            <Label fx:id="lblTarjetaSistema" text="Tarjeta: ₡89,300.00" style="-fx-font-size: 13px;"/>
-                            <Label fx:id="lblTotalSistema" text="Total: ₡214,800.00" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #007bff;"/>
+                            <Label fx:id="lblEfectivoSistema" text="Efectivo: —" style="-fx-font-size: 13px;"/>
+                            <Label fx:id="lblTarjetaSistema" text="Tarjeta: —" style="-fx-font-size: 13px;"/>
+                            <Label fx:id="lblTotalSistema" text="Total: —" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
                         </VBox>
                     </HBox>
                 </VBox>
-                
-                <!-- Filtros de búsqueda -->
+
+                <!-- Filtros -->
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <Label text="Filtrar por:" style="-fx-font-weight: bold;"/>
                     <DatePicker fx:id="dpFechaInicio" promptText="Fecha inicio" prefWidth="140">
@@ -77,13 +76,13 @@
                         <font><Font size="13"/></font>
                     </Button>
                 </HBox>
-                
-                <!-- Tabla de historial de cierres -->
+
+                <!-- Tabla de historial -->
                 <TableView fx:id="tblCierres" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colFechaApertura" text="Apertura" prefWidth="130"/>
                         <TableColumn fx:id="colFechaCierre" text="Cierre" prefWidth="130"/>
-                        <TableColumn fx:id="colCajero" text="Cajero" prefWidth="100"/>
+                        <TableColumn fx:id="colCajero" text="Usuario" prefWidth="100"/>
                         <TableColumn fx:id="colEfectivoSistema" text="Efectivo Sist." prefWidth="110"/>
                         <TableColumn fx:id="colTarjetaSistema" text="Tarjeta Sist." prefWidth="110"/>
                         <TableColumn fx:id="colEfectivoDeclarado" text="Efectivo Decl." prefWidth="110"/>
@@ -92,8 +91,8 @@
                         <TableColumn fx:id="colEstado" text="Estado" prefWidth="80"/>
                     </columns>
                 </TableView>
-                
-                <!-- Botones de acción -->
+
+                <!-- Botones tabla -->
                 <HBox spacing="10" alignment="CENTER">
                     <Button fx:id="btnVerDetalle" text="👁️ Ver Detalle" onAction="#onVerDetalle"
                             style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" prefWidth="140">
@@ -109,132 +108,126 @@
                     </Button>
                 </HBox>
             </VBox>
-            
-            <!-- PANEL DERECHO: Formulario de cierre -->
-            <VBox spacing="15"
-                  prefWidth="380"
-                  style="-fx-background-color: white;
-                         -fx-background-radius: 12;
+
+            <!-- PANEL DERECHO: Formulario -->
+            <VBox spacing="15" prefWidth="380"
+                  style="-fx-background-color: white; -fx-background-radius: 12;
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
-                
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
-                
-                <!-- Scroll interno con los campos del formulario -->
-                <ScrollPane fitToWidth="true"
-                            VBox.vgrow="ALWAYS"
-                            hbarPolicy="NEVER"
-                            vbarPolicy="AS_NEEDED"
+
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                             style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;">
                     <content>
                         <VBox spacing="15">
                             <Label fx:id="lblFormTitle" text="Realizar Cierre de Caja">
                                 <font><Font name="System Bold" size="18"/></font>
                             </Label>
-                            
+
                             <Separator/>
-                            
-                            <!-- Información del cierre actual -->
+
+                            <!-- Info cierre actual -->
                             <VBox spacing="8" style="-fx-background-color: #e7f3ff; -fx-background-radius: 8; -fx-padding: 12;">
                                 <Label text="Información del Cierre" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                                <Label fx:id="lblInfoCajero" text="Cajero: CRIS" style="-fx-font-size: 12px;"/>
-                                <Label fx:id="lblInfoApertura" text="Apertura: 01/12/2024 08:00 AM" style="-fx-font-size: 12px;"/>
-                                <Label fx:id="lblInfoFacturas" text="Facturas realizadas: 45" style="-fx-font-size: 12px;"/>
+                                <Label fx:id="lblInfoCajero" text="Usuario: —" style="-fx-font-size: 12px;"/>
+                                <Label fx:id="lblInfoApertura" text="Apertura: —" style="-fx-font-size: 12px;"/>
+                                <!-- Oculto por defecto; el controlador decide -->
+                                <Label fx:id="lblInfoFacturas" text="" visible="false" managed="false" style="-fx-font-size: 12px;"/>
                             </VBox>
-                            
+
                             <!-- Montos del Sistema -->
                             <VBox spacing="8">
                                 <Label text="Montos Registrados en el Sistema" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Efectivo:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
-                                    <Label fx:id="lblSistemaEfectivo" text="₡125,500.00" style="-fx-font-size: 16px; -fx-text-fill: #28a745; -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblSistemaEfectivo" text="₡0.00" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
                                 </HBox>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Tarjeta:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
-                                    <Label fx:id="lblSistemaTarjeta" text="₡89,300.00" style="-fx-font-size: 16px; -fx-text-fill: #007bff; -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblSistemaTarjeta" text="₡0.00" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
                                 </HBox>
-                                
+
                                 <Separator/>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Total Sistema:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
-                                    <Label fx:id="lblSistemaTotal" text="₡214,800.00" style="-fx-font-size: 18px; -fx-text-fill: #FF7A00; -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblSistemaTotal" text="₡0.00" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
                                 </HBox>
                             </VBox>
-                            
+
                             <Separator/>
-                            
-                            <!-- Montos Declarados por el Cajero -->
+
+                            <!-- Montos Declarados -->
                             <VBox spacing="8">
                                 <Label text="Montos Declarados por el Cajero" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                                <Label text="Ingrese los montos físicos contados en caja" 
+                                <Label text="Ingrese los montos físicos contados en caja"
                                        wrapText="true" style="-fx-text-fill: gray; -fx-font-size: 11px;"/>
-                                
-                                <!-- Campo: Efectivo Declarado -->
+
                                 <VBox spacing="5">
                                     <Label fx:id="lblEfectivoDeclarado" text="Efectivo Declarado (₡):" style="-fx-font-weight: bold;"/>
                                     <HBox spacing="10" alignment="CENTER_LEFT">
                                         <Label text="₡" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-                                        <TextField fx:id="txtEfectivoDeclarado" promptText="0.00" prefWidth="280">
+                                        <TextField fx:id="txtEfectivoDeclarado" promptText="0.00" prefWidth="280" disable="true">
                                             <font><Font size="14"/></font>
                                         </TextField>
                                     </HBox>
                                 </VBox>
-                                
-                                <!-- Campo: Tarjeta Declarado -->
+
                                 <VBox spacing="5">
                                     <Label fx:id="lblTarjetaDeclarado" text="Tarjeta Declarado (₡):" style="-fx-font-weight: bold;"/>
                                     <HBox spacing="10" alignment="CENTER_LEFT">
                                         <Label text="₡" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-                                        <TextField fx:id="txtTarjetaDeclarado" promptText="0.00" prefWidth="280">
+                                        <TextField fx:id="txtTarjetaDeclarado" promptText="0.00" prefWidth="280" disable="true">
                                             <font><Font size="14"/></font>
                                         </TextField>
                                     </HBox>
                                 </VBox>
                             </VBox>
-                            
+
                             <Separator/>
-                            
-                            <!-- Diferencias Calculadas -->
+
+                            <!-- Diferencias -->
                             <VBox spacing="8" fx:id="vboxDiferencias" visible="false" managed="false"
                                   style="-fx-background-color: #fff3cd; -fx-background-radius: 8; -fx-padding: 12;">
                                 <Label text="Diferencias Detectadas" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Efectivo:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
                                     <Label fx:id="lblDiferenciaEfectivo" text="₡0.00" style="-fx-font-size: 14px;"/>
                                 </HBox>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Tarjeta:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
                                     <Label fx:id="lblDiferenciaTarjeta" text="₡0.00" style="-fx-font-size: 14px;"/>
                                 </HBox>
-                                
+
                                 <Separator/>
-                                
+
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Label text="Total Diferencia:" style="-fx-font-weight: bold; -fx-min-width: 100;"/>
                                     <Label fx:id="lblDiferenciaTotal" text="₡0.00" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
                                 </HBox>
                             </VBox>
-                            
                         </VBox>
                     </content>
                 </ScrollPane>
-                
-                <!-- Botones del formulario (quedan siempre visibles) -->
+
+                <!-- Botones del formulario -->
                 <HBox spacing="10">
-                    <Button fx:id="btnCalcular" text="🧮 Calcular" onAction="#onCalcular" 
-                            style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
-                            prefWidth="170" HBox.hgrow="ALWAYS">
-                        <font><Font name="System Bold" size="14"/></font>
-                    </Button>
-                    <Button fx:id="btnCerrarCaja" text="🔒 Cerrar Caja" onAction="#onCerrarCaja" 
-                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;" 
+                    <Button fx:id="btnCalcular" text="🧮 Calcular" onAction="#onCalcular"
+                            style="-fx-background-color: #007bff; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;"
                             prefWidth="170" HBox.hgrow="ALWAYS" disable="true">
                         <font><Font name="System Bold" size="14"/></font>
                     </Button>
+                    <Button fx:id="btnCerrarCaja" text="🔒 Cerrar Caja" onAction="#onCerrarCaja"
+                            style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 8;"
+                            prefWidth="170" HBox.hgrow="ALWAYS" disable="true">
+                        <font><Font name="System Bold" size="14"/></font>
+                    </Button>
+                     <Button fx:id="btnAbrirCaja" text="🟢 Abrir Caja" onAction="#onAbrirCaja"
+            style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-background-radius: 8;"
+            prefWidth="140" HBox.hgrow="NEVER" visible="false" managed="false"/>
                 </HBox>
             </VBox>
         </HBox>

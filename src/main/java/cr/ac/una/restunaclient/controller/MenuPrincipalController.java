@@ -313,8 +313,11 @@ public class MenuPrincipalController implements Initializable {
 
     @FXML
     private void onCierres(MouseEvent event) {
-        // TODO: Cierre de caja
-        Mensaje.showInfo("Próximamente", "Módulo de Cierres de Caja en desarrollo");
+        FlowController.getInstance().goToView(
+        "CierresCaja",              // el nombre del .fxml registrado en FlowController
+        "RestUNA - Cierres de Caja",      // título de la ventana
+        1200, 700                     // tamaño; tu layout es ancho, algo tipo POS, dale más horizontal
+    );
     }
 
     @FXML

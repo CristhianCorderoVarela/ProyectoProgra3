@@ -38,6 +38,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import javafx.scene.Parent;
 
+
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
+
+
+import cr.ac.una.restunaclient.model.Mesa;
+import cr.ac.una.restunaclient.model.Salon;
+import java.time.LocalDate;
+
+
 public class VentanaVentasController implements Initializable {
 
     // HEADER
@@ -100,23 +113,85 @@ public class VentanaVentasController implements Initializable {
     @FXML private Button btnImprimir;
     @FXML private Button btnEnviarEmail;
     @FXML private Button btnCancelar;
+    
 
     private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(java.time.LocalDate.class,
-                    (JsonDeserializer<java.time.LocalDate>) (je, t, ctx) ->
-                            java.time.LocalDate.parse(je.getAsString()))
-            .registerTypeAdapter(java.time.LocalDateTime.class,
-                    (JsonDeserializer<java.time.LocalDateTime>) (je, t, ctx) -> {
-                        String s = je.getAsString();
+            // TypeAdapter para LocalDate (NO usa reflexión)
+            .registerTypeAdapter(LocalDate.class, new TypeAdapter<LocalDate>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+                @Override
+                public void write(JsonWriter out, LocalDate value) throws IOException {
+                    if (value == null) {
+                        out.nullValue();
+                    } else {
+                        out.value(value.format(formatter));
+                    }
+                }
+
+                @Override
+                public LocalDate read(JsonReader in) throws IOException {
+                    if (in.peek() == JsonToken.NULL) {
+                        in.nextNull();
+                        return null;
+                    }
+                    String dateStr = in.nextString();
+                    return dateStr != null && !dateStr.isEmpty()
+                            ? LocalDate.parse(dateStr, formatter)
+                            : null;
+                }
+            })
+            // TypeAdapter para LocalDateTime (NO usa reflexión)
+            .registerTypeAdapter(LocalDateTime.class, new TypeAdapter<LocalDateTime>() {
+                private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+                @Override
+                public void write(JsonWriter out, LocalDateTime value) throws IOException {
+                    if (value == null) {
+                        out.nullValue();
+                    } else {
+                        out.value(value.format(formatter));
+                    }
+                }
+
+                @Override
+                public LocalDateTime read(JsonReader in) throws IOException {
+                    if (in.peek() == JsonToken.NULL) {
+                        in.nextNull();
+                        return null;
+                    }
+
+                    String dateTimeStr = in.nextString();
+                    if (dateTimeStr == null || dateTimeStr.isEmpty()) {
+                        return null;
+                    }
+
+                    try {
+                        // Intenta parsear como LocalDateTime completo
+                        return LocalDateTime.parse(dateTimeStr, formatter);
+                    } catch (Exception e1) {
                         try {
-                            return java.time.LocalDateTime.parse(
-                                    s, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                        } catch (Exception e) {
-                            return java.time.LocalDate.parse(
-                                    s, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE).atStartOfDay();
+                            // Si falla, intenta como fecha simple (sin hora)
+                            return LocalDate.parse(dateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE)
+                                    .atStartOfDay();
+                        } catch (Exception e2) {
+                            System.err.println("⚠️ Error parseando fecha: " + dateTimeStr);
+                            return null;
                         }
-                    })
+                    }
+                }
+            })
+            // Excluir campos que causan problemas de reflexión
+            .excludeFieldsWithModifiers(
+                    java.lang.reflect.Modifier.TRANSIENT,
+                    java.lang.reflect.Modifier.STATIC
+            )
+            // Modo leniente para JSON no estricto
+            .setLenient()
             .create();
+
+    
+    
 
     private final ObservableList<DetalleOrden> lineas = FXCollections.observableArrayList();
     private Orden ordenSeleccionada;
@@ -138,6 +213,8 @@ public class VentanaVentasController implements Initializable {
     private static final BigDecimal IV_PORC       = new BigDecimal("0.13"); // 13%
     private static final BigDecimal SERV_PORC     = new BigDecimal("0.10"); // 10%
     private static final BigDecimal DESCUENTO_MAX = new BigDecimal("15");   // 15%
+    
+    private boolean esVentaDirecta = false;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -146,8 +223,8 @@ public class VentanaVentasController implements Initializable {
         lblFechaHora.setText(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()));
 
         // Config tabla
-        colProducto.setCellValueFactory(d ->
-                new SimpleStringProperty(
+        colProducto.setCellValueFactory(d
+                -> new SimpleStringProperty(
                         d.getValue().getProducto() != null ? d.getValue().getProducto().getNombre() : I18n.get("facturacion.producto")
                 )
         );
@@ -186,12 +263,20 @@ public class VentanaVentasController implements Initializable {
 
         limpiarPantalla();
         actualizarTextos();
+
+        // ⭐ NUEVO: Detectar modo de entrada y cargar datos
+        detectarYCargarModo();
     }
 
-    // ========== ESTADO / RESET ==========
     private void limpiarPantalla() {
         lblOrdenInfo.setText(I18n.get("facturacion.ordenNoAsignada"));
         lblMesaInfo.setText(I18n.get("facturacion.mesaNoAsignada"));
+
+        // ⭐ Restaurar botón de seleccionar orden si estaba oculto
+        if (!btnSeleccionarOrden.isVisible()) {
+            btnSeleccionarOrden.setVisible(true);
+            btnSeleccionarOrden.setManaged(true);
+        }
 
         txtCliente.clear();
         clienteSeleccionadoId = null;
@@ -215,6 +300,7 @@ public class VentanaVentasController implements Initializable {
         chkImpuestoServicio.setSelected(true);
 
         ordenSeleccionada = null;
+        esVentaDirecta = false; // ⭐ Reset flag
         updateBotonesEdicion();
     }
 
@@ -222,7 +308,14 @@ public class VentanaVentasController implements Initializable {
         boolean hayOrden = (ordenSeleccionada != null);
         boolean haySeleccion = (tblProductos.getSelectionModel().getSelectedItem() != null);
 
-        btnAgregarProducto.setDisable(!hayOrden);
+        // ⭐ En venta directa, siempre habilitar agregar producto (incluso sin orden)
+        if (esVentaDirecta) {
+            btnAgregarProducto.setDisable(false);
+        } else {
+            btnAgregarProducto.setDisable(!hayOrden);
+        }
+
+        // ⭐ Modificar/Eliminar solo si HAY orden Y selección
         btnModificarCantidad.setDisable(!hayOrden || !haySeleccion);
         btnEliminarProducto.setDisable(!hayOrden || !haySeleccion);
     }
@@ -566,60 +659,72 @@ public class VentanaVentasController implements Initializable {
 
     // ========== PRODUCTOS ==========
     @FXML
-private void onAgregarProducto(ActionEvent event) {
-    if (ordenSeleccionada == null) {
-        Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.seleccioneOrdenPrimero"));
-        return;
-    }
-
-    try {
-        // Cargar FXML como modal
-        javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                getClass().getResource("/cr/ac/una/restunaclient/view/QuickPickProductosView.fxml")
-        );
-        Parent root = loader.load();
-
-        Stage stage = new Stage();
-        stage.setTitle(I18n.isSpanish() ? "Agregar producto (rápido)" : "Quick add product");
-        stage.initOwner(btnAgregarProducto.getScene().getWindow());
-        stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-        stage.setScene(new javafx.scene.Scene(root, 900, 600));
-        stage.showAndWait();
-
-        // Recuperar resultado
-        var opt = cr.ac.una.restunaclient.controller.QuickPickProductosController.getResultFromStage(stage);
-        if (opt.isEmpty()) return;
-
-        var sel = opt.get(); // producto + cantidad
-        Long productoId = sel.producto().getId();
-        int cantidadNueva = sel.cantidad();
-
-        DetalleOrden detalleExistente = buscarDetalleExistenteEnOrden(productoId);
-        boolean ok;
-        if (detalleExistente != null) {
-            int cantTotal = detalleExistente.getCantidad() + cantidadNueva;
-            ok = actualizarDetalleEnBackend(ordenSeleccionada.getId(), detalleExistente.getId(), cantTotal);
-        } else {
-            ok = agregarDetalleEnBackend(ordenSeleccionada.getId(), productoId, cantidadNueva);
+    private void onAgregarProducto(ActionEvent event) {
+        // ⭐ NUEVO: Si es venta directa y no hay orden, crearla primero
+        if (esVentaDirecta && ordenSeleccionada == null) {
+            if (!crearOrdenTemporal()) {
+                return; // No se pudo crear, abortar
+            }
         }
 
-        if (!ok) {
-            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAplicarProducto"));
+        // ⭐ Validación normal
+        if (ordenSeleccionada == null) {
+            Mensaje.showWarning(I18n.get("facturacion.productos"), I18n.get("facturacion.seleccioneOrdenPrimero"));
             return;
         }
 
-        cargarDetallesDeOrden(ordenSeleccionada.getId());
-        onCalcularTotales(null);
-        Mensaje.showSuccess(I18n.get("facturacion.productos"), I18n.get("facturacion.productoAplicado"));
+        try {
+            // Cargar FXML como modal
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/cr/ac/una/restunaclient/view/QuickPickProductosView.fxml")
+            );
+            Parent root = loader.load();
 
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorCargarCatalogo") + ex.getMessage());
+            Stage stage = new Stage();
+            stage.setTitle(I18n.isSpanish() ? "Agregar producto (rápido)" : "Quick add product");
+            stage.initOwner(btnAgregarProducto.getScene().getWindow());
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.setScene(new javafx.scene.Scene(root, 900, 600));
+            stage.showAndWait();
+
+            // Recuperar resultado
+            var opt = cr.ac.una.restunaclient.controller.QuickPickProductosController.getResultFromStage(stage);
+            if (opt.isEmpty()) {
+                return;
+            }
+
+            var sel = opt.get(); // producto + cantidad
+            Long productoId = sel.producto().getId();
+            int cantidadNueva = sel.cantidad();
+
+            DetalleOrden detalleExistente = buscarDetalleExistenteEnOrden(productoId);
+            boolean ok;
+            if (detalleExistente != null) {
+                int cantTotal = detalleExistente.getCantidad() + cantidadNueva;
+                ok = actualizarDetalleEnBackend(ordenSeleccionada.getId(), detalleExistente.getId(), cantTotal);
+            } else {
+                ok = agregarDetalleEnBackend(ordenSeleccionada.getId(), productoId, cantidadNueva);
+            }
+
+            if (!ok) {
+                Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorAplicarProducto"));
+                return;
+            }
+
+            cargarDetallesDeOrden(ordenSeleccionada.getId());
+            onCalcularTotales(null);
+            Mensaje.showSuccess(I18n.get("facturacion.productos"), I18n.get("facturacion.productoAplicado"));
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Mensaje.showError(I18n.get("facturacion.productos"), I18n.get("facturacion.errorCargarCatalogo") + ex.getMessage());
+        }
     }
-}
 
     private DetalleOrden buscarDetalleExistenteEnOrden(Long productoId) {
-        if (productoId == null) return null;
+        if (productoId == null) {
+            return null;
+        }
         for (DetalleOrden det : lineas) {
             Long pid = det.getProductoId() != null
                     ? det.getProductoId()
@@ -633,7 +738,7 @@ private void onAgregarProducto(ActionEvent event) {
 
     private boolean actualizarDetalleEnBackend(Long ordenId, Long detalleId, int nuevaCantidad) {
         try {
-            Map<String,Object> payload = new HashMap<>();
+            Map<String, Object> payload = new HashMap<>();
             payload.put("cantidad", nuevaCantidad);
 
             String res = RestClient.put(
@@ -641,13 +746,79 @@ private void onAgregarProducto(ActionEvent event) {
                     payload
             );
 
-            Map<String,Object> body = RestClient.parseResponse(res);
+            Map<String, Object> body = RestClient.parseResponse(res);
             return Boolean.TRUE.equals(body.get("success"));
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
+  
+    private boolean crearOrdenTemporal() {
+        try {
+            System.out.println("🔄 Creando orden temporal para venta directa...");
+
+            // Payload mínimo para crear orden
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("estado", "ABIERTA");
+            payload.put("usuarioId", AppContext.getInstance().getUsuarioLogueado().getId());
+
+            // ⭐ IMPORTANTE: Ajusta este payload según lo que tu backend necesite
+            // Si requiere mesaId, salonId, etc., agrégalos aquí o márcalos como null
+            String jsonResponse = RestClient.post("/ordenes", payload);
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (!Boolean.TRUE.equals(response.get("success"))) {
+                String errorMsg = response.get("message") != null
+                        ? response.get("message").toString()
+                        : "Error desconocido";
+
+                System.err.println("❌ Error del backend: " + errorMsg);
+                Mensaje.showError("Error",
+                        I18n.isSpanish()
+                        ? "No se pudo crear la orden:\n" + errorMsg
+                        : "Could not create order:\n" + errorMsg
+                );
+                return false;
+            }
+
+            // Parsear la orden creada
+            Object dataObj = response.get("data");
+            String dataJson = gson.toJson(dataObj);
+            Orden orden = gson.fromJson(dataJson, Orden.class);
+
+            if (orden == null || orden.getId() == null) {
+                Mensaje.showError("Error", "Orden creada sin ID válido");
+                return false;
+            }
+
+            // Asignar orden
+            this.ordenSeleccionada = orden;
+
+            // Actualizar label con el número de orden
+            lblOrdenInfo.setText(
+                    I18n.get("facturacion.ventaDirecta") + " - "
+                    + I18n.get("facturacion.ordenNum") + orden.getId()
+            );
+
+            updateBotonesEdicion();
+
+            System.out.println("✅ Orden temporal creada: #" + orden.getId());
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error crítico creando orden temporal:");
+            e.printStackTrace();
+
+            Mensaje.showError("Error",
+                    I18n.isSpanish()
+                    ? "Error al crear orden temporal:\n" + e.getMessage()
+                    : "Error creating temporary order:\n" + e.getMessage()
+            );
+            return false;
+        }
+    }
+
 
     private void cargarCatalogoProductosDesdeBackend() {
         try {
@@ -1110,17 +1281,37 @@ private void onAgregarProducto(ActionEvent event) {
                 }
             }
 
-            Mensaje.showSuccess(I18n.get("app.exito"), facturada
-                    ? I18n.get("facturacion.facturaRegistradaExito")
-                    : I18n.get("facturacion.facturaRegistradaParcial"));
+            if (esVentaDirecta) {
+                Mensaje.showSuccess(
+                        I18n.get("app.exito"),
+                        I18n.get("facturacion.ventaDirectaExitosa")
+                );
+            } else {
+                Mensaje.showSuccess(I18n.get("app.exito"), facturada
+                        ? I18n.get("facturacion.facturaRegistradaExito")
+                        : I18n.get("facturacion.facturaRegistradaParcial"));
+            }
 
             limpiarPantalla();
+
+            // ⭐ NUEVO: Si era venta directa, volver al menú automáticamente
+            if (esVentaDirecta) {
+                // Pequeño delay para que el usuario vea el mensaje de éxito
+                javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.seconds(1.5)
+                );
+                delay.setOnFinished(ev -> {
+                    FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú", 1000, 560);
+                });
+                delay.play();
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             Mensaje.showError(I18n.get("app.error"), I18n.get("facturacion.errorProcesarPago") + e.getMessage());
         }
     }
+
 
     @FXML
     private void onImprimir(ActionEvent event) {
@@ -1237,6 +1428,7 @@ private void onAgregarProducto(ActionEvent event) {
     }
 
     private static class ProductoCantidadSelection {
+
         final Producto producto;
         final int cantidad;
 
@@ -1245,4 +1437,303 @@ private void onAgregarProducto(ActionEvent event) {
             this.cantidad = cantidad;
         }
     }
+
+    private void detectarYCargarModo() {
+        String modoFacturacion = (String) AppContext.getInstance().get("modoFacturacion");
+        System.out.println("🎯 Modo de facturación detectado: " + modoFacturacion);
+
+        if ("VENTA_DIRECTA".equals(modoFacturacion)) {
+            // ⭐ NUEVO: Modo venta directa en caja (SIN crear orden previa)
+            configurarVentaDirecta();
+
+        } else if ("MESA".equals(modoFacturacion)) {
+            // Modo 1: Arrastrar mesa desde VistaSalones
+            cargarDesdeMesa();
+
+        } else if ("ORDEN".equals(modoFacturacion)) {
+            // Modo 2: Facturar desde ventana de órdenes
+            cargarDesdeOrden();
+
+        } else {
+            // Modo 3: Facturación normal (seleccionar orden manualmente)
+            System.out.println("💰 Modo facturación normal - esperando selección de orden");
+        }
+
+        // Limpiar contexto después de usar
+        AppContext.getInstance().remove("modoFacturacion");
+    }
+    private void cargarDesdeMesa() {
+        Mesa mesa = null;
+        Salon salon = null;
+
+        try {
+            mesa = (Mesa) AppContext.getInstance().get("mesaParaFacturar");
+            salon = (Salon) AppContext.getInstance().get("salonParaFacturar");
+
+            if (mesa == null || mesa.getId() == null) {
+                System.err.println("❌ No se encontró mesa en el contexto");
+                Mensaje.showError("Error", "No se pudo cargar la información de la mesa");
+                return;
+            }
+
+            System.out.println("📍 Cargando facturación para mesa: " + mesa.getIdentificador());
+            System.out.println("📍 Mesa ID: " + mesa.getId());
+
+            // Cargar orden de la mesa
+            String jsonResponse = RestClient.get("/ordenes/mesa/" + mesa.getId());
+            System.out.println("📥 Respuesta raw: " + jsonResponse);
+
+            Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+            if (!Boolean.TRUE.equals(response.get("success"))) {
+                String errorMsg = response.get("message") != null
+                        ? response.get("message").toString()
+                        : "Error desconocido";
+
+                System.err.println("❌ Error del backend: " + errorMsg);
+
+                Mensaje.showWarning(
+                        I18n.isSpanish() ? "Aviso" : "Warning",
+                        I18n.isSpanish()
+                        ? "No se encontraron órdenes para esta mesa: " + errorMsg
+                        : "No orders found for this table: " + errorMsg
+                );
+                return;
+            }
+
+            // ⭐ CRÍTICO: Convertir data a JSON usando Gson local
+            Object dataObj = response.get("data");
+            if (dataObj == null) {
+                System.err.println("❌ El campo 'data' está vacío");
+                Mensaje.showWarning("Aviso", "No hay datos de orden disponibles");
+                return;
+            }
+
+            String dataJson = gson.toJson(dataObj);
+            System.out.println("📦 JSON parseado: " + dataJson.substring(0, Math.min(300, dataJson.length())) + "...");
+
+            // Parsear la orden
+            Orden orden = null;
+
+            try {
+                // Intenta parsear como objeto único
+                orden = gson.fromJson(dataJson, Orden.class);
+                System.out.println("✅ Orden parseada como objeto único: #" + orden.getId());
+
+            } catch (Exception e1) {
+                System.out.println("⚠️ No es objeto único, intentando como lista...");
+
+                try {
+                    // Intenta como lista y toma el primero
+                    List<Orden> ordenes = gson.fromJson(
+                            dataJson,
+                            new TypeToken<List<Orden>>() {
+                            }.getType()
+                    );
+
+                    if (ordenes != null && !ordenes.isEmpty()) {
+                        orden = ordenes.get(0);
+                        System.out.println("✅ Orden parseada de lista: #" + orden.getId());
+                    } else {
+                        System.err.println("❌ Lista de órdenes vacía");
+                    }
+
+                } catch (Exception e2) {
+                    System.err.println("❌ Error parseando orden:");
+                    e1.printStackTrace();
+                    e2.printStackTrace();
+
+                    throw new RuntimeException(
+                            "No se pudo parsear la orden. Formato inesperado: " + dataJson.substring(0, 100),
+                            e2
+                    );
+                }
+            }
+
+            if (orden == null) {
+                Mensaje.showWarning(
+                        I18n.isSpanish() ? "Aviso" : "Warning",
+                        I18n.isSpanish()
+                        ? "No hay órdenes activas para esta mesa"
+                        : "No active orders for this table"
+                );
+                return;
+            }
+
+            // ⭐ Verificar que la orden tenga ID
+            if (orden.getId() == null) {
+                System.err.println("❌ La orden no tiene ID");
+                Mensaje.showError("Error", "Orden inválida (sin ID)");
+                return;
+            }
+
+            // Asignar la orden
+            this.ordenSeleccionada = orden;
+            System.out.println("✅ Orden seleccionada: #" + orden.getId());
+
+            // Actualizar labels
+            lblOrdenInfo.setText(I18n.get("facturacion.ordenNum") + orden.getId());
+
+            String mesaTxt = mesa.getIdentificador() != null && !mesa.getIdentificador().isBlank()
+                    ? mesa.getIdentificador()
+                    : String.valueOf(mesa.getId());
+
+            lblMesaInfo.setText(I18n.get("facturacion.mesa") + mesaTxt);
+
+            // Cargar detalles
+            System.out.println("📋 Cargando detalles de orden #" + orden.getId());
+            cargarDetallesDeOrden(orden.getId());
+
+            // Configurar impuestos según el salón
+            if (salon != null) {
+                chkImpuestoServicio.setSelected(salon.cobraServicio());
+                System.out.println("⚙️ Cargo por servicio: " + salon.cobraServicio());
+            }
+
+            onCalcularTotales(null);
+            updateBotonesEdicion();
+
+            System.out.println("✅ Facturación cargada desde mesa correctamente");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error crítico en cargarDesdeMesa:");
+            e.printStackTrace();
+
+            String errorMsg = e.getMessage();
+            if (errorMsg == null || errorMsg.isEmpty()) {
+                errorMsg = e.getClass().getSimpleName();
+            }
+
+            Mensaje.showError("Error",
+                    I18n.isSpanish()
+                    ? "Error al cargar facturación desde mesa:\n" + errorMsg
+                    : "Error loading billing from table:\n" + errorMsg
+            );
+
+        } finally {
+            // Limpiar contexto
+            AppContext.getInstance().remove("mesaParaFacturar");
+            AppContext.getInstance().remove("salonParaFacturar");
+        }
+    }
+
+    private void cargarDesdeOrden() {
+        try {
+            Orden orden = (Orden) AppContext.getInstance().get("ordenParaFacturar");
+
+            if (orden == null || orden.getId() == null) {
+                System.err.println("❌ No se encontró orden en el contexto");
+                Mensaje.showError("Error", "No se pudo cargar la información de la orden");
+                return;
+            }
+
+            System.out.println("📋 Cargando facturación para orden: #" + orden.getId());
+
+            // ⭐ Si la orden viene sin detalles completos, recargarla desde backend
+            if (orden.getFechaHora() == null) {
+                System.out.println("⚠️ Orden incompleta, recargando desde backend...");
+
+                String jsonResponse = RestClient.get("/ordenes/" + orden.getId());
+                Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+
+                if (Boolean.TRUE.equals(response.get("success"))) {
+                    Object dataObj = response.get("data");
+                    String dataJson = gson.toJson(dataObj);
+                    orden = gson.fromJson(dataJson, Orden.class);
+                    System.out.println("✅ Orden recargada desde backend");
+                } else {
+                    System.err.println("⚠️ No se pudo recargar la orden, usando datos parciales");
+                }
+            }
+
+            this.ordenSeleccionada = orden;
+
+            // Actualizar labels
+            lblOrdenInfo.setText(I18n.get("facturacion.ordenNum") + orden.getId());
+
+            Mesa mesa = (Mesa) AppContext.getInstance().get("mesaParaFacturar");
+            Salon salon = (Salon) AppContext.getInstance().get("salonParaFacturar");
+
+            if (mesa != null) {
+                String mesaTxt = mesa.getIdentificador() != null && !mesa.getIdentificador().isBlank()
+                        ? mesa.getIdentificador()
+                        : String.valueOf(mesa.getId());
+                lblMesaInfo.setText(I18n.get("facturacion.mesa") + mesaTxt);
+
+                if (salon != null) {
+                    chkImpuestoServicio.setSelected(salon.cobraServicio());
+                }
+            } else if (orden.getMesa() != null) {
+                String mesaTxt = orden.getMesa().getIdentificador() != null
+                        && !orden.getMesa().getIdentificador().isBlank()
+                        ? orden.getMesa().getIdentificador()
+                        : String.valueOf(orden.getMesa().getId());
+                lblMesaInfo.setText(I18n.get("facturacion.mesa") + mesaTxt);
+            } else {
+                lblMesaInfo.setText(I18n.get("facturacion.barra"));
+            }
+
+            cargarDetallesDeOrden(orden.getId());
+            onCalcularTotales(null);
+            updateBotonesEdicion();
+
+            System.out.println("✅ Facturación cargada desde orden correctamente");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Mensaje.showError("Error",
+                    I18n.isSpanish()
+                    ? "Error al cargar facturación desde orden:\n" + e.getMessage()
+                    : "Error loading billing from order:\n" + e.getMessage()
+            );
+        } finally {
+            AppContext.getInstance().remove("ordenParaFacturar");
+            AppContext.getInstance().remove("mesaParaFacturar");
+            AppContext.getInstance().remove("salonParaFacturar");
+        }
+    }
+
+    private void configurarVentaDirecta() {
+        try {
+            System.out.println("🛒 Configurando venta directa en caja...");
+
+            esVentaDirecta = true;
+
+            // ⭐ NO creamos orden previa, se creará al agregar el primer producto
+            this.ordenSeleccionada = null;
+
+            // ⭐ Actualizar UI para venta directa
+            lblOrdenInfo.setText(I18n.get("facturacion.ventaDirecta"));
+            lblMesaInfo.setText(I18n.get("facturacion.sinMesaAsignada"));
+
+            // ⭐ Ocultar botón de seleccionar orden
+            btnSeleccionarOrden.setVisible(false);
+            btnSeleccionarOrden.setManaged(false);
+
+            // ⭐ Habilitar botón de agregar producto inmediatamente
+            updateBotonesEdicion();
+
+            // ⭐ Aplicar impuestos por defecto (sin salón no hay servicio)
+            chkImpuestoVentas.setSelected(true);
+            chkImpuestoServicio.setSelected(false); // Venta directa SIN servicio
+
+            System.out.println("✅ Venta directa configurada correctamente (sin orden previa)");
+
+        } catch (Exception e) {
+            System.err.println("❌ Error configurando venta directa:");
+            e.printStackTrace();
+
+            Mensaje.showError("Error",
+                    I18n.isSpanish()
+                    ? "Error al iniciar venta directa:\n" + e.getMessage()
+                    : "Error starting direct sale:\n" + e.getMessage()
+            );
+
+            // Volver al menú
+            FlowController.getInstance().goToView("MenuPrincipal", "RestUNA - Menú", 1000, 560);
+        }
+    }
+    
+    
+    
 }

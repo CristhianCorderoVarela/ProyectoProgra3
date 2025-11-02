@@ -8,6 +8,7 @@ cr\ac\una\restunaclient\controller\OrdenesController.class
 cr\ac\una\restunaclient\controller\CierresCajaController$1.class
 cr\ac\una\restunaclient\controller\QuickPickProductosController$5.class
 cr\ac\una\restunaclient\controller\ProductosController$3.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$7.class
 cr\ac\una\restunaclient\controller\CierresCajaController$4.class
 cr\ac\una\restunaclient\util\I18n.class
 cr\ac\una\restunaclient\controller\CierresCajaController$7.class
@@ -32,6 +33,7 @@ cr\ac\una\restunaclient\controller\ReportesController.class
 cr\ac\una\restunaclient\model\DetalleOrden.class
 cr\ac\una\restunaclient\controller\QuickPickProductosController$Resultado.class
 cr\ac\una\restunaclient\util\LocalDateAdapter.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$6.class
 cr\ac\una\restunaclient\model\Mesa$SalonReference.class
 cr\ac\una\restunaclient\service\RestClient.class
 cr\ac\una\restunaclient\model\Producto.class
@@ -82,4 +84,6 @@ cr\ac\una\restunaclient\controller\CierresCajaController$10.class
 cr\ac\una\restunaclient\controller\MenuPrincipalController$1.class
 cr\ac\una\restunaclient\model\DetalleFactura.class
 cr\ac\una\restunaclient\controller\ProductosController.class
+cr\ac\una\restunaclient\controller\VentanaVentasController$8.class
 cr\ac\una\restunaclient\controller\UsuariosController$1.class
+cr\ac\una\restunaclient\controller\OrdenesController$8.class

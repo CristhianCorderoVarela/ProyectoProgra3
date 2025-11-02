@@ -90,7 +90,7 @@
                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
                 <padding><Insets top="20" bottom="20" left="20" right="20"/></padding>
                 
-                <Label text="🍽️ Seleccionar Productos" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                <Label text="🍽 Seleccionar Productos" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
                 
                 <!-- Búsqueda y filtros -->
                 <HBox spacing="10">
@@ -140,13 +140,20 @@
                 
                 <Separator/>
                 
-                <!-- Total y botón guardar -->
+                <!-- ⭐ MODIFICADO: Total y botones (Facturar + Guardar) -->
                 <HBox spacing="15" alignment="CENTER" 
                       style="-fx-background-color: #FFF5EC; -fx-padding: 15; -fx-background-radius: 8;">
                     <Label text="TOTAL:" style="-fx-font-weight: bold; -fx-font-size: 18px;"/>
                     <Label fx:id="lblTotal" text="₡0.00"
                            style="-fx-text-fill: #FF7A00; -fx-font-weight: bold; -fx-font-size: 24px;"/>
                     <Region HBox.hgrow="ALWAYS"/>
+                    
+                    <Button fx:id="btnFacturar" text="💳 Facturar" onAction="#onFacturar"
+                            style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-cursor: hand;
+                                   -fx-background-radius: 8; -fx-font-size: 15px; -fx-padding: 12 30;">
+                        <font><Font name="System Bold" size="15"/></font>
+                    </Button>
+                    
                     <Button fx:id="btnGuardar" text="💾 Guardar Orden" onAction="#onGuardar"
                             style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand;
                                    -fx-background-radius: 8; -fx-font-size: 15px; -fx-padding: 12 30;">

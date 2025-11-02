@@ -61,6 +61,7 @@ public class OrdenesController implements Initializable {
     @FXML private ScrollPane scrollOrdenes;
     @FXML private VBox vboxOrdenes;
     @FXML private HBox hboxSelectorBarra;
+    @FXML private Button btnFacturar;
     
     private Orden ordenActual;
     private Mesa mesaSeleccionada;
@@ -116,6 +117,7 @@ public class OrdenesController implements Initializable {
         cargarGrupos();
         cargarProductos();
         cargarOrdenExistente();
+        configurarBotonFacturar();
         actualizarHeaderInformativo();
         actualizarTextos();
         cargarListaOrdenes();
@@ -147,8 +149,8 @@ public class OrdenesController implements Initializable {
         });
         
         ContextMenu contextMenu = new ContextMenu();
-        MenuItem itemEditar = new MenuItem(I18n.isSpanish() ? "✏️ Editar cantidad" : "✏️ Edit quantity");
-        MenuItem itemEliminar = new MenuItem(I18n.isSpanish() ? "🗑️ Eliminar" : "🗑️ Delete");
+        MenuItem itemEditar = new MenuItem(I18n.isSpanish() ? "✏ Editar cantidad" : "✏ Edit quantity");
+        MenuItem itemEliminar = new MenuItem(I18n.isSpanish() ? "🗑 Eliminar" : "🗑 Delete");
         
         itemEditar.setOnAction(e -> {
             DetalleOrden detalle = tblDetalles.getSelectionModel().getSelectedItem();
@@ -304,9 +306,9 @@ public class OrdenesController implements Initializable {
                 System.out.println("✅ Auto-seleccionada barra: " + barras.get(0).getNombre());
             } else if (!barras.isEmpty()) {
                 cmbBarraSelect.getSelectionModel().selectFirst();
-                System.out.println("ℹ️ Múltiples barras disponibles, seleccione una");
+                System.out.println("ℹ Múltiples barras disponibles, seleccione una");
             } else {
-                System.err.println("⚠️ No hay barras disponibles");
+                System.err.println("⚠ No hay barras disponibles");
                 Mensaje.showWarning(
                         I18n.isSpanish() ? "Sin Barras" : "No Bars",
                         I18n.isSpanish()
@@ -551,7 +553,7 @@ public class OrdenesController implements Initializable {
     System.out.println("🔍 Buscando: '" + busqueda + "'");
     
     if (listaProductos == null || listaProductos.isEmpty()) {
-        System.err.println("⚠️ listaProductos vacía");
+        System.err.println("⚠ listaProductos vacía");
         mostrarProductos(Collections.emptyList());
         return;
     }
@@ -607,7 +609,7 @@ public class OrdenesController implements Initializable {
         System.out.println("🔍 Filtrando por grupo: " + (grupo != null ? grupo.getNombre() : "TODOS"));
 
         if (listaProductos == null || listaProductos.isEmpty()) {
-            System.err.println("⚠️ listaProductos está vacía o null");
+            System.err.println("⚠ listaProductos está vacía o null");
             mostrarProductos(Collections.emptyList());
             return;
         }
@@ -647,7 +649,7 @@ public class OrdenesController implements Initializable {
 
         // Feedback si no hay productos en el grupo
         if (filtrados.isEmpty()) {
-            System.err.println("⚠️ No hay productos activos en el grupo: " + grupo.getNombre());
+            System.err.println("⚠ No hay productos activos en el grupo: " + grupo.getNombre());
         }
     }
 
@@ -747,7 +749,7 @@ public class OrdenesController implements Initializable {
         AppContext.getInstance().remove("salonSeleccionado");
 
         if ("BARRA".equals(modoOrden)) {
-            System.out.println("⬅️ Regresando a Menú Principal (modo barra)");
+            System.out.println("⬅ Regresando a Menú Principal (modo barra)");
             FlowController.getInstance().goToView(
                     "MenuPrincipal",
                     "RestUNA - Menú Principal",
@@ -755,7 +757,7 @@ public class OrdenesController implements Initializable {
                     560
             );
         } else {
-            System.out.println("⬅️ Regresando a Vista de Salones");
+            System.out.println("⬅ Regresando a Vista de Salones");
             FlowController.getInstance().goToView(
                     "VistaSalones",
                     "RestUNA - Salones",
@@ -828,7 +830,7 @@ public class OrdenesController implements Initializable {
                 } else if (detalle.getProductoId() != null) {
                     detalleDTO.setProductoId(detalle.getProductoId());
                 } else {
-                    System.err.println("⚠️ Detalle sin productoId: " + detalle);
+                    System.err.println("⚠ Detalle sin productoId: " + detalle);
                     continue;
                 }
 
@@ -875,7 +877,7 @@ public class OrdenesController implements Initializable {
                         RestClient.post("/mesas/" + mesaSeleccionada.getId() + "/ocupar", null);
                         System.out.println("✅ Mesa marcada como ocupada");
                     } catch (Exception e) {
-                        System.err.println("⚠️ No se pudo marcar mesa como ocupada: " + e.getMessage());
+                        System.err.println("⚠ No se pudo marcar mesa como ocupada: " + e.getMessage());
                     }
                 }
 
@@ -888,6 +890,7 @@ public class OrdenesController implements Initializable {
                 );
 
                 limpiarFormularioParaNuevaOrden();
+                actualizarEstadoBotonFacturar();
 
                 cargarListaOrdenes();
 
@@ -1050,7 +1053,7 @@ public class OrdenesController implements Initializable {
                 }
             } else {
                 lblUbicacionTipo.setText(
-                        I18n.isSpanish() ? "🍽️ Nueva Orden" : "🍽️ New Order"
+                        I18n.isSpanish() ? "🍽 Nueva Orden" : "🍽 New Order"
                 );
                 lblUbicacionTipo.setStyle(
                         "-fx-font-weight: bold; -fx-text-fill: #FF7A00; -fx-font-size: 16px;"
@@ -1084,6 +1087,9 @@ public class OrdenesController implements Initializable {
         btnVolver.setText(esEspanol ? "← Volver" : "← Back");
         btnGuardar.setText(esEspanol ? "💾 Guardar Orden" : "💾 Save Order");
         btnCancelarOrden.setText(esEspanol ? "❌ Cancelar Orden" : "❌ Cancel Order");
+        if (btnFacturar != null) {
+            btnFacturar.setText(I18n.isSpanish() ? "💳 Facturar" : "💳 Bill");
+}
         
         txtBuscarProducto.setPromptText(esEspanol ? "🔍 Buscar producto..." : "🔍 Search product...");
         cmbGrupos.setPromptText(esEspanol ? "Todos los grupos" : "All groups");
@@ -1220,4 +1226,289 @@ public class OrdenesController implements Initializable {
             Mensaje.showError("Error", "No se pudo cargar la orden seleccionada.");
         }
     }
+    
+    
+/**
+ * ⭐ NUEVO: Configura la visibilidad y estado del botón Facturar
+ */
+private void configurarBotonFacturar() {
+    if (btnFacturar == null) {
+        System.err.println("⚠ btnFacturar es null - revisar fx:id en FXML");
+        return;
+    }
+    
+    // Solo visible para cajeros y administradores
+    boolean puedeFacturar = AppContext.getInstance().isCajero() || 
+                            AppContext.getInstance().isAdministrador();
+    
+    btnFacturar.setVisible(puedeFacturar);
+    btnFacturar.setManaged(puedeFacturar);
+    
+    // Deshabilitar si no hay productos
+    actualizarEstadoBotonFacturar();
+    
+    // Listener para actualizar estado cuando cambian los detalles
+    detallesOrden.addListener((javafx.collections.ListChangeListener.Change<? extends DetalleOrden> c) -> {
+        actualizarEstadoBotonFacturar();
+    });
+}
+
+/**
+ * ⭐ NUEVO: Actualiza el estado del botón Facturar según la orden
+ */
+private void actualizarEstadoBotonFacturar() {
+    if (btnFacturar == null) return;
+    
+    // Habilitar solo si:
+    // 1. Hay una orden guardada (con ID)
+    // 2. La orden tiene productos
+    // 3. La orden está en estado ABIERTA
+    boolean puedeFacturar = ordenActual != null && 
+                            ordenActual.getId() != null &&
+                            !detallesOrden.isEmpty() &&
+                            ordenActual.isAbierta();
+    
+    btnFacturar.setDisable(!puedeFacturar);
+    
+    // Feedback visual
+    if (puedeFacturar) {
+        btnFacturar.setStyle(
+            "-fx-background-color: #28a745; -fx-text-fill: white; " +
+            "-fx-font-size: 14px; -fx-font-weight: bold; " +
+            "-fx-padding: 10 20; -fx-cursor: hand; -fx-background-radius: 8;"
+        );
+        btnFacturar.setTooltip(new Tooltip(
+            I18n.isSpanish() ? 
+            "Proceder a facturación con esta orden" :
+            "Proceed to billing with this order"
+        ));
+    } else {
+        btnFacturar.setStyle(
+            "-fx-background-color: #6c757d; -fx-text-fill: white; " +
+            "-fx-font-size: 14px; -fx-font-weight: bold; " +
+            "-fx-padding: 10 20; -fx-background-radius: 8; -fx-opacity: 0.6;"
+        );
+        btnFacturar.setTooltip(new Tooltip(
+            I18n.isSpanish() ? 
+            "Debe guardar la orden primero" :
+            "Must save the order first"
+        ));
+    }
+}
+
+/**
+ * ⭐ NUEVO: Navega a facturación con la orden actual
+ */
+@FXML
+private void onFacturar(ActionEvent event) {
+    System.out.println("💳 Facturando orden desde ventana de órdenes");
+    
+    // Validaciones
+    if (ordenActual == null || ordenActual.getId() == null) {
+        Mensaje.showWarning(
+            I18n.isSpanish() ? "Aviso" : "Warning",
+            I18n.isSpanish() ? 
+                "Debe guardar la orden antes de facturar" :
+                "Must save the order before billing"
+        );
+        return;
+    }
+    
+    if (detallesOrden.isEmpty()) {
+        Mensaje.showWarning(
+            I18n.isSpanish() ? "Aviso" : "Warning",
+            I18n.isSpanish() ? 
+                "La orden no tiene productos para facturar" :
+                "The order has no products to bill"
+        );
+        return;
+    }
+    
+    if (!ordenActual.isAbierta()) {
+        Mensaje.showWarning(
+            I18n.isSpanish() ? "Aviso" : "Warning",
+            I18n.isSpanish() ? 
+                "Esta orden ya fue facturada o cancelada" :
+                "This order was already billed or cancelled"
+        );
+        return;
+    }
+    
+    // Confirmar navegación si hay cambios sin guardar
+    if (hayCambiosSinGuardar()) {
+        boolean confirmar = Mensaje.showConfirmation(
+            I18n.isSpanish() ? "Cambios sin guardar" : "Unsaved changes",
+            I18n.isSpanish() ? 
+                "Hay cambios sin guardar en la orden.\n\n" +
+                "¿Desea guardarlos antes de facturar?" :
+                "There are unsaved changes in the order.\n\n" +
+                "Do you want to save them before billing?"
+        );
+        
+        if (confirmar) {
+            // Intentar guardar
+            try {
+                guardarOrdenActual();
+            } catch (Exception e) {
+                Mensaje.showError("Error", 
+                    I18n.isSpanish() ? 
+                    "No se pudo guardar la orden" :
+                    "Could not save the order"
+                );
+                return;
+            }
+        }
+    }
+    
+    try {
+        // ⭐ Configurar contexto para VentanaVentas
+        AppContext.getInstance().set("ordenParaFacturar", ordenActual);
+        AppContext.getInstance().set("modoFacturacion", "ORDEN"); // ⭐ Indica origen
+        
+        // También pasar mesa/salón si están disponibles
+        if (mesaSeleccionada != null) {
+            AppContext.getInstance().set("mesaParaFacturar", mesaSeleccionada);
+        }
+        if (salonSeleccionado != null) {
+            AppContext.getInstance().set("salonParaFacturar", salonSeleccionado);
+        }
+        
+        System.out.println("✅ Contexto configurado para facturación");
+        System.out.println("   - Orden ID: " + ordenActual.getId());
+        System.out.println("   - Productos: " + detallesOrden.size());
+        System.out.println("   - Mesa: " + (mesaSeleccionada != null ? mesaSeleccionada.getIdentificador() : "N/A"));
+        
+        // Navegar a ventana de facturación
+        FlowController.getInstance().goToView(
+            "VentanaVentas",
+            I18n.isSpanish() ? 
+                "Facturación - Orden #" + ordenActual.getId() :
+                "Billing - Order #" + ordenActual.getId(),
+            1200, 700
+        );
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        Mensaje.showError("Error", 
+            I18n.isSpanish() ? 
+            "Error al navegar a facturación:\n" + e.getMessage() :
+            "Error navigating to billing:\n" + e.getMessage()
+        );
+    }
+}
+
+/**
+ * ⭐ NUEVO: Verifica si hay cambios sin guardar en la orden
+ */
+private boolean hayCambiosSinGuardar() {
+    // Si no hay orden guardada, siempre hay cambios
+    if (ordenActual == null || ordenActual.getId() == null) {
+        return !detallesOrden.isEmpty();
+    }
+    
+    // Comparar cantidad de detalles (método simple)
+    // En un sistema más robusto, se compararía producto por producto
+    try {
+        String jsonResponse = RestClient.get("/ordenes/" + ordenActual.getId() + "/detalles");
+        Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+        
+        if (Boolean.TRUE.equals(response.get("success"))) {
+            Gson gson = new Gson();
+            String dataJson = gson.toJson(response.get("data"));
+            List<DetalleOrden> detallesServidor = gson.fromJson(
+                dataJson, 
+                new TypeToken<List<DetalleOrden>>(){}.getType()
+            );
+            
+            // Comparar tamaños como indicador simple
+            return detallesOrden.size() != detallesServidor.size();
+        }
+    } catch (Exception e) {
+        System.err.println("Error verificando cambios: " + e.getMessage());
+    }
+    
+    return false; // Si falla, asumir que no hay cambios
+}
+
+/**
+ * ⭐ NUEVO: Guarda la orden actual (versión simplificada del método onGuardar)
+ */
+private void guardarOrdenActual() throws Exception {
+    if (detallesOrden.isEmpty()) {
+        throw new Exception("No hay productos en la orden");
+    }
+    
+    if ("BARRA".equals(modoOrden)) {
+        if (barraSeleccionada == null) {
+            throw new Exception("Debe seleccionar una barra");
+        }
+        ordenActual.setMesaId(null);
+    } else {
+        if (mesaSeleccionada == null) {
+            throw new Exception("Debe seleccionar una mesa");
+        }
+        ordenActual.setMesaId(mesaSeleccionada.getId());
+    }
+    
+    Usuario logged = AppContext.getInstance().getUsuarioLogueado();
+    if (logged == null || logged.getId() == null) {
+        throw new Exception("No hay usuario logueado");
+    }
+    
+    ordenActual.setUsuarioId(logged.getId());
+    ordenActual.setObservaciones(txtObservaciones.getText());
+    
+    List<DetalleOrden> detallesParaEnviar = new ArrayList<>();
+    for (DetalleOrden detalle : detallesOrden) {
+        DetalleOrden detalleDTO = new DetalleOrden();
+        
+        if (detalle.getProducto() != null && detalle.getProducto().getId() != null) {
+            detalleDTO.setProductoId(detalle.getProducto().getId());
+        } else if (detalle.getProductoId() != null) {
+            detalleDTO.setProductoId(detalle.getProductoId());
+        } else {
+            continue;
+        }
+        
+        detalleDTO.setCantidad(detalle.getCantidad());
+        detalleDTO.setPrecioUnitario(detalle.getPrecioUnitario());
+        detalleDTO.calcularSubtotal();
+        
+        detallesParaEnviar.add(detalleDTO);
+    }
+    
+    if (detallesParaEnviar.isEmpty()) {
+        throw new Exception("No se pudieron preparar los detalles");
+    }
+    
+    ordenActual.setDetalles(detallesParaEnviar);
+    
+    String jsonResponse;
+    if (modoEdicion && ordenActual.getId() != null) {
+        jsonResponse = RestClient.put("/ordenes/" + ordenActual.getId(), ordenActual);
+    } else {
+        jsonResponse = RestClient.post("/ordenes", ordenActual);
+    }
+    
+    Map<String, Object> response = RestClient.parseResponse(jsonResponse);
+    
+    if (!Boolean.TRUE.equals(response.get("success"))) {
+        throw new Exception(response.get("message").toString());
+    }
+    
+    // Actualizar ID si es nueva
+    if (ordenActual.getId() == null) {
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDateTime.class, (com.google.gson.JsonDeserializer<LocalDateTime>)
+                (je, t, ctx) -> LocalDateTime.parse(je.getAsString()))
+            .create();
+        String dataJson = gson.toJson(response.get("data"));
+        Orden ordenGuardada = gson.fromJson(dataJson, Orden.class);
+        ordenActual.setId(ordenGuardada.getId());
+    }
+    
+    System.out.println("✅ Orden guardada antes de facturar: ID " + ordenActual.getId());
+}
+
+    
 }

@@ -20,6 +20,9 @@ import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 
 /**
  * Controlador del menú principal
@@ -304,14 +307,58 @@ public class MenuPrincipalController implements Initializable {
 
     @FXML
     private void onFacturacion(MouseEvent event) {
-        FlowController.getInstance().goToView(
-        "VentanaVentas",              // el nombre del .fxml registrado en FlowController
-        "RestUNA - Facturación",      // título de la ventana
-        1200, 700                     // tamaño; tu layout es ancho, algo tipo POS, dale más horizontal
-    );
+        // Mostrar diálogo de selección
+        Alert dialogo = new Alert(Alert.AlertType.CONFIRMATION);
+        dialogo.setTitle(I18n.get("facturacion.seleccionModo"));
+        dialogo.setHeaderText(I18n.get("facturacion.eligaModo"));
+        dialogo.setContentText(I18n.get("facturacion.modoDescripcion"));
+
+        ButtonType btnVentaDirecta = new ButtonType(
+                I18n.get("facturacion.ventaDirecta"),
+                ButtonBar.ButtonData.OK_DONE
+        );
+
+        ButtonType btnOrdenExistente = new ButtonType(
+                I18n.get("facturacion.ordenExistente"),
+                ButtonBar.ButtonData.OTHER
+        );
+
+        ButtonType btnCancelar = new ButtonType(
+                I18n.get("app.cancelar"),
+                ButtonBar.ButtonData.CANCEL_CLOSE
+        );
+
+        dialogo.getButtonTypes().setAll(btnVentaDirecta, btnOrdenExistente, btnCancelar);
+
+        Optional<ButtonType> resultado = dialogo.showAndWait();
+
+        if (resultado.isEmpty() || resultado.get() == btnCancelar) {
+            return; // Usuario canceló
+        }
+
+        // Configurar modo según elección
+        if (resultado.get() == btnVentaDirecta) {
+            // Modo: Venta directa en caja
+            AppContext.getInstance().set("modoFacturacion", "VENTA_DIRECTA");
+
+            FlowController.getInstance().goToView(
+                    "VentanaVentas",
+                    I18n.get("facturacion.ventaDirecta") + " - RestUNA",
+                    1200, 700
+            );
+        } else {
+            // Modo: Facturar orden existente (default)
+            AppContext.getInstance().remove("modoFacturacion"); // Sin modo especial
+
+            FlowController.getInstance().goToView(
+                    "VentanaVentas",
+                    I18n.get("facturacion.titulo"),
+                    1200, 700
+            );
+        }
     }
 
-    @FXML
+     @FXML
     private void onCierres(MouseEvent event) {
         FlowController.getInstance().goToView(
         "CierresCaja",              // el nombre del .fxml registrado en FlowController

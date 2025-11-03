@@ -33,7 +33,7 @@ public class RestClient {
 
     // OJO: el contexto real según tu log es /ProyectoProgra3WS y los servicios REST están en /api/*
     // Ejemplo completo: http://localhost:8080/ProyectoProgra3WS/api/usuarios/login
-    private static final String BASE_URL = "http://localhost:8080/WsRestUNA/api";
+    private static final String BASE_URL = "http://localhost:8080/ProyectoProgra3WS/api";
 
     private static final Gson gson;
 

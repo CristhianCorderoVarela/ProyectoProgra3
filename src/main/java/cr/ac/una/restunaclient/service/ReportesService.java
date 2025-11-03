@@ -23,9 +23,13 @@ public class ReportesService {
     // ✅ Modo directo (sin OpenAPI)
     private static final boolean DIRECT_MODE = true;
     private static final Map<String, String> FIXED = new HashMap<>();
+     private static String preview(String s){ return (s==null)? "null" : (s.length()<=200? s : s.substring(0,200)+"..."); }
+    private static void log(String m){ System.out.println("[ReportesService] " + m); }
 
     static {
         // JSON
+         // Agrega al bloque FIXED
+        FIXED.put("reportes.cierres.byid.pdf", "/reportes/cierres/{id}/pdf");   
         FIXED.put("reportes.facturas.get",        "/reportes/facturas");
         FIXED.put("reportes.cierres.get",         "/reportes/cierres");
         FIXED.put("reportes.productos.top",       "/reportes/productos/top");
@@ -205,6 +209,8 @@ public class ReportesService {
     private String buildUrl(String path, String rawQs) {
         return BASE + API + path + (rawQs == null ? "" : rawQs);
     }
+    
+    
 
     // ---------------------- HTTP helpers ----------------------
 
@@ -293,6 +299,17 @@ public class ReportesService {
     
 
 
-    private static String preview(String s){ return (s==null)? "null" : (s.length()<=200? s : s.substring(0,200)+"..."); }
-    private static void log(String m){ System.out.println("[ReportesService] " + m); }
+   
+    
+    
+    
+    
+  
+// Agrega este método
+public File cierreByIdPdf(Long id) throws Exception {
+    String path = resolvePath("reportes.cierres.byid.pdf").replace("{id}", String.valueOf(id));
+    String url = buildUrl(path, null);
+    log("PDF cierreById -> " + url);
+    return downloadPdf(url, "cierre-" + id);
+}
 }

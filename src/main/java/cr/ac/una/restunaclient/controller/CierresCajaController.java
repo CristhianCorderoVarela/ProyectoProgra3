@@ -20,6 +20,9 @@ import javafx.event.ActionEvent;
 import java.util.concurrent.ConcurrentHashMap;
 
 import java.net.URL;
+import java.io.File;
+import java.time.LocalDate;
+
 import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
@@ -100,6 +103,30 @@ public class CierresCajaController implements Initializable {
         return null;
     }
 
+    // añade este campo
+private final cr.ac.una.restunaclient.service.ReportesService reportesServiceCli =
+        new cr.ac.una.restunaclient.service.ReportesService();
+
+@FXML
+    private void onGenerarReporte() {
+        CierreCaja sel = tblCierres.getSelectionModel().getSelectedItem();
+        if (sel == null) {
+            mostrarAlerta("Selección requerida", "Seleccione un cierre.", Alert.AlertType.WARNING);
+            return;
+        }
+        try {
+            File pdf = reportesServiceCli.cierreByIdPdf(sel.getId());
+            RestClient.openFile(pdf);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            mostrarAlerta("Error", "No se pudo generar el reporte del cierre.\n" + ex.getMessage(),
+                    Alert.AlertType.ERROR);
+        }
+    }
+
+    
+    
+    
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         configurarTabla();
@@ -436,15 +463,7 @@ private void onBuscar() {
         mostrarAlerta("Detalle", "Vista de detalle en construcción.", Alert.AlertType.INFORMATION);
     }
 
-    @FXML
-    private void onGenerarReporte() {
-        CierreCaja sel = tblCierres.getSelectionModel().getSelectedItem();
-        if (sel == null) {
-            mostrarAlerta("Selección requerida", "Seleccione un cierre.", Alert.AlertType.WARNING);
-            return;
-        }
-        mostrarAlerta("Reporte", "Generando reporte del cierre #" + sel.getId() + "...", Alert.AlertType.INFORMATION);
-    }
+    
 
     @FXML
     private void onRefrescar() {
@@ -488,14 +507,25 @@ private void onBuscar() {
 
         try {
             Map<String, Object> body = Map.of(
-                "efectivoDeclarado", new BigDecimal(txtEfectivoDeclarado.getText()),
-                "tarjetaDeclarado",  new BigDecimal(txtTarjetaDeclarado.getText())
+                    "efectivoDeclarado", new java.math.BigDecimal(txtEfectivoDeclarado.getText()),
+                    "tarjetaDeclarado", new java.math.BigDecimal(txtTarjetaDeclarado.getText())
             );
-            String json = RestClient.post("/cierres/" + cierreActual.getId() + "/cerrar", body);
-            Map<String, Object> resp = gson.fromJson(json, new TypeToken<Map<String, Object>>(){}.getType());
+            String json = cr.ac.una.restunaclient.service.RestClient.post(
+                    "/cierres/" + cierreActual.getId() + "/cerrar", body);
+            Map<String, Object> resp = new com.google.gson.Gson().fromJson(
+                    json, new TypeToken<Map<String, Object>>() {}.getType());
 
             if (Boolean.TRUE.equals(resp.get("success"))) {
                 mostrarAlerta("Éxito", "Caja cerrada correctamente.", Alert.AlertType.INFORMATION);
+                Long cierreId = cierreActual.getId();
+                try {
+                   File pdf = reportesServiceCli.cierreByIdPdf(cierreId);
+                    RestClient.openFile(pdf);
+                } catch (Exception e) {
+                    mostrarAlerta("Reporte",
+                            "El cierre se registró, pero no se pudo abrir el PDF.\n" + e.getMessage(),
+                            Alert.AlertType.WARNING);
+                }
                 limpiarFormulario();
                 refrescarTodo();
             } else {

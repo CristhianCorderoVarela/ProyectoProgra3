@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 import com.google.gson.JsonPrimitive;
+import java.awt.Desktop;
 import java.io.File;
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -83,7 +84,30 @@ public class RestClient {
             }
         }
     }
-
+    
+    
+    public static void openFile(File file) {
+        if (file == null) throw new IllegalArgumentException("Archivo nulo.");
+        if (!file.exists() || file.length() == 0) {
+            throw new IllegalArgumentException("Archivo no existe o está vacío: " + file.getAbsolutePath());
+        }
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                Desktop.getDesktop().open(file);
+                return;
+            }
+            // Fallback por SO
+            String os = System.getProperty("os.name").toLowerCase();
+            ProcessBuilder pb = os.contains("win")
+                    ? new ProcessBuilder("cmd", "/c", "start", "", file.getAbsolutePath())
+                    : os.contains("mac")
+                        ? new ProcessBuilder("open", file.getAbsolutePath())
+                        : new ProcessBuilder("xdg-open", file.getAbsolutePath());
+            pb.inheritIO().start();
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo abrir el PDF: " + e.getMessage(), e);
+        }
+    }
     /**
      * Realiza una petición POST
      * @param endpoint Endpoint (ej: "/usuarios/login")
@@ -267,7 +291,5 @@ private static HttpGet constructGet(String url) {
     return request;
 }
 
-    public static void openFile(File pdf) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+    
 }
